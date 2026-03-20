@@ -1,0 +1,26 @@
+{
+  "featureKey": "feat-2026-004",
+  "title": "VS Code Extension (lac-lens)",
+  "status": "active",
+  "problem": "Developers spend most of their time in their editor. Feature provenance needs to surface exactly where the code is — as a CodeLens badge, hover card, and status bar item — without requiring context switches to a browser or terminal.",
+  "analysis": "Two modes: Direct (reads feature.json via VS Code FS API, no external process) and LSP (delegates to lac-lsp for diagnostics and workspace symbols). Auto-detect: if lac-lsp is in PATH at activation, LSP mode is enabled automatically. This means zero configuration for the common case. As of iteration 3, hover provider escapes backticks in all string values to prevent broken markdown rendering.",
+  "implementation": "CodeLens shows featureKey + status + completeness%. Hover shows problem, analysis, decisions, limitations with backtick escaping. Status bar shows active feature. Click-to-open feature.json. LSP mode adds diagnostics, go-to-definition, workspace symbol search. Bundled with esbuild to CJS for VS Code compatibility.",
+  "decisions": [
+    {
+      "decision": "Two modes (direct + LSP) rather than LSP-only",
+      "rationale": "Direct mode works offline, in remote environments, and without any global installs. LSP mode is opt-in for power users.",
+      "date": "2026-02-10"
+    },
+    {
+      "decision": "Auto-detect lac-lsp at activation via spawnSync",
+      "rationale": "Zero-config experience. Most users who have lac-lsp installed want LSP mode. Explicit false opt-out is better than explicit true opt-in.",
+      "date": "2026-03-15"
+    }
+  ],
+  "knownLimitations": [
+    "Only first workspace folder used in multi-root workspaces",
+    "No Neovim/Helix/JetBrains support (LSP is standard but needs client config)"
+  ],
+  "tags": ["vscode", "codelens", "lsp-client", "extension"],
+  "schemaVersion": 1
+}

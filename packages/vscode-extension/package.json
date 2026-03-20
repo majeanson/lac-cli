@@ -1,0 +1,80 @@
+{
+  "name": "lac-lens",
+  "displayName": "life-as-code Lens",
+  "description": "View feature provenance inline in your editor",
+  "version": "0.1.0",
+  "private": true,
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "lacLens.openFeatureJson",
+        "title": "lac: Open feature.json"
+      },
+      {
+        "command": "lac.openFeatureJson",
+        "title": "lac: Open feature.json"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "lacLens.openFeatureJson",
+          "group": "lacLens@1",
+          "when": "editorIsOpen"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "life-as-code Lens",
+      "properties": {
+        "lacLens.enableCodeLens": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show feature CodeLens above first line of files in feature folders"
+        },
+        "lacLens.enableStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show active feature context in the status bar"
+        },
+        "lacLens.lspMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use the lac-lsp Language Server for richer hover, diagnostics, and workspace symbols. Requires lac-lsp to be installed (npm i -g @life-as-code/lac-lsp)."
+        },
+        "lacLens.lspServerPath": {
+          "type": "string",
+          "default": "lac-lsp",
+          "description": "Path to the lac-lsp binary (defaults to 'lac-lsp' on PATH)"
+        },
+        "lacLens.httpPort": {
+          "type": "number",
+          "default": 7474,
+          "description": "Port the lac-lsp HTTP API listens on (used for status bar blame in LSP mode)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "watch": "node esbuild.config.mjs --watch",
+    "vsce:package": "vsce package",
+    "lint": "oxlint src",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.24.0",
+    "esbuild": "^0.20.0",
+    "oxlint": "^1.39.0",
+    "typescript": "^5.3.0"
+  }
+}

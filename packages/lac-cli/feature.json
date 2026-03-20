@@ -1,0 +1,28 @@
+{
+  "featureKey": "feat-2026-002",
+  "title": "lac CLI",
+  "status": "active",
+  "problem": "Developers need a terminal interface for the entire feature provenance lifecycle — creating features, running quality checks, tracing ownership, and operating the local server — without leaving their workflow.",
+  "analysis": "A Commander.js-based CLI exposes 11 commands covering the full lifecycle. Commands are thin wrappers over shared lib/ utilities so they are individually testable. The serve command bridges the CLI and LSP worlds by spawning lac-lsp and opening the browser. As of iteration 3, 23 Vitest tests cover loadConfig, doctor, lint, and blame commands.",
+  "implementation": "Commands: workspace (init/status), init, spawn, tag, archive, lint (--watch), blame, export (--site), hooks (install/uninstall), serve, doctor, search. Built with tsdown to ESM. Installed globally as `lac` binary. Reads lac.config.json from workspace root for default options and paths.",
+  "validation": "23 Vitest tests cover: loadConfig parsing and defaults, doctor validation errors, lint threshold and required-fields checks, blame path resolution and edge cases.",
+  "decisions": [
+    {
+      "decision": "Commander.js over yargs or meow",
+      "rationale": "Commander has the cleanest subcommand model and TypeScript support without runtime type gymnastics.",
+      "date": "2026-01-20"
+    },
+    {
+      "decision": "lac serve spawns lac-lsp as a child process rather than embedding the HTTP server",
+      "rationale": "Keeps packages independently deployable. lac-cli stays lightweight. lac-lsp can be used standalone.",
+      "date": "2026-03-01"
+    }
+  ],
+  "knownLimitations": [
+    "lint --watch uses fs.watch which is unreliable on Linux (use chokidar in a future iteration)",
+    "No shell completion yet (bash/zsh/fish)",
+    "lac diff command not yet implemented"
+  ],
+  "tags": ["cli", "commander", "developer-tools"],
+  "schemaVersion": 1
+}

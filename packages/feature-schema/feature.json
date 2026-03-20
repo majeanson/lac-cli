@@ -1,0 +1,36 @@
+{
+  "featureKey": "feat-2026-001",
+  "title": "Feature Schema",
+  "status": "active",
+  "problem": "Every provenance system needs a canonical, versioned, machine-readable format for capturing why a feature exists. Without a shared schema, tooling cannot validate, index, or evolve feature records consistently.",
+  "analysis": "A Zod-based schema provides runtime validation and TypeScript type inference from a single source of truth. The featureKey pattern (domain-YYYY-NNN) encodes temporal context and supports multi-domain deployments. Optional fields are additive so the schema can evolve without breaking existing records. The schemaVersion field enables future migration tooling. As of iteration 3, 40 Vitest tests exercise all validation paths.",
+  "implementation": "Zod schema exported as FeatureSchema with validateFeature() and generateFeatureKey() utilities. The FEATURE_KEY_PATTERN regex accepts any lowercase domain prefix. A JSON Schema file (feature.schema.json) is co-located for IDE validation and autocompletion. Published as @life-as-code/feature-schema. Build output: ESM + .d.mts type declarations via tsdown.",
+  "validation": "40 Vitest tests cover schema shape validation, featureKey pattern matching, required vs optional fields, nested object coercion, generateFeatureKey uniqueness and format, validateFeature success and failure paths.",
+  "decisions": [
+    {
+      "decision": "Use Zod for runtime validation",
+      "rationale": "Single schema definition drives both TypeScript types and runtime validation. No code duplication.",
+      "alternativesConsidered": ["JSON Schema only — no TS type inference", "manual validation — fragile and verbose"],
+      "date": "2026-01-15"
+    },
+    {
+      "decision": "featureKey format: domain-YYYY-NNN",
+      "rationale": "Year in key makes keys self-documenting. Domain prefix enables multi-domain workspaces (proc-, goal-, adr-).",
+      "alternativesConsidered": ["UUIDs — opaque, not human-readable", "sequential integers — no temporal context"],
+      "date": "2026-01-15"
+    },
+    {
+      "decision": "schemaVersion as an explicit integer field",
+      "rationale": "Enables forward migration when breaking changes are needed. Current value is 1.",
+      "alternativesConsidered": ["Implicit versioning via field presence — ambiguous under concurrent evolution"],
+      "date": "2026-02-01"
+    }
+  ],
+  "knownLimitations": [
+    "knownLimitations field is a flat string array — no structured impact/workaround fields yet",
+    "No schema migration tooling for breaking changes (schemaVersion field exists but no migrator)",
+    "annotations field not yet in schema — added ad-hoc by consuming packages"
+  ],
+  "tags": ["schema", "core", "zod", "typescript", "validation"],
+  "schemaVersion": 1
+}

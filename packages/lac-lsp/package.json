@@ -1,0 +1,30 @@
+{
+  "name": "@life-as-code/lac-lsp",
+  "version": "0.1.0",
+  "description": "LSP server + HTTP API for life-as-code feature provenance",
+  "type": "module",
+  "bin": {
+    "lac-lsp": "./bin/lac-lsp.js"
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts --format esm --dts --out-dir dist",
+    "dev": "tsdown src/index.ts --format esm --dts --out-dir dist --watch",
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint src",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@life-as-code/feature-schema": "workspace:*",
+    "chokidar": "^3.6.0",
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.12"
+  },
+  "devDependencies": {
+    "@life-as-code/tsconfig": "workspace:*",
+    "@types/node": "catalog:dev",
+    "tsdown": "catalog:dev",
+    "typescript": "catalog:dev",
+    "vitest": "^4.1.0"
+  }
+}

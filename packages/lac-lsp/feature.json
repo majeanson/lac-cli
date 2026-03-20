@@ -1,0 +1,29 @@
+{
+  "featureKey": "feat-2026-003",
+  "title": "Language Server + HTTP API",
+  "status": "active",
+  "problem": "Editors need real-time feature provenance overlaid on code (hover cards, code lens, diagnostics) without polling the filesystem on every keystroke. CI pipelines and browser tools need a stable HTTP API to query the same index.",
+  "analysis": "A single long-running process serves both transports. The LSP stdio transport connects to any LSP-capable editor. The HTTP server on :7474 provides a REST API for CI, browser extensions, and the webapp. A shared in-memory FeatureIndex (chokidar-backed) is the single source of truth for both transports. As of iteration 3, 10 Vitest tests cover HTTP routing, rate limiting, lineage, and oversized-body protection.",
+  "implementation": "LacLspServer orchestrates FeatureIndex + optional HttpServer + optional LSP connection. LSP capabilities: hover (with missing fields + completeness %), codeLens, definition, diagnostics (push), workspaceSymbols. HTTP endpoints: GET /health (uptime, indexedCount, version) /features /features/:key /features/:key/lineage /blame /lint /events (SSE), PUT /features/:key, DELETE /features/:key. Startup log: 'lac-lsp v0.1.0 started on port N'. File watching via chokidar.",
+  "validation": "10 Vitest tests: GET /health, GET /features, GET /features?q= filter, GET /blame path-traversal guard, PUT valid update, PUT oversized body (413), DELETE missing key, rate limiter structure, SSE connection.",
+  "decisions": [
+    {
+      "decision": "Single process for both LSP and HTTP",
+      "rationale": "One shared FeatureIndex means no sync needed between transports. Simpler to install and operate.",
+      "alternativesConsidered": ["separate processes — double the memory, sync complexity"],
+      "date": "2026-02-01"
+    },
+    {
+      "decision": "Replace fs.watch with chokidar",
+      "rationale": "fs.watch --recursive is unreliable on Linux/Docker. Chokidar provides consistent cross-platform behavior.",
+      "date": "2026-03-15"
+    }
+  ],
+  "knownLimitations": [
+    "Only one workspace root supported — multi-root workspaces use first folder only",
+    "textDocument/references not yet implemented",
+    "textDocument/rename not yet implemented"
+  ],
+  "tags": ["lsp", "http-api", "language-server", "chokidar"],
+  "schemaVersion": 1
+}
