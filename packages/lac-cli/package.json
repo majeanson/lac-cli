@@ -1,21 +1,31 @@
 {
   "name": "@life-as-code/lac-cli",
   "version": "0.1.0",
-  "private": true,
+  "description": "CLI for life-as-code — feature provenance tracking from the terminal",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/majeanson/lac-cli.git"
+  },
+  "keywords": ["cli", "feature", "provenance", "lac", "life-as-code"],
   "type": "module",
   "bin": {
     "lac": "./bin/lac.js"
   },
+  "files": [
+    "bin",
+    "dist"
+  ],
   "scripts": {
     "build": "tsdown src/index.ts --format esm --dts --out-dir dist",
     "dev": "tsdown src/index.ts --format esm --dts --out-dir dist --watch",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "lint": "oxlint src",
+    "prepublishOnly": "bun run build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@life-as-code/feature-schema": "workspace:*",
     "commander": "^12.0.0",
     "prompts": "^2.4.2"
   },
