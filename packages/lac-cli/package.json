@@ -1,5 +1,5 @@
 {
-  "name": "@life-as-code/lac-cli",
+  "name": "@majeanson/lac",
   "version": "0.1.0",
   "description": "CLI for life-as-code — feature provenance tracking from the terminal",
   "license": "MIT",
