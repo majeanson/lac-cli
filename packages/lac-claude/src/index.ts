@@ -17,6 +17,8 @@ import {
 } from './prompts.js'
 
 export type { FillableField }
+export { buildContext, contextToString } from './context-builder.js'
+export { getMissingFields, ALL_FILLABLE_FIELDS, FILL_PROMPTS, JSON_FIELDS } from './prompts.js'
 
 export interface FillOptions {
   /** Absolute path to the feature folder (contains feature.json) */

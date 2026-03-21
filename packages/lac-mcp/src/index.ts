@@ -11,7 +11,16 @@ import {
 
 import type { Feature } from '@life-as-code/feature-schema'
 import { validateFeature } from '@life-as-code/feature-schema'
-import { fillFeature, genFromFeature } from '@life-as-code/lac-claude'
+import {
+  fillFeature,
+  genFromFeature,
+  buildContext,
+  contextToString,
+  getMissingFields,
+  ALL_FILLABLE_FIELDS,
+  FILL_PROMPTS,
+  JSON_FIELDS,
+} from '@life-as-code/lac-claude'
 
 // Workspace root: first CLI arg, LAC_WORKSPACE env, or cwd
 const workspaceRoot = process.argv[2] ?? process.env.LAC_WORKSPACE ?? process.cwd()
@@ -159,6 +168,41 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
             description: 'Directory to scan (default: workspace root)',
           },
         },
+      },
+    },
+    {
+      name: 'read_feature_context',
+      description:
+        'Read a feature.json and all surrounding source files. Returns the full context needed to fill missing fields — use this when the user asks you to fill or analyse a feature WITHOUT calling an external AI API (you ARE the AI). After reading, generate the missing fields yourself and call write_feature_fields to save.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          path: {
+            type: 'string',
+            description: 'Absolute or relative path to the feature folder (contains feature.json)',
+          },
+        },
+        required: ['path'],
+      },
+    },
+    {
+      name: 'write_feature_fields',
+      description:
+        'Patch a feature.json with new field values. Use this after read_feature_context — write the fields you generated back to disk.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          path: {
+            type: 'string',
+            description: 'Absolute or relative path to the feature folder (contains feature.json)',
+          },
+          fields: {
+            type: 'object',
+            description:
+              'Key-value pairs to merge into feature.json. Values may be strings, arrays, or objects depending on the field.',
+          },
+        },
+        required: ['path', 'fields'],
       },
     },
   ],
@@ -314,6 +358,69 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: `${passes.length} passed, ${failures.length} failed — ${results.length} features checked\n\n${lines.join('\n')}`,
             },
           ],
+        }
+      }
+
+      case 'read_feature_context': {
+        const featureDir = resolvePath(String(a.path))
+        const featurePath = path.join(featureDir, 'feature.json')
+        let raw: string
+        try {
+          raw = fs.readFileSync(featurePath, 'utf-8')
+        } catch {
+          return { content: [{ type: 'text', text: `No feature.json found at "${featurePath}"` }], isError: true }
+        }
+        const parsed = JSON.parse(raw) as unknown
+        const result = validateFeature(parsed)
+        if (!result.success) {
+          return { content: [{ type: 'text', text: `Invalid feature.json: ${result.errors.join(', ')}` }], isError: true }
+        }
+        const feature = result.data
+        const ctx = buildContext(featureDir, feature)
+        const contextStr = contextToString(ctx)
+        const missingFields = getMissingFields(feature)
+
+        // Build per-field instructions so Claude knows exactly what to generate
+        const fieldInstructions = missingFields.map((field) => {
+          const prompt = FILL_PROMPTS[field]
+          const isJson = JSON_FIELDS.has(field)
+          return `### ${field}\n${prompt.system}\n${prompt.userSuffix}\n${isJson ? '(Return valid JSON for this field)' : '(Return plain text for this field)'}`
+        }).join('\n\n')
+
+        const instructions = missingFields.length === 0
+          ? 'All fillable fields are already populated. No generation needed.'
+          : `## Missing fields to fill (${missingFields.join(', ')})\n\nFor each field below, generate the value described, then call write_feature_fields with all generated values.\n\n${fieldInstructions}`
+
+        return {
+          content: [{
+            type: 'text',
+            text: `${instructions}\n\n## Context\n\n${contextStr}`,
+          }],
+        }
+      }
+
+      case 'write_feature_fields': {
+        const featureDir = resolvePath(String(a.path))
+        const featurePath = path.join(featureDir, 'feature.json')
+        let raw: string
+        try {
+          raw = fs.readFileSync(featurePath, 'utf-8')
+        } catch {
+          return { content: [{ type: 'text', text: `No feature.json found at "${featurePath}"` }], isError: true }
+        }
+        const existing = JSON.parse(raw) as Record<string, unknown>
+        const fields = a.fields as Record<string, unknown>
+        if (!fields || typeof fields !== 'object' || Array.isArray(fields)) {
+          return { content: [{ type: 'text', text: 'fields must be a JSON object' }], isError: true }
+        }
+        const updated = { ...existing, ...fields }
+        fs.writeFileSync(featurePath, JSON.stringify(updated, null, 2) + '\n', 'utf-8')
+        const writtenKeys = Object.keys(fields)
+        return {
+          content: [{
+            type: 'text',
+            text: `✓ Wrote ${writtenKeys.length} field(s) to ${featurePath}: ${writtenKeys.join(', ')}`,
+          }],
         }
       }
 
