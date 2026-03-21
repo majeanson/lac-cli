@@ -216,6 +216,7 @@
     "build": "node esbuild.config.mjs",
     "watch": "node esbuild.config.mjs --watch",
     "vsce:package": "vsce package --no-dependencies",
+    "vsce:publish": "vsce publish --no-dependencies",
     "lint": "oxlint src",
     "typecheck": "tsc --noEmit"
   },
