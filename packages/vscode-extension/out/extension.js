@@ -3104,7 +3104,7 @@ var require_main = __commonJS({
     exports2.createMessageConnection = exports2.createServerSocketTransport = exports2.createClientSocketTransport = exports2.createServerPipeTransport = exports2.createClientPipeTransport = exports2.generateRandomPipeName = exports2.StreamMessageWriter = exports2.StreamMessageReader = exports2.SocketMessageWriter = exports2.SocketMessageReader = exports2.PortMessageWriter = exports2.PortMessageReader = exports2.IPCMessageWriter = exports2.IPCMessageReader = void 0;
     var ril_1 = require_ril();
     ril_1.default.install();
-    var path2 = require("path");
+    var path5 = require("path");
     var os = require("os");
     var crypto_1 = require("crypto");
     var net_1 = require("net");
@@ -3240,9 +3240,9 @@ var require_main = __commonJS({
       }
       let result;
       if (XDG_RUNTIME_DIR) {
-        result = path2.join(XDG_RUNTIME_DIR, `vscode-ipc-${randomSuffix}.sock`);
+        result = path5.join(XDG_RUNTIME_DIR, `vscode-ipc-${randomSuffix}.sock`);
       } else {
-        result = path2.join(os.tmpdir(), `vscode-${randomSuffix}.sock`);
+        result = path5.join(os.tmpdir(), `vscode-${randomSuffix}.sock`);
       }
       const limit = safeIpcPathLengths.get(process.platform);
       if (limit !== void 0 && result.length > limit) {
@@ -3413,8 +3413,8 @@ var require_main2 = __commonJS({
         }
         Position2.is = is;
       })(Position || (exports3.Position = Position = {}));
-      var Range2;
-      (function(Range3) {
+      var Range3;
+      (function(Range4) {
         function create(one, two, three, four) {
           if (Is.uinteger(one) && Is.uinteger(two) && Is.uinteger(three) && Is.uinteger(four)) {
             return { start: Position.create(one, two), end: Position.create(three, four) };
@@ -3424,13 +3424,13 @@ var require_main2 = __commonJS({
             throw new Error("Range#create called with invalid arguments[".concat(one, ", ").concat(two, ", ").concat(three, ", ").concat(four, "]"));
           }
         }
-        Range3.create = create;
+        Range4.create = create;
         function is(value) {
           var candidate = value;
           return Is.objectLiteral(candidate) && Position.is(candidate.start) && Position.is(candidate.end);
         }
-        Range3.is = is;
-      })(Range2 || (exports3.Range = Range2 = {}));
+        Range4.is = is;
+      })(Range3 || (exports3.Range = Range3 = {}));
       var Location;
       (function(Location2) {
         function create(uri, range) {
@@ -3439,7 +3439,7 @@ var require_main2 = __commonJS({
         Location2.create = create;
         function is(value) {
           var candidate = value;
-          return Is.objectLiteral(candidate) && Range2.is(candidate.range) && (Is.string(candidate.uri) || Is.undefined(candidate.uri));
+          return Is.objectLiteral(candidate) && Range3.is(candidate.range) && (Is.string(candidate.uri) || Is.undefined(candidate.uri));
         }
         Location2.is = is;
       })(Location || (exports3.Location = Location = {}));
@@ -3451,7 +3451,7 @@ var require_main2 = __commonJS({
         LocationLink2.create = create;
         function is(value) {
           var candidate = value;
-          return Is.objectLiteral(candidate) && Range2.is(candidate.targetRange) && Is.string(candidate.targetUri) && Range2.is(candidate.targetSelectionRange) && (Range2.is(candidate.originSelectionRange) || Is.undefined(candidate.originSelectionRange));
+          return Is.objectLiteral(candidate) && Range3.is(candidate.targetRange) && Is.string(candidate.targetUri) && Range3.is(candidate.targetSelectionRange) && (Range3.is(candidate.originSelectionRange) || Is.undefined(candidate.originSelectionRange));
         }
         LocationLink2.is = is;
       })(LocationLink || (exports3.LocationLink = LocationLink = {}));
@@ -3483,7 +3483,7 @@ var require_main2 = __commonJS({
         ColorInformation2.create = create;
         function is(value) {
           var candidate = value;
-          return Is.objectLiteral(candidate) && Range2.is(candidate.range) && Color.is(candidate.color);
+          return Is.objectLiteral(candidate) && Range3.is(candidate.range) && Color.is(candidate.color);
         }
         ColorInformation2.is = is;
       })(ColorInformation || (exports3.ColorInformation = ColorInformation = {}));
@@ -3552,13 +3552,13 @@ var require_main2 = __commonJS({
         }
         DiagnosticRelatedInformation2.is = is;
       })(DiagnosticRelatedInformation || (exports3.DiagnosticRelatedInformation = DiagnosticRelatedInformation = {}));
-      var DiagnosticSeverity;
-      (function(DiagnosticSeverity2) {
-        DiagnosticSeverity2.Error = 1;
-        DiagnosticSeverity2.Warning = 2;
-        DiagnosticSeverity2.Information = 3;
-        DiagnosticSeverity2.Hint = 4;
-      })(DiagnosticSeverity || (exports3.DiagnosticSeverity = DiagnosticSeverity = {}));
+      var DiagnosticSeverity2;
+      (function(DiagnosticSeverity3) {
+        DiagnosticSeverity3.Error = 1;
+        DiagnosticSeverity3.Warning = 2;
+        DiagnosticSeverity3.Information = 3;
+        DiagnosticSeverity3.Hint = 4;
+      })(DiagnosticSeverity2 || (exports3.DiagnosticSeverity = DiagnosticSeverity2 = {}));
       var DiagnosticTag;
       (function(DiagnosticTag2) {
         DiagnosticTag2.Unnecessary = 1;
@@ -3572,8 +3572,8 @@ var require_main2 = __commonJS({
         }
         CodeDescription2.is = is;
       })(CodeDescription || (exports3.CodeDescription = CodeDescription = {}));
-      var Diagnostic;
-      (function(Diagnostic2) {
+      var Diagnostic2;
+      (function(Diagnostic3) {
         function create(range, message, severity, code, source, relatedInformation) {
           var result = { range, message };
           if (Is.defined(severity)) {
@@ -3590,14 +3590,14 @@ var require_main2 = __commonJS({
           }
           return result;
         }
-        Diagnostic2.create = create;
+        Diagnostic3.create = create;
         function is(value) {
           var _a;
           var candidate = value;
-          return Is.defined(candidate) && Range2.is(candidate.range) && Is.string(candidate.message) && (Is.number(candidate.severity) || Is.undefined(candidate.severity)) && (Is.integer(candidate.code) || Is.string(candidate.code) || Is.undefined(candidate.code)) && (Is.undefined(candidate.codeDescription) || Is.string((_a = candidate.codeDescription) === null || _a === void 0 ? void 0 : _a.href)) && (Is.string(candidate.source) || Is.undefined(candidate.source)) && (Is.undefined(candidate.relatedInformation) || Is.typedArray(candidate.relatedInformation, DiagnosticRelatedInformation.is));
+          return Is.defined(candidate) && Range3.is(candidate.range) && Is.string(candidate.message) && (Is.number(candidate.severity) || Is.undefined(candidate.severity)) && (Is.integer(candidate.code) || Is.string(candidate.code) || Is.undefined(candidate.code)) && (Is.undefined(candidate.codeDescription) || Is.string((_a = candidate.codeDescription) === null || _a === void 0 ? void 0 : _a.href)) && (Is.string(candidate.source) || Is.undefined(candidate.source)) && (Is.undefined(candidate.relatedInformation) || Is.typedArray(candidate.relatedInformation, DiagnosticRelatedInformation.is));
         }
-        Diagnostic2.is = is;
-      })(Diagnostic || (exports3.Diagnostic = Diagnostic = {}));
+        Diagnostic3.is = is;
+      })(Diagnostic2 || (exports3.Diagnostic = Diagnostic2 = {}));
       var Command;
       (function(Command2) {
         function create(title, command) {
@@ -3634,7 +3634,7 @@ var require_main2 = __commonJS({
         TextEdit2.del = del;
         function is(value) {
           var candidate = value;
-          return Is.objectLiteral(candidate) && Is.string(candidate.newText) && Range2.is(candidate.range);
+          return Is.objectLiteral(candidate) && Is.string(candidate.newText) && Range3.is(candidate.range);
         }
         TextEdit2.is = is;
       })(TextEdit || (exports3.TextEdit = TextEdit = {}));
@@ -4178,7 +4178,7 @@ var require_main2 = __commonJS({
         InsertReplaceEdit2.create = create;
         function is(value) {
           var candidate = value;
-          return candidate && Is.string(candidate.newText) && Range2.is(candidate.insert) && Range2.is(candidate.replace);
+          return candidate && Is.string(candidate.newText) && Range3.is(candidate.insert) && Range3.is(candidate.replace);
         }
         InsertReplaceEdit2.is = is;
       })(InsertReplaceEdit || (exports3.InsertReplaceEdit = InsertReplaceEdit = {}));
@@ -4225,7 +4225,7 @@ var require_main2 = __commonJS({
       (function(Hover3) {
         function is(value) {
           var candidate = value;
-          return !!candidate && Is.objectLiteral(candidate) && (MarkupContent.is(candidate.contents) || MarkedString.is(candidate.contents) || Is.typedArray(candidate.contents, MarkedString.is)) && (value.range === void 0 || Range2.is(value.range));
+          return !!candidate && Is.objectLiteral(candidate) && (MarkupContent.is(candidate.contents) || MarkedString.is(candidate.contents) || Is.typedArray(candidate.contents, MarkedString.is)) && (value.range === void 0 || Range3.is(value.range));
         }
         Hover3.is = is;
       })(Hover2 || (exports3.Hover = Hover2 = {}));
@@ -4346,7 +4346,7 @@ var require_main2 = __commonJS({
         DocumentSymbol2.create = create;
         function is(value) {
           var candidate = value;
-          return candidate && Is.string(candidate.name) && Is.number(candidate.kind) && Range2.is(candidate.range) && Range2.is(candidate.selectionRange) && (candidate.detail === void 0 || Is.string(candidate.detail)) && (candidate.deprecated === void 0 || Is.boolean(candidate.deprecated)) && (candidate.children === void 0 || Array.isArray(candidate.children)) && (candidate.tags === void 0 || Array.isArray(candidate.tags));
+          return candidate && Is.string(candidate.name) && Is.number(candidate.kind) && Range3.is(candidate.range) && Range3.is(candidate.selectionRange) && (candidate.detail === void 0 || Is.string(candidate.detail)) && (candidate.deprecated === void 0 || Is.boolean(candidate.deprecated)) && (candidate.children === void 0 || Array.isArray(candidate.children)) && (candidate.tags === void 0 || Array.isArray(candidate.tags));
         }
         DocumentSymbol2.is = is;
       })(DocumentSymbol || (exports3.DocumentSymbol = DocumentSymbol = {}));
@@ -4382,7 +4382,7 @@ var require_main2 = __commonJS({
         CodeActionContext2.create = create;
         function is(value) {
           var candidate = value;
-          return Is.defined(candidate) && Is.typedArray(candidate.diagnostics, Diagnostic.is) && (candidate.only === void 0 || Is.typedArray(candidate.only, Is.string)) && (candidate.triggerKind === void 0 || candidate.triggerKind === CodeActionTriggerKind.Invoked || candidate.triggerKind === CodeActionTriggerKind.Automatic);
+          return Is.defined(candidate) && Is.typedArray(candidate.diagnostics, Diagnostic2.is) && (candidate.only === void 0 || Is.typedArray(candidate.only, Is.string)) && (candidate.triggerKind === void 0 || candidate.triggerKind === CodeActionTriggerKind.Invoked || candidate.triggerKind === CodeActionTriggerKind.Automatic);
         }
         CodeActionContext2.is = is;
       })(CodeActionContext || (exports3.CodeActionContext = CodeActionContext = {}));
@@ -4407,7 +4407,7 @@ var require_main2 = __commonJS({
         CodeAction2.create = create;
         function is(value) {
           var candidate = value;
-          return candidate && Is.string(candidate.title) && (candidate.diagnostics === void 0 || Is.typedArray(candidate.diagnostics, Diagnostic.is)) && (candidate.kind === void 0 || Is.string(candidate.kind)) && (candidate.edit !== void 0 || candidate.command !== void 0) && (candidate.command === void 0 || Command.is(candidate.command)) && (candidate.isPreferred === void 0 || Is.boolean(candidate.isPreferred)) && (candidate.edit === void 0 || WorkspaceEdit.is(candidate.edit));
+          return candidate && Is.string(candidate.title) && (candidate.diagnostics === void 0 || Is.typedArray(candidate.diagnostics, Diagnostic2.is)) && (candidate.kind === void 0 || Is.string(candidate.kind)) && (candidate.edit !== void 0 || candidate.command !== void 0) && (candidate.command === void 0 || Command.is(candidate.command)) && (candidate.isPreferred === void 0 || Is.boolean(candidate.isPreferred)) && (candidate.edit === void 0 || WorkspaceEdit.is(candidate.edit));
         }
         CodeAction2.is = is;
       })(CodeAction || (exports3.CodeAction = CodeAction = {}));
@@ -4423,7 +4423,7 @@ var require_main2 = __commonJS({
         CodeLens3.create = create;
         function is(value) {
           var candidate = value;
-          return Is.defined(candidate) && Range2.is(candidate.range) && (Is.undefined(candidate.command) || Command.is(candidate.command));
+          return Is.defined(candidate) && Range3.is(candidate.range) && (Is.undefined(candidate.command) || Command.is(candidate.command));
         }
         CodeLens3.is = is;
       })(CodeLens2 || (exports3.CodeLens = CodeLens2 = {}));
@@ -4447,7 +4447,7 @@ var require_main2 = __commonJS({
         DocumentLink2.create = create;
         function is(value) {
           var candidate = value;
-          return Is.defined(candidate) && Range2.is(candidate.range) && (Is.undefined(candidate.target) || Is.string(candidate.target));
+          return Is.defined(candidate) && Range3.is(candidate.range) && (Is.undefined(candidate.target) || Is.string(candidate.target));
         }
         DocumentLink2.is = is;
       })(DocumentLink || (exports3.DocumentLink = DocumentLink = {}));
@@ -4459,7 +4459,7 @@ var require_main2 = __commonJS({
         SelectionRange2.create = create;
         function is(value) {
           var candidate = value;
-          return Is.objectLiteral(candidate) && Range2.is(candidate.range) && (candidate.parent === void 0 || SelectionRange2.is(candidate.parent));
+          return Is.objectLiteral(candidate) && Range3.is(candidate.range) && (candidate.parent === void 0 || SelectionRange2.is(candidate.parent));
         }
         SelectionRange2.is = is;
       })(SelectionRange || (exports3.SelectionRange = SelectionRange = {}));
@@ -4518,7 +4518,7 @@ var require_main2 = __commonJS({
         InlineValueText2.create = create;
         function is(value) {
           var candidate = value;
-          return candidate !== void 0 && candidate !== null && Range2.is(candidate.range) && Is.string(candidate.text);
+          return candidate !== void 0 && candidate !== null && Range3.is(candidate.range) && Is.string(candidate.text);
         }
         InlineValueText2.is = is;
       })(InlineValueText || (exports3.InlineValueText = InlineValueText = {}));
@@ -4530,7 +4530,7 @@ var require_main2 = __commonJS({
         InlineValueVariableLookup2.create = create;
         function is(value) {
           var candidate = value;
-          return candidate !== void 0 && candidate !== null && Range2.is(candidate.range) && Is.boolean(candidate.caseSensitiveLookup) && (Is.string(candidate.variableName) || candidate.variableName === void 0);
+          return candidate !== void 0 && candidate !== null && Range3.is(candidate.range) && Is.boolean(candidate.caseSensitiveLookup) && (Is.string(candidate.variableName) || candidate.variableName === void 0);
         }
         InlineValueVariableLookup2.is = is;
       })(InlineValueVariableLookup || (exports3.InlineValueVariableLookup = InlineValueVariableLookup = {}));
@@ -4542,7 +4542,7 @@ var require_main2 = __commonJS({
         InlineValueEvaluatableExpression2.create = create;
         function is(value) {
           var candidate = value;
-          return candidate !== void 0 && candidate !== null && Range2.is(candidate.range) && (Is.string(candidate.expression) || candidate.expression === void 0);
+          return candidate !== void 0 && candidate !== null && Range3.is(candidate.range) && (Is.string(candidate.expression) || candidate.expression === void 0);
         }
         InlineValueEvaluatableExpression2.is = is;
       })(InlineValueEvaluatableExpression || (exports3.InlineValueEvaluatableExpression = InlineValueEvaluatableExpression = {}));
@@ -4554,7 +4554,7 @@ var require_main2 = __commonJS({
         InlineValueContext2.create = create;
         function is(value) {
           var candidate = value;
-          return Is.defined(candidate) && Range2.is(value.stoppedLocation);
+          return Is.defined(candidate) && Range3.is(value.stoppedLocation);
         }
         InlineValueContext2.is = is;
       })(InlineValueContext || (exports3.InlineValueContext = InlineValueContext = {}));
@@ -6697,8 +6697,8 @@ var require_protocolCodeAction = __commonJS({
   "../../node_modules/.bun/vscode-languageclient@9.0.1/node_modules/vscode-languageclient/lib/common/protocolCodeAction.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var vscode7 = require("vscode");
-    var ProtocolCodeAction = class extends vscode7.CodeAction {
+    var vscode16 = require("vscode");
+    var ProtocolCodeAction = class extends vscode16.CodeAction {
       constructor(title, data) {
         super(title);
         this.data = data;
@@ -6714,7 +6714,7 @@ var require_protocolDiagnostic = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.ProtocolDiagnostic = exports2.DiagnosticCode = void 0;
-    var vscode7 = require("vscode");
+    var vscode16 = require("vscode");
     var Is = require_is();
     var DiagnosticCode;
     (function(DiagnosticCode2) {
@@ -6724,7 +6724,7 @@ var require_protocolDiagnostic = __commonJS({
       }
       DiagnosticCode2.is = is;
     })(DiagnosticCode || (exports2.DiagnosticCode = DiagnosticCode = {}));
-    var ProtocolDiagnostic = class extends vscode7.Diagnostic {
+    var ProtocolDiagnostic = class extends vscode16.Diagnostic {
       constructor(range, message, severity, data) {
         super(range, message, severity);
         this.data = data;
@@ -9205,11 +9205,23 @@ var require_features = __commonJS({
   }
 });
 
-// ../../node_modules/.bun/minimatch@5.1.9/node_modules/minimatch/lib/path.js
-var require_path = __commonJS({
-  "../../node_modules/.bun/minimatch@5.1.9/node_modules/minimatch/lib/path.js"(exports2, module2) {
-    var isWindows = typeof process === "object" && process && process.platform === "win32";
-    module2.exports = isWindows ? { sep: "\\" } : { sep: "/" };
+// ../../node_modules/.bun/concat-map@0.0.1/node_modules/concat-map/index.js
+var require_concat_map = __commonJS({
+  "../../node_modules/.bun/concat-map@0.0.1/node_modules/concat-map/index.js"(exports2, module2) {
+    module2.exports = function(xs, fn) {
+      var res = [];
+      for (var i = 0; i < xs.length; i++) {
+        var x = fn(xs[i], i);
+        if (isArray(x))
+          res.push.apply(res, x);
+        else
+          res.push(x);
+      }
+      return res;
+    };
+    var isArray = Array.isArray || function(xs) {
+      return Object.prototype.toString.call(xs) === "[object Array]";
+    };
   }
 });
 
@@ -9273,9 +9285,10 @@ var require_balanced_match = __commonJS({
   }
 });
 
-// ../../node_modules/.bun/brace-expansion@2.0.2/node_modules/brace-expansion/index.js
+// ../../node_modules/.bun/brace-expansion@1.1.12/node_modules/brace-expansion/index.js
 var require_brace_expansion = __commonJS({
-  "../../node_modules/.bun/brace-expansion@2.0.2/node_modules/brace-expansion/index.js"(exports2, module2) {
+  "../../node_modules/.bun/brace-expansion@1.1.12/node_modules/brace-expansion/index.js"(exports2, module2) {
+    var concatMap = require_concat_map();
     var balanced = require_balanced_match();
     module2.exports = expandTop;
     var escSlash = "\0SLASH" + Math.random() + "\0";
@@ -9335,88 +9348,81 @@ var require_brace_expansion = __commonJS({
     function expand(str, isTop) {
       var expansions = [];
       var m = balanced("{", "}", str);
-      if (!m)
+      if (!m || /\$$/.test(m.pre))
         return [str];
+      var isNumericSequence = /^-?\d+\.\.-?\d+(?:\.\.-?\d+)?$/.test(m.body);
+      var isAlphaSequence = /^[a-zA-Z]\.\.[a-zA-Z](?:\.\.-?\d+)?$/.test(m.body);
+      var isSequence = isNumericSequence || isAlphaSequence;
+      var isOptions = m.body.indexOf(",") >= 0;
+      if (!isSequence && !isOptions) {
+        if (m.post.match(/,(?!,).*\}/)) {
+          str = m.pre + "{" + m.body + escClose + m.post;
+          return expand(str);
+        }
+        return [str];
+      }
+      var n;
+      if (isSequence) {
+        n = m.body.split(/\.\./);
+      } else {
+        n = parseCommaParts(m.body);
+        if (n.length === 1) {
+          n = expand(n[0], false).map(embrace);
+          if (n.length === 1) {
+            var post = m.post.length ? expand(m.post, false) : [""];
+            return post.map(function(p) {
+              return m.pre + n[0] + p;
+            });
+          }
+        }
+      }
       var pre = m.pre;
       var post = m.post.length ? expand(m.post, false) : [""];
-      if (/\$$/.test(m.pre)) {
-        for (var k = 0; k < post.length; k++) {
-          var expansion = pre + "{" + m.body + "}" + post[k];
-          expansions.push(expansion);
+      var N;
+      if (isSequence) {
+        var x = numeric(n[0]);
+        var y = numeric(n[1]);
+        var width = Math.max(n[0].length, n[1].length);
+        var incr = n.length == 3 ? Math.abs(numeric(n[2])) : 1;
+        var test = lte;
+        var reverse = y < x;
+        if (reverse) {
+          incr *= -1;
+          test = gte;
         }
-      } else {
-        var isNumericSequence = /^-?\d+\.\.-?\d+(?:\.\.-?\d+)?$/.test(m.body);
-        var isAlphaSequence = /^[a-zA-Z]\.\.[a-zA-Z](?:\.\.-?\d+)?$/.test(m.body);
-        var isSequence = isNumericSequence || isAlphaSequence;
-        var isOptions = m.body.indexOf(",") >= 0;
-        if (!isSequence && !isOptions) {
-          if (m.post.match(/,(?!,).*\}/)) {
-            str = m.pre + "{" + m.body + escClose + m.post;
-            return expand(str);
-          }
-          return [str];
-        }
-        var n;
-        if (isSequence) {
-          n = m.body.split(/\.\./);
-        } else {
-          n = parseCommaParts(m.body);
-          if (n.length === 1) {
-            n = expand(n[0], false).map(embrace);
-            if (n.length === 1) {
-              return post.map(function(p) {
-                return m.pre + n[0] + p;
-              });
-            }
-          }
-        }
-        var N;
-        if (isSequence) {
-          var x = numeric(n[0]);
-          var y = numeric(n[1]);
-          var width = Math.max(n[0].length, n[1].length);
-          var incr = n.length == 3 ? Math.abs(numeric(n[2])) : 1;
-          var test = lte;
-          var reverse = y < x;
-          if (reverse) {
-            incr *= -1;
-            test = gte;
-          }
-          var pad = n.some(isPadded);
-          N = [];
-          for (var i = x; test(i, y); i += incr) {
-            var c;
-            if (isAlphaSequence) {
-              c = String.fromCharCode(i);
-              if (c === "\\")
-                c = "";
-            } else {
-              c = String(i);
-              if (pad) {
-                var need = width - c.length;
-                if (need > 0) {
-                  var z = new Array(need + 1).join("0");
-                  if (i < 0)
-                    c = "-" + z + c.slice(1);
-                  else
-                    c = z + c;
-                }
+        var pad = n.some(isPadded);
+        N = [];
+        for (var i = x; test(i, y); i += incr) {
+          var c;
+          if (isAlphaSequence) {
+            c = String.fromCharCode(i);
+            if (c === "\\")
+              c = "";
+          } else {
+            c = String(i);
+            if (pad) {
+              var need = width - c.length;
+              if (need > 0) {
+                var z = new Array(need + 1).join("0");
+                if (i < 0)
+                  c = "-" + z + c.slice(1);
+                else
+                  c = z + c;
               }
             }
-            N.push(c);
           }
-        } else {
-          N = [];
-          for (var j = 0; j < n.length; j++) {
-            N.push.apply(N, expand(n[j], false));
-          }
+          N.push(c);
         }
-        for (var j = 0; j < N.length; j++) {
-          for (var k = 0; k < post.length; k++) {
-            var expansion = pre + N[j] + post[k];
-            if (!isTop || isSequence || expansion)
-              expansions.push(expansion);
-          }
+      } else {
+        N = concatMap(n, function(el) {
+          return expand(el, false);
+        });
+      }
+      for (var j = 0; j < N.length; j++) {
+        for (var k = 0; k < post.length; k++) {
+          var expansion = pre + N[j] + post[k];
+          if (!isTop || isSequence || expansion)
+            expansions.push(expansion);
         }
       }
       return expansions;
@@ -9424,21 +9430,21 @@ var require_brace_expansion = __commonJS({
   }
 });
 
-// ../../node_modules/.bun/minimatch@5.1.9/node_modules/minimatch/minimatch.js
+// ../../node_modules/.bun/minimatch@3.1.5/node_modules/minimatch/minimatch.js
 var require_minimatch = __commonJS({
-  "../../node_modules/.bun/minimatch@5.1.9/node_modules/minimatch/minimatch.js"(exports2, module2) {
-    var minimatch = module2.exports = (p, pattern, options = {}) => {
-      assertValidPattern(pattern);
-      if (!options.nocomment && pattern.charAt(0) === "#") {
-        return false;
-      }
-      return new Minimatch(pattern, options).match(p);
-    };
+  "../../node_modules/.bun/minimatch@3.1.5/node_modules/minimatch/minimatch.js"(exports2, module2) {
     module2.exports = minimatch;
-    var path2 = require_path();
-    minimatch.sep = path2.sep;
-    var GLOBSTAR = Symbol("globstar **");
-    minimatch.GLOBSTAR = GLOBSTAR;
+    minimatch.Minimatch = Minimatch;
+    var path5 = function() {
+      try {
+        return require("path");
+      } catch (e) {
+      }
+    }() || {
+      sep: "/"
+    };
+    minimatch.sep = path5.sep;
+    var GLOBSTAR = minimatch.GLOBSTAR = Minimatch.GLOBSTAR = {};
     var expand = require_brace_expansion();
     var plTypes = {
       "!": { open: "(?:(?!(?:", close: "))[^/]*?)" },
@@ -9451,49 +9457,169 @@ var require_minimatch = __commonJS({
     var star = qmark + "*?";
     var twoStarDot = "(?:(?!(?:\\/|^)(?:\\.{1,2})($|\\/)).)*?";
     var twoStarNoDot = "(?:(?!(?:\\/|^)\\.).)*?";
-    var charSet = (s) => s.split("").reduce((set, c) => {
-      set[c] = true;
-      return set;
-    }, {});
     var reSpecials = charSet("().*{}+?[]^$\\!");
-    var addPatternStartSet = charSet("[.(");
+    function charSet(s) {
+      return s.split("").reduce(function(set, c) {
+        set[c] = true;
+        return set;
+      }, {});
+    }
     var slashSplit = /\/+/;
-    minimatch.filter = (pattern, options = {}) => (p, i, list) => minimatch(p, pattern, options);
-    var ext = (a, b = {}) => {
-      const t = {};
-      Object.keys(a).forEach((k) => t[k] = a[k]);
-      Object.keys(b).forEach((k) => t[k] = b[k]);
+    minimatch.filter = filter;
+    function filter(pattern, options) {
+      options = options || {};
+      return function(p, i, list) {
+        return minimatch(p, pattern, options);
+      };
+    }
+    function ext(a, b) {
+      b = b || {};
+      var t = {};
+      Object.keys(a).forEach(function(k) {
+        t[k] = a[k];
+      });
+      Object.keys(b).forEach(function(k) {
+        t[k] = b[k];
+      });
       return t;
-    };
-    minimatch.defaults = (def) => {
+    }
+    minimatch.defaults = function(def) {
       if (!def || typeof def !== "object" || !Object.keys(def).length) {
         return minimatch;
       }
-      const orig = minimatch;
-      const m = (p, pattern, options) => orig(p, pattern, ext(def, options));
-      m.Minimatch = class Minimatch extends orig.Minimatch {
-        constructor(pattern, options) {
-          super(pattern, ext(def, options));
-        }
+      var orig = minimatch;
+      var m = function minimatch2(p, pattern, options) {
+        return orig(p, pattern, ext(def, options));
       };
-      m.Minimatch.defaults = (options) => orig.defaults(ext(def, options)).Minimatch;
-      m.filter = (pattern, options) => orig.filter(pattern, ext(def, options));
-      m.defaults = (options) => orig.defaults(ext(def, options));
-      m.makeRe = (pattern, options) => orig.makeRe(pattern, ext(def, options));
-      m.braceExpand = (pattern, options) => orig.braceExpand(pattern, ext(def, options));
-      m.match = (list, pattern, options) => orig.match(list, pattern, ext(def, options));
+      m.Minimatch = function Minimatch2(pattern, options) {
+        return new orig.Minimatch(pattern, ext(def, options));
+      };
+      m.Minimatch.defaults = function defaults(options) {
+        return orig.defaults(ext(def, options)).Minimatch;
+      };
+      m.filter = function filter2(pattern, options) {
+        return orig.filter(pattern, ext(def, options));
+      };
+      m.defaults = function defaults(options) {
+        return orig.defaults(ext(def, options));
+      };
+      m.makeRe = function makeRe2(pattern, options) {
+        return orig.makeRe(pattern, ext(def, options));
+      };
+      m.braceExpand = function braceExpand2(pattern, options) {
+        return orig.braceExpand(pattern, ext(def, options));
+      };
+      m.match = function(list, pattern, options) {
+        return orig.match(list, pattern, ext(def, options));
+      };
       return m;
     };
-    minimatch.braceExpand = (pattern, options) => braceExpand(pattern, options);
-    var braceExpand = (pattern, options = {}) => {
+    Minimatch.defaults = function(def) {
+      return minimatch.defaults(def).Minimatch;
+    };
+    function minimatch(p, pattern, options) {
+      assertValidPattern(pattern);
+      if (!options)
+        options = {};
+      if (!options.nocomment && pattern.charAt(0) === "#") {
+        return false;
+      }
+      return new Minimatch(pattern, options).match(p);
+    }
+    function Minimatch(pattern, options) {
+      if (!(this instanceof Minimatch)) {
+        return new Minimatch(pattern, options);
+      }
+      assertValidPattern(pattern);
+      if (!options)
+        options = {};
+      pattern = pattern.trim();
+      if (!options.allowWindowsEscape && path5.sep !== "/") {
+        pattern = pattern.split(path5.sep).join("/");
+      }
+      this.options = options;
+      this.maxGlobstarRecursion = options.maxGlobstarRecursion !== void 0 ? options.maxGlobstarRecursion : 200;
+      this.set = [];
+      this.pattern = pattern;
+      this.regexp = null;
+      this.negate = false;
+      this.comment = false;
+      this.empty = false;
+      this.partial = !!options.partial;
+      this.make();
+    }
+    Minimatch.prototype.debug = function() {
+    };
+    Minimatch.prototype.make = make;
+    function make() {
+      var pattern = this.pattern;
+      var options = this.options;
+      if (!options.nocomment && pattern.charAt(0) === "#") {
+        this.comment = true;
+        return;
+      }
+      if (!pattern) {
+        this.empty = true;
+        return;
+      }
+      this.parseNegate();
+      var set = this.globSet = this.braceExpand();
+      if (options.debug)
+        this.debug = function debug() {
+          console.error.apply(console, arguments);
+        };
+      this.debug(this.pattern, set);
+      set = this.globParts = set.map(function(s) {
+        return s.split(slashSplit);
+      });
+      this.debug(this.pattern, set);
+      set = set.map(function(s, si, set2) {
+        return s.map(this.parse, this);
+      }, this);
+      this.debug(this.pattern, set);
+      set = set.filter(function(s) {
+        return s.indexOf(false) === -1;
+      });
+      this.debug(this.pattern, set);
+      this.set = set;
+    }
+    Minimatch.prototype.parseNegate = parseNegate;
+    function parseNegate() {
+      var pattern = this.pattern;
+      var negate = false;
+      var options = this.options;
+      var negateOffset = 0;
+      if (options.nonegate)
+        return;
+      for (var i = 0, l = pattern.length; i < l && pattern.charAt(i) === "!"; i++) {
+        negate = !negate;
+        negateOffset++;
+      }
+      if (negateOffset)
+        this.pattern = pattern.substr(negateOffset);
+      this.negate = negate;
+    }
+    minimatch.braceExpand = function(pattern, options) {
+      return braceExpand(pattern, options);
+    };
+    Minimatch.prototype.braceExpand = braceExpand;
+    function braceExpand(pattern, options) {
+      if (!options) {
+        if (this instanceof Minimatch) {
+          options = this.options;
+        } else {
+          options = {};
+        }
+      }
+      pattern = typeof pattern === "undefined" ? this.pattern : pattern;
       assertValidPattern(pattern);
       if (options.nobrace || !/\{(?:(?!\{).)*\}/.test(pattern)) {
         return [pattern];
       }
       return expand(pattern);
-    };
+    }
     var MAX_PATTERN_LENGTH = 1024 * 64;
-    var assertValidPattern = (pattern) => {
+    var assertValidPattern = function(pattern) {
       if (typeof pattern !== "string") {
         throw new TypeError("invalid pattern");
       }
@@ -9501,594 +9627,495 @@ var require_minimatch = __commonJS({
         throw new TypeError("pattern is too long");
       }
     };
-    var SUBPARSE = Symbol("subparse");
-    minimatch.makeRe = (pattern, options) => new Minimatch(pattern, options || {}).makeRe();
-    minimatch.match = (list, pattern, options = {}) => {
-      const mm = new Minimatch(pattern, options);
-      list = list.filter((f) => mm.match(f));
+    Minimatch.prototype.parse = parse;
+    var SUBPARSE = {};
+    function parse(pattern, isSub) {
+      assertValidPattern(pattern);
+      var options = this.options;
+      if (pattern === "**") {
+        if (!options.noglobstar)
+          return GLOBSTAR;
+        else
+          pattern = "*";
+      }
+      if (pattern === "")
+        return "";
+      var re = "";
+      var hasMagic = !!options.nocase;
+      var escaping = false;
+      var patternListStack = [];
+      var negativeLists = [];
+      var stateChar;
+      var inClass = false;
+      var reClassStart = -1;
+      var classStart = -1;
+      var patternStart = pattern.charAt(0) === "." ? "" : options.dot ? "(?!(?:^|\\/)\\.{1,2}(?:$|\\/))" : "(?!\\.)";
+      var self = this;
+      function clearStateChar() {
+        if (stateChar) {
+          switch (stateChar) {
+            case "*":
+              re += star;
+              hasMagic = true;
+              break;
+            case "?":
+              re += qmark;
+              hasMagic = true;
+              break;
+            default:
+              re += "\\" + stateChar;
+              break;
+          }
+          self.debug("clearStateChar %j %j", stateChar, re);
+          stateChar = false;
+        }
+      }
+      for (var i = 0, len = pattern.length, c; i < len && (c = pattern.charAt(i)); i++) {
+        this.debug("%s	%s %s %j", pattern, i, re, c);
+        if (escaping && reSpecials[c]) {
+          re += "\\" + c;
+          escaping = false;
+          continue;
+        }
+        switch (c) {
+          case "/": {
+            return false;
+          }
+          case "\\":
+            clearStateChar();
+            escaping = true;
+            continue;
+          case "?":
+          case "*":
+          case "+":
+          case "@":
+          case "!":
+            this.debug("%s	%s %s %j <-- stateChar", pattern, i, re, c);
+            if (inClass) {
+              this.debug("  in class");
+              if (c === "!" && i === classStart + 1)
+                c = "^";
+              re += c;
+              continue;
+            }
+            if (c === "*" && stateChar === "*")
+              continue;
+            self.debug("call clearStateChar %j", stateChar);
+            clearStateChar();
+            stateChar = c;
+            if (options.noext)
+              clearStateChar();
+            continue;
+          case "(":
+            if (inClass) {
+              re += "(";
+              continue;
+            }
+            if (!stateChar) {
+              re += "\\(";
+              continue;
+            }
+            patternListStack.push({
+              type: stateChar,
+              start: i - 1,
+              reStart: re.length,
+              open: plTypes[stateChar].open,
+              close: plTypes[stateChar].close
+            });
+            re += stateChar === "!" ? "(?:(?!(?:" : "(?:";
+            this.debug("plType %j %j", stateChar, re);
+            stateChar = false;
+            continue;
+          case ")":
+            if (inClass || !patternListStack.length) {
+              re += "\\)";
+              continue;
+            }
+            clearStateChar();
+            hasMagic = true;
+            var pl = patternListStack.pop();
+            re += pl.close;
+            if (pl.type === "!") {
+              negativeLists.push(pl);
+            }
+            pl.reEnd = re.length;
+            continue;
+          case "|":
+            if (inClass || !patternListStack.length || escaping) {
+              re += "\\|";
+              escaping = false;
+              continue;
+            }
+            clearStateChar();
+            re += "|";
+            continue;
+          case "[":
+            clearStateChar();
+            if (inClass) {
+              re += "\\" + c;
+              continue;
+            }
+            inClass = true;
+            classStart = i;
+            reClassStart = re.length;
+            re += c;
+            continue;
+          case "]":
+            if (i === classStart + 1 || !inClass) {
+              re += "\\" + c;
+              escaping = false;
+              continue;
+            }
+            var cs = pattern.substring(classStart + 1, i);
+            try {
+              RegExp("[" + cs + "]");
+            } catch (er) {
+              var sp = this.parse(cs, SUBPARSE);
+              re = re.substr(0, reClassStart) + "\\[" + sp[0] + "\\]";
+              hasMagic = hasMagic || sp[1];
+              inClass = false;
+              continue;
+            }
+            hasMagic = true;
+            inClass = false;
+            re += c;
+            continue;
+          default:
+            clearStateChar();
+            if (escaping) {
+              escaping = false;
+            } else if (reSpecials[c] && !(c === "^" && inClass)) {
+              re += "\\";
+            }
+            re += c;
+        }
+      }
+      if (inClass) {
+        cs = pattern.substr(classStart + 1);
+        sp = this.parse(cs, SUBPARSE);
+        re = re.substr(0, reClassStart) + "\\[" + sp[0];
+        hasMagic = hasMagic || sp[1];
+      }
+      for (pl = patternListStack.pop(); pl; pl = patternListStack.pop()) {
+        var tail = re.slice(pl.reStart + pl.open.length);
+        this.debug("setting tail", re, pl);
+        tail = tail.replace(/((?:\\{2}){0,64})(\\?)\|/g, function(_, $1, $2) {
+          if (!$2) {
+            $2 = "\\";
+          }
+          return $1 + $1 + $2 + "|";
+        });
+        this.debug("tail=%j\n   %s", tail, tail, pl, re);
+        var t = pl.type === "*" ? star : pl.type === "?" ? qmark : "\\" + pl.type;
+        hasMagic = true;
+        re = re.slice(0, pl.reStart) + t + "\\(" + tail;
+      }
+      clearStateChar();
+      if (escaping) {
+        re += "\\\\";
+      }
+      var addPatternStart = false;
+      switch (re.charAt(0)) {
+        case "[":
+        case ".":
+        case "(":
+          addPatternStart = true;
+      }
+      for (var n = negativeLists.length - 1; n > -1; n--) {
+        var nl = negativeLists[n];
+        var nlBefore = re.slice(0, nl.reStart);
+        var nlFirst = re.slice(nl.reStart, nl.reEnd - 8);
+        var nlLast = re.slice(nl.reEnd - 8, nl.reEnd);
+        var nlAfter = re.slice(nl.reEnd);
+        nlLast += nlAfter;
+        var openParensBefore = nlBefore.split("(").length - 1;
+        var cleanAfter = nlAfter;
+        for (i = 0; i < openParensBefore; i++) {
+          cleanAfter = cleanAfter.replace(/\)[+*?]?/, "");
+        }
+        nlAfter = cleanAfter;
+        var dollar = "";
+        if (nlAfter === "" && isSub !== SUBPARSE) {
+          dollar = "$";
+        }
+        var newRe = nlBefore + nlFirst + nlAfter + dollar + nlLast;
+        re = newRe;
+      }
+      if (re !== "" && hasMagic) {
+        re = "(?=.)" + re;
+      }
+      if (addPatternStart) {
+        re = patternStart + re;
+      }
+      if (isSub === SUBPARSE) {
+        return [re, hasMagic];
+      }
+      if (!hasMagic) {
+        return globUnescape(pattern);
+      }
+      var flags = options.nocase ? "i" : "";
+      try {
+        var regExp = new RegExp("^" + re + "$", flags);
+      } catch (er) {
+        return new RegExp("$.");
+      }
+      regExp._glob = pattern;
+      regExp._src = re;
+      return regExp;
+    }
+    minimatch.makeRe = function(pattern, options) {
+      return new Minimatch(pattern, options || {}).makeRe();
+    };
+    Minimatch.prototype.makeRe = makeRe;
+    function makeRe() {
+      if (this.regexp || this.regexp === false)
+        return this.regexp;
+      var set = this.set;
+      if (!set.length) {
+        this.regexp = false;
+        return this.regexp;
+      }
+      var options = this.options;
+      var twoStar = options.noglobstar ? star : options.dot ? twoStarDot : twoStarNoDot;
+      var flags = options.nocase ? "i" : "";
+      var re = set.map(function(pattern) {
+        return pattern.map(function(p) {
+          return p === GLOBSTAR ? twoStar : typeof p === "string" ? regExpEscape(p) : p._src;
+        }).join("\\/");
+      }).join("|");
+      re = "^(?:" + re + ")$";
+      if (this.negate)
+        re = "^(?!" + re + ").*$";
+      try {
+        this.regexp = new RegExp(re, flags);
+      } catch (ex) {
+        this.regexp = false;
+      }
+      return this.regexp;
+    }
+    minimatch.match = function(list, pattern, options) {
+      options = options || {};
+      var mm = new Minimatch(pattern, options);
+      list = list.filter(function(f) {
+        return mm.match(f);
+      });
       if (mm.options.nonull && !list.length) {
         list.push(pattern);
       }
       return list;
     };
-    var globUnescape = (s) => s.replace(/\\(.)/g, "$1");
-    var charUnescape = (s) => s.replace(/\\([^-\]])/g, "$1");
-    var regExpEscape = (s) => s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
-    var braExpEscape = (s) => s.replace(/[[\]\\]/g, "\\$&");
-    var Minimatch = class {
-      constructor(pattern, options) {
-        assertValidPattern(pattern);
-        if (!options)
-          options = {};
-        this.options = options;
-        this.maxGlobstarRecursion = options.maxGlobstarRecursion !== void 0 ? options.maxGlobstarRecursion : 200;
-        this.set = [];
-        this.pattern = pattern;
-        this.windowsPathsNoEscape = !!options.windowsPathsNoEscape || options.allowWindowsEscape === false;
-        if (this.windowsPathsNoEscape) {
-          this.pattern = this.pattern.replace(/\\/g, "/");
-        }
-        this.regexp = null;
-        this.negate = false;
-        this.comment = false;
-        this.empty = false;
-        this.partial = !!options.partial;
-        this.make();
+    Minimatch.prototype.match = function match(f, partial) {
+      if (typeof partial === "undefined")
+        partial = this.partial;
+      this.debug("match", f, this.pattern);
+      if (this.comment)
+        return false;
+      if (this.empty)
+        return f === "";
+      if (f === "/" && partial)
+        return true;
+      var options = this.options;
+      if (path5.sep !== "/") {
+        f = f.split(path5.sep).join("/");
       }
-      debug() {
+      f = f.split(slashSplit);
+      this.debug(this.pattern, "split", f);
+      var set = this.set;
+      this.debug(this.pattern, "set", set);
+      var filename;
+      var i;
+      for (i = f.length - 1; i >= 0; i--) {
+        filename = f[i];
+        if (filename)
+          break;
       }
-      make() {
-        const pattern = this.pattern;
-        const options = this.options;
-        if (!options.nocomment && pattern.charAt(0) === "#") {
-          this.comment = true;
-          return;
+      for (i = 0; i < set.length; i++) {
+        var pattern = set[i];
+        var file = f;
+        if (options.matchBase && pattern.length === 1) {
+          file = [filename];
         }
-        if (!pattern) {
-          this.empty = true;
-          return;
+        var hit = this.matchOne(file, pattern, partial);
+        if (hit) {
+          if (options.flipNegate)
+            return true;
+          return !this.negate;
         }
-        this.parseNegate();
-        let set = this.globSet = this.braceExpand();
-        if (options.debug)
-          this.debug = (...args) => console.error(...args);
-        this.debug(this.pattern, set);
-        set = this.globParts = set.map((s) => s.split(slashSplit));
-        this.debug(this.pattern, set);
-        set = set.map((s, si, set2) => s.map(this.parse, this));
-        this.debug(this.pattern, set);
-        set = set.filter((s) => s.indexOf(false) === -1);
-        this.debug(this.pattern, set);
-        this.set = set;
       }
-      parseNegate() {
-        if (this.options.nonegate)
-          return;
-        const pattern = this.pattern;
-        let negate = false;
-        let negateOffset = 0;
-        for (let i = 0; i < pattern.length && pattern.charAt(i) === "!"; i++) {
-          negate = !negate;
-          negateOffset++;
-        }
-        if (negateOffset)
-          this.pattern = pattern.slice(negateOffset);
-        this.negate = negate;
+      if (options.flipNegate)
+        return false;
+      return this.negate;
+    };
+    Minimatch.prototype.matchOne = function(file, pattern, partial) {
+      if (pattern.indexOf(GLOBSTAR) !== -1) {
+        return this._matchGlobstar(file, pattern, partial, 0, 0);
       }
-      // set partial to true to test if, for example,
-      // "/a/b" matches the start of "/*/b/*/d"
-      // Partial means, if you run out of file before you run
-      // out of pattern, then that's fine, as long as all
-      // the parts match.
-      matchOne(file, pattern, partial) {
-        if (pattern.indexOf(GLOBSTAR) !== -1) {
-          return this._matchGlobstar(file, pattern, partial, 0, 0);
+      return this._matchOne(file, pattern, partial, 0, 0);
+    };
+    Minimatch.prototype._matchGlobstar = function(file, pattern, partial, fileIndex, patternIndex) {
+      var i;
+      var firstgs = -1;
+      for (i = patternIndex; i < pattern.length; i++) {
+        if (pattern[i] === GLOBSTAR) {
+          firstgs = i;
+          break;
         }
-        return this._matchOne(file, pattern, partial, 0, 0);
       }
-      _matchGlobstar(file, pattern, partial, fileIndex, patternIndex) {
-        let firstgs = -1;
-        for (let i = patternIndex; i < pattern.length; i++) {
-          if (pattern[i] === GLOBSTAR) {
-            firstgs = i;
-            break;
-          }
+      var lastgs = -1;
+      for (i = pattern.length - 1; i >= 0; i--) {
+        if (pattern[i] === GLOBSTAR) {
+          lastgs = i;
+          break;
         }
-        let lastgs = -1;
-        for (let i = pattern.length - 1; i >= 0; i--) {
-          if (pattern[i] === GLOBSTAR) {
-            lastgs = i;
-            break;
-          }
+      }
+      var head = pattern.slice(patternIndex, firstgs);
+      var body = partial ? pattern.slice(firstgs + 1) : pattern.slice(firstgs + 1, lastgs);
+      var tail = partial ? [] : pattern.slice(lastgs + 1);
+      if (head.length) {
+        var fileHead = file.slice(fileIndex, fileIndex + head.length);
+        if (!this._matchOne(fileHead, head, partial, 0, 0)) {
+          return false;
         }
-        const head = pattern.slice(patternIndex, firstgs);
-        const body = partial ? pattern.slice(firstgs + 1) : pattern.slice(firstgs + 1, lastgs);
-        const tail = partial ? [] : pattern.slice(lastgs + 1);
-        if (head.length) {
-          const fileHead = file.slice(fileIndex, fileIndex + head.length);
-          if (!this._matchOne(fileHead, head, partial, 0, 0)) {
+        fileIndex += head.length;
+      }
+      var fileTailMatch = 0;
+      if (tail.length) {
+        if (tail.length + fileIndex > file.length)
+          return false;
+        var tailStart = file.length - tail.length;
+        if (this._matchOne(file, tail, partial, tailStart, 0)) {
+          fileTailMatch = tail.length;
+        } else {
+          if (file[file.length - 1] !== "" || fileIndex + tail.length === file.length) {
             return false;
           }
-          fileIndex += head.length;
-        }
-        let fileTailMatch = 0;
-        if (tail.length) {
-          if (tail.length + fileIndex > file.length)
+          tailStart--;
+          if (!this._matchOne(file, tail, partial, tailStart, 0)) {
             return false;
-          const tailStart = file.length - tail.length;
-          if (this._matchOne(file, tail, partial, tailStart, 0)) {
-            fileTailMatch = tail.length;
-          } else {
-            if (file[file.length - 1] !== "" || fileIndex + tail.length === file.length) {
-              return false;
-            }
-            if (!this._matchOne(file, tail, partial, tailStart - 1, 0)) {
-              return false;
-            }
-            fileTailMatch = tail.length + 1;
           }
+          fileTailMatch = tail.length + 1;
         }
-        if (!body.length) {
-          let sawSome = !!fileTailMatch;
-          for (let i = fileIndex; i < file.length - fileTailMatch; i++) {
-            const f = String(file[i]);
-            sawSome = true;
-            if (f === "." || f === ".." || !this.options.dot && f.charAt(0) === ".") {
-              return false;
-            }
-          }
-          return partial || sawSome;
-        }
-        const bodySegments = [[[], 0]];
-        let currentBody = bodySegments[0];
-        let nonGsParts = 0;
-        const nonGsPartsSums = [0];
-        for (const b of body) {
-          if (b === GLOBSTAR) {
-            nonGsPartsSums.push(nonGsParts);
-            currentBody = [[], 0];
-            bodySegments.push(currentBody);
-          } else {
-            currentBody[0].push(b);
-            nonGsParts++;
-          }
-        }
-        let idx = bodySegments.length - 1;
-        const fileLength = file.length - fileTailMatch;
-        for (const b of bodySegments) {
-          b[1] = fileLength - (nonGsPartsSums[idx--] + b[0].length);
-        }
-        return !!this._matchGlobStarBodySections(
-          file,
-          bodySegments,
-          fileIndex,
-          0,
-          partial,
-          0,
-          !!fileTailMatch
-        );
       }
-      // return false for "nope, not matching"
-      // return null for "not matching, cannot keep trying"
-      _matchGlobStarBodySections(file, bodySegments, fileIndex, bodyIndex, partial, globStarDepth, sawTail) {
-        const bs = bodySegments[bodyIndex];
-        if (!bs) {
-          for (let i = fileIndex; i < file.length; i++) {
-            sawTail = true;
-            const f = file[i];
-            if (f === "." || f === ".." || !this.options.dot && f.charAt(0) === ".") {
-              return false;
-            }
-          }
-          return sawTail;
-        }
-        const [body, after] = bs;
-        while (fileIndex <= after) {
-          const m = this._matchOne(
-            file.slice(0, fileIndex + body.length),
-            body,
-            partial,
-            fileIndex,
-            0
-          );
-          if (m && globStarDepth < this.maxGlobstarRecursion) {
-            const sub = this._matchGlobStarBodySections(
-              file,
-              bodySegments,
-              fileIndex + body.length,
-              bodyIndex + 1,
-              partial,
-              globStarDepth + 1,
-              sawTail
-            );
-            if (sub !== false) {
-              return sub;
-            }
-          }
-          const f = file[fileIndex];
+      if (!body.length) {
+        var sawSome = !!fileTailMatch;
+        for (i = fileIndex; i < file.length - fileTailMatch; i++) {
+          var f = String(file[i]);
+          sawSome = true;
           if (f === "." || f === ".." || !this.options.dot && f.charAt(0) === ".") {
             return false;
           }
-          fileIndex++;
         }
-        return partial || null;
+        return partial || sawSome;
       }
-      _matchOne(file, pattern, partial, fileIndex, patternIndex) {
-        let fi, pi, fl, pl;
-        for (fi = fileIndex, pi = patternIndex, fl = file.length, pl = pattern.length; fi < fl && pi < pl; fi++, pi++) {
-          this.debug("matchOne loop");
-          const p = pattern[pi];
-          const f = file[fi];
-          this.debug(pattern, p, f);
-          if (p === false || p === GLOBSTAR)
-            return false;
-          let hit;
-          if (typeof p === "string") {
-            hit = f === p;
-            this.debug("string match", p, f, hit);
-          } else {
-            hit = f.match(p);
-            this.debug("pattern match", p, f, hit);
-          }
-          if (!hit)
-            return false;
-        }
-        if (fi === fl && pi === pl) {
-          return true;
-        } else if (fi === fl) {
-          return partial;
-        } else if (pi === pl) {
-          return fi === fl - 1 && file[fi] === "";
-        }
-        throw new Error("wtf?");
-      }
-      braceExpand() {
-        return braceExpand(this.pattern, this.options);
-      }
-      parse(pattern, isSub) {
-        assertValidPattern(pattern);
-        const options = this.options;
-        if (pattern === "**") {
-          if (!options.noglobstar)
-            return GLOBSTAR;
-          else
-            pattern = "*";
-        }
-        if (pattern === "")
-          return "";
-        let re = "";
-        let hasMagic = false;
-        let escaping = false;
-        const patternListStack = [];
-        const negativeLists = [];
-        let stateChar;
-        let inClass = false;
-        let reClassStart = -1;
-        let classStart = -1;
-        let cs;
-        let pl;
-        let sp;
-        let dotTravAllowed = pattern.charAt(0) === ".";
-        let dotFileAllowed = options.dot || dotTravAllowed;
-        const patternStart = () => dotTravAllowed ? "" : dotFileAllowed ? "(?!(?:^|\\/)\\.{1,2}(?:$|\\/))" : "(?!\\.)";
-        const subPatternStart = (p) => p.charAt(0) === "." ? "" : options.dot ? "(?!(?:^|\\/)\\.{1,2}(?:$|\\/))" : "(?!\\.)";
-        const clearStateChar = () => {
-          if (stateChar) {
-            switch (stateChar) {
-              case "*":
-                re += star;
-                hasMagic = true;
-                break;
-              case "?":
-                re += qmark;
-                hasMagic = true;
-                break;
-              default:
-                re += "\\" + stateChar;
-                break;
-            }
-            this.debug("clearStateChar %j %j", stateChar, re);
-            stateChar = false;
-          }
-        };
-        for (let i = 0, c; i < pattern.length && (c = pattern.charAt(i)); i++) {
-          this.debug("%s	%s %s %j", pattern, i, re, c);
-          if (escaping) {
-            if (c === "/") {
-              return false;
-            }
-            if (reSpecials[c]) {
-              re += "\\";
-            }
-            re += c;
-            escaping = false;
-            continue;
-          }
-          switch (c) {
-            case "/": {
-              return false;
-            }
-            case "\\":
-              if (inClass && pattern.charAt(i + 1) === "-") {
-                re += c;
-                continue;
-              }
-              clearStateChar();
-              escaping = true;
-              continue;
-            case "?":
-            case "*":
-            case "+":
-            case "@":
-            case "!":
-              this.debug("%s	%s %s %j <-- stateChar", pattern, i, re, c);
-              if (inClass) {
-                this.debug("  in class");
-                if (c === "!" && i === classStart + 1)
-                  c = "^";
-                re += c;
-                continue;
-              }
-              if (c === "*" && stateChar === "*")
-                continue;
-              this.debug("call clearStateChar %j", stateChar);
-              clearStateChar();
-              stateChar = c;
-              if (options.noext)
-                clearStateChar();
-              continue;
-            case "(": {
-              if (inClass) {
-                re += "(";
-                continue;
-              }
-              if (!stateChar) {
-                re += "\\(";
-                continue;
-              }
-              const plEntry = {
-                type: stateChar,
-                start: i - 1,
-                reStart: re.length,
-                open: plTypes[stateChar].open,
-                close: plTypes[stateChar].close
-              };
-              this.debug(this.pattern, "	", plEntry);
-              patternListStack.push(plEntry);
-              re += plEntry.open;
-              if (plEntry.start === 0 && plEntry.type !== "!") {
-                dotTravAllowed = true;
-                re += subPatternStart(pattern.slice(i + 1));
-              }
-              this.debug("plType %j %j", stateChar, re);
-              stateChar = false;
-              continue;
-            }
-            case ")": {
-              const plEntry = patternListStack[patternListStack.length - 1];
-              if (inClass || !plEntry) {
-                re += "\\)";
-                continue;
-              }
-              patternListStack.pop();
-              clearStateChar();
-              hasMagic = true;
-              pl = plEntry;
-              re += pl.close;
-              if (pl.type === "!") {
-                negativeLists.push(Object.assign(pl, { reEnd: re.length }));
-              }
-              continue;
-            }
-            case "|": {
-              const plEntry = patternListStack[patternListStack.length - 1];
-              if (inClass || !plEntry) {
-                re += "\\|";
-                continue;
-              }
-              clearStateChar();
-              re += "|";
-              if (plEntry.start === 0 && plEntry.type !== "!") {
-                dotTravAllowed = true;
-                re += subPatternStart(pattern.slice(i + 1));
-              }
-              continue;
-            }
-            case "[":
-              clearStateChar();
-              if (inClass) {
-                re += "\\" + c;
-                continue;
-              }
-              inClass = true;
-              classStart = i;
-              reClassStart = re.length;
-              re += c;
-              continue;
-            case "]":
-              if (i === classStart + 1 || !inClass) {
-                re += "\\" + c;
-                continue;
-              }
-              cs = pattern.substring(classStart + 1, i);
-              try {
-                RegExp("[" + braExpEscape(charUnescape(cs)) + "]");
-                re += c;
-              } catch (er) {
-                re = re.substring(0, reClassStart) + "(?:$.)";
-              }
-              hasMagic = true;
-              inClass = false;
-              continue;
-            default:
-              clearStateChar();
-              if (reSpecials[c] && !(c === "^" && inClass)) {
-                re += "\\";
-              }
-              re += c;
-              break;
-          }
-        }
-        if (inClass) {
-          cs = pattern.slice(classStart + 1);
-          sp = this.parse(cs, SUBPARSE);
-          re = re.substring(0, reClassStart) + "\\[" + sp[0];
-          hasMagic = hasMagic || sp[1];
-        }
-        for (pl = patternListStack.pop(); pl; pl = patternListStack.pop()) {
-          let tail;
-          tail = re.slice(pl.reStart + pl.open.length);
-          this.debug("setting tail", re, pl);
-          tail = tail.replace(/((?:\\{2}){0,64})(\\?)\|/g, (_, $1, $2) => {
-            if (!$2) {
-              $2 = "\\";
-            }
-            return $1 + $1 + $2 + "|";
-          });
-          this.debug("tail=%j\n   %s", tail, tail, pl, re);
-          const t = pl.type === "*" ? star : pl.type === "?" ? qmark : "\\" + pl.type;
-          hasMagic = true;
-          re = re.slice(0, pl.reStart) + t + "\\(" + tail;
-        }
-        clearStateChar();
-        if (escaping) {
-          re += "\\\\";
-        }
-        const addPatternStart = addPatternStartSet[re.charAt(0)];
-        for (let n = negativeLists.length - 1; n > -1; n--) {
-          const nl = negativeLists[n];
-          const nlBefore = re.slice(0, nl.reStart);
-          const nlFirst = re.slice(nl.reStart, nl.reEnd - 8);
-          let nlAfter = re.slice(nl.reEnd);
-          const nlLast = re.slice(nl.reEnd - 8, nl.reEnd) + nlAfter;
-          const closeParensBefore = nlBefore.split(")").length;
-          const openParensBefore = nlBefore.split("(").length - closeParensBefore;
-          let cleanAfter = nlAfter;
-          for (let i = 0; i < openParensBefore; i++) {
-            cleanAfter = cleanAfter.replace(/\)[+*?]?/, "");
-          }
-          nlAfter = cleanAfter;
-          const dollar = nlAfter === "" && isSub !== SUBPARSE ? "(?:$|\\/)" : "";
-          re = nlBefore + nlFirst + nlAfter + dollar + nlLast;
-        }
-        if (re !== "" && hasMagic) {
-          re = "(?=.)" + re;
-        }
-        if (addPatternStart) {
-          re = patternStart() + re;
-        }
-        if (isSub === SUBPARSE) {
-          return [re, hasMagic];
-        }
-        if (options.nocase && !hasMagic) {
-          hasMagic = pattern.toUpperCase() !== pattern.toLowerCase();
-        }
-        if (!hasMagic) {
-          return globUnescape(pattern);
-        }
-        const flags = options.nocase ? "i" : "";
-        try {
-          return Object.assign(new RegExp("^" + re + "$", flags), {
-            _glob: pattern,
-            _src: re
-          });
-        } catch (er) {
-          return new RegExp("$.");
+      var bodySegments = [[[], 0]];
+      var currentBody = bodySegments[0];
+      var nonGsParts = 0;
+      var nonGsPartsSums = [0];
+      for (var bi = 0; bi < body.length; bi++) {
+        var b = body[bi];
+        if (b === GLOBSTAR) {
+          nonGsPartsSums.push(nonGsParts);
+          currentBody = [[], 0];
+          bodySegments.push(currentBody);
+        } else {
+          currentBody[0].push(b);
+          nonGsParts++;
         }
       }
-      makeRe() {
-        if (this.regexp || this.regexp === false)
-          return this.regexp;
-        const set = this.set;
-        if (!set.length) {
-          this.regexp = false;
-          return this.regexp;
-        }
-        const options = this.options;
-        const twoStar = options.noglobstar ? star : options.dot ? twoStarDot : twoStarNoDot;
-        const flags = options.nocase ? "i" : "";
-        let re = set.map((pattern) => {
-          pattern = pattern.map(
-            (p) => typeof p === "string" ? regExpEscape(p) : p === GLOBSTAR ? GLOBSTAR : p._src
-          ).reduce((set2, p) => {
-            if (!(set2[set2.length - 1] === GLOBSTAR && p === GLOBSTAR)) {
-              set2.push(p);
-            }
-            return set2;
-          }, []);
-          pattern.forEach((p, i) => {
-            if (p !== GLOBSTAR || pattern[i - 1] === GLOBSTAR) {
-              return;
-            }
-            if (i === 0) {
-              if (pattern.length > 1) {
-                pattern[i + 1] = "(?:\\/|" + twoStar + "\\/)?" + pattern[i + 1];
-              } else {
-                pattern[i] = twoStar;
-              }
-            } else if (i === pattern.length - 1) {
-              pattern[i - 1] += "(?:\\/|" + twoStar + ")?";
-            } else {
-              pattern[i - 1] += "(?:\\/|\\/" + twoStar + "\\/)" + pattern[i + 1];
-              pattern[i + 1] = GLOBSTAR;
-            }
-          });
-          return pattern.filter((p) => p !== GLOBSTAR).join("/");
-        }).join("|");
-        re = "^(?:" + re + ")$";
-        if (this.negate)
-          re = "^(?!" + re + ").*$";
-        try {
-          this.regexp = new RegExp(re, flags);
-        } catch (ex) {
-          this.regexp = false;
-        }
-        return this.regexp;
+      var idx = bodySegments.length - 1;
+      var fileLength = file.length - fileTailMatch;
+      for (var si = 0; si < bodySegments.length; si++) {
+        bodySegments[si][1] = fileLength - (nonGsPartsSums[idx--] + bodySegments[si][0].length);
       }
-      match(f, partial = this.partial) {
-        this.debug("match", f, this.pattern);
-        if (this.comment)
-          return false;
-        if (this.empty)
-          return f === "";
-        if (f === "/" && partial)
-          return true;
-        const options = this.options;
-        if (path2.sep !== "/") {
-          f = f.split(path2.sep).join("/");
-        }
-        f = f.split(slashSplit);
-        this.debug(this.pattern, "split", f);
-        const set = this.set;
-        this.debug(this.pattern, "set", set);
-        let filename;
-        for (let i = f.length - 1; i >= 0; i--) {
-          filename = f[i];
-          if (filename)
-            break;
-        }
-        for (let i = 0; i < set.length; i++) {
-          const pattern = set[i];
-          let file = f;
-          if (options.matchBase && pattern.length === 1) {
-            file = [filename];
-          }
-          const hit = this.matchOne(file, pattern, partial);
-          if (hit) {
-            if (options.flipNegate)
-              return true;
-            return !this.negate;
-          }
-        }
-        if (options.flipNegate)
-          return false;
-        return this.negate;
-      }
-      static defaults(def) {
-        return minimatch.defaults(def).Minimatch;
-      }
+      return !!this._matchGlobStarBodySections(
+        file,
+        bodySegments,
+        fileIndex,
+        0,
+        partial,
+        0,
+        !!fileTailMatch
+      );
     };
-    minimatch.Minimatch = Minimatch;
+    Minimatch.prototype._matchGlobStarBodySections = function(file, bodySegments, fileIndex, bodyIndex, partial, globStarDepth, sawTail) {
+      var bs = bodySegments[bodyIndex];
+      if (!bs) {
+        for (var i = fileIndex; i < file.length; i++) {
+          sawTail = true;
+          var f = file[i];
+          if (f === "." || f === ".." || !this.options.dot && f.charAt(0) === ".") {
+            return false;
+          }
+        }
+        return sawTail;
+      }
+      var body = bs[0];
+      var after = bs[1];
+      while (fileIndex <= after) {
+        var m = this._matchOne(
+          file.slice(0, fileIndex + body.length),
+          body,
+          partial,
+          fileIndex,
+          0
+        );
+        if (m && globStarDepth < this.maxGlobstarRecursion) {
+          var sub = this._matchGlobStarBodySections(
+            file,
+            bodySegments,
+            fileIndex + body.length,
+            bodyIndex + 1,
+            partial,
+            globStarDepth + 1,
+            sawTail
+          );
+          if (sub !== false) {
+            return sub;
+          }
+        }
+        var f = file[fileIndex];
+        if (f === "." || f === ".." || !this.options.dot && f.charAt(0) === ".") {
+          return false;
+        }
+        fileIndex++;
+      }
+      return partial || null;
+    };
+    Minimatch.prototype._matchOne = function(file, pattern, partial, fileIndex, patternIndex) {
+      var fi, pi, fl, pl;
+      for (fi = fileIndex, pi = patternIndex, fl = file.length, pl = pattern.length; fi < fl && pi < pl; fi++, pi++) {
+        this.debug("matchOne loop");
+        var p = pattern[pi];
+        var f = file[fi];
+        this.debug(pattern, p, f);
+        if (p === false || p === GLOBSTAR)
+          return false;
+        var hit;
+        if (typeof p === "string") {
+          hit = f === p;
+          this.debug("string match", p, f, hit);
+        } else {
+          hit = f.match(p);
+          this.debug("pattern match", p, f, hit);
+        }
+        if (!hit)
+          return false;
+      }
+      if (fi === fl && pi === pl) {
+        return true;
+      } else if (fi === fl) {
+        return partial;
+      } else if (pi === pl) {
+        return fi === fl - 1 && file[fi] === "";
+      }
+      throw new Error("wtf?");
+    };
+    function globUnescape(s) {
+      return s.replace(/\\(.)/g, "$1");
+    }
+    function regExpEscape(s) {
+      return s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+    }
   }
 });
 
@@ -10843,7 +10870,7 @@ var require_notebook = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.NotebookDocumentSyncFeature = void 0;
-    var vscode7 = require("vscode");
+    var vscode16 = require("vscode");
     var minimatch = require_minimatch();
     var proto = require_main3();
     var UUID = require_uuid();
@@ -10898,9 +10925,9 @@ var require_notebook = __commonJS({
         c2p2.asNotebookCell = asNotebookCell;
         function asNotebookCellKind(kind) {
           switch (kind) {
-            case vscode7.NotebookCellKind.Markup:
+            case vscode16.NotebookCellKind.Markup:
               return proto.NotebookCellKind.Markup;
-            case vscode7.NotebookCellKind.Code:
+            case vscode16.NotebookCellKind.Code:
               return proto.NotebookCellKind.Code;
           }
         }
@@ -11151,25 +11178,25 @@ var require_notebook = __commonJS({
         this.notebookDidOpen = /* @__PURE__ */ new Set();
         this.disposables = [];
         this.selector = client.protocol2CodeConverter.asDocumentSelector($NotebookDocumentSyncOptions.asDocumentSelector(options));
-        vscode7.workspace.onDidOpenNotebookDocument((notebookDocument) => {
+        vscode16.workspace.onDidOpenNotebookDocument((notebookDocument) => {
           this.notebookDidOpen.add(notebookDocument.uri.toString());
           this.didOpen(notebookDocument);
         }, void 0, this.disposables);
-        for (const notebookDocument of vscode7.workspace.notebookDocuments) {
+        for (const notebookDocument of vscode16.workspace.notebookDocuments) {
           this.notebookDidOpen.add(notebookDocument.uri.toString());
           this.didOpen(notebookDocument);
         }
-        vscode7.workspace.onDidChangeNotebookDocument((event) => this.didChangeNotebookDocument(event), void 0, this.disposables);
+        vscode16.workspace.onDidChangeNotebookDocument((event) => this.didChangeNotebookDocument(event), void 0, this.disposables);
         if (this.options.save === true) {
-          vscode7.workspace.onDidSaveNotebookDocument((notebookDocument) => this.didSave(notebookDocument), void 0, this.disposables);
+          vscode16.workspace.onDidSaveNotebookDocument((notebookDocument) => this.didSave(notebookDocument), void 0, this.disposables);
         }
-        vscode7.workspace.onDidCloseNotebookDocument((notebookDocument) => {
+        vscode16.workspace.onDidCloseNotebookDocument((notebookDocument) => {
           this.didClose(notebookDocument);
           this.notebookDidOpen.delete(notebookDocument.uri.toString());
         }, void 0, this.disposables);
       }
       getState() {
-        for (const notebook of vscode7.workspace.notebookDocuments) {
+        for (const notebook of vscode16.workspace.notebookDocuments) {
           const matchingCells = this.getMatchingCells(notebook);
           if (matchingCells !== void 0) {
             return { kind: "document", id: "$internal", registrations: true, matches: true };
@@ -11181,10 +11208,10 @@ var require_notebook = __commonJS({
         return "notebook";
       }
       handles(textDocument) {
-        return vscode7.languages.match(this.selector, textDocument) > 0;
+        return vscode16.languages.match(this.selector, textDocument) > 0;
       }
       didOpenNotebookCellTextDocument(notebookDocument, cell) {
-        if (vscode7.languages.match(this.selector, cell.document) === 0) {
+        if (vscode16.languages.match(this.selector, cell.document) === 0) {
           return;
         }
         if (!this.notebookDidOpen.has(notebookDocument.uri.toString())) {
@@ -11215,7 +11242,7 @@ var require_notebook = __commonJS({
         }
       }
       didChangeNotebookCellTextDocument(notebookDocument, event) {
-        if (vscode7.languages.match(this.selector, event.document) === 0) {
+        if (vscode16.languages.match(this.selector, event.document) === 0) {
           return;
         }
         this.doSendChange({
@@ -11488,7 +11515,7 @@ var require_notebook = __commonJS({
         this.client = client;
         this.registrations = /* @__PURE__ */ new Map();
         this.registrationType = proto.NotebookDocumentSyncRegistrationType.type;
-        vscode7.workspace.onDidOpenTextDocument((textDocument) => {
+        vscode16.workspace.onDidOpenTextDocument((textDocument) => {
           if (textDocument.uri.scheme !== _NotebookDocumentSyncFeature.CellScheme) {
             return;
           }
@@ -11502,7 +11529,7 @@ var require_notebook = __commonJS({
             }
           }
         });
-        vscode7.workspace.onDidChangeTextDocument((event) => {
+        vscode16.workspace.onDidChangeTextDocument((event) => {
           if (event.contentChanges.length === 0) {
             return;
           }
@@ -11520,7 +11547,7 @@ var require_notebook = __commonJS({
             }
           }
         });
-        vscode7.workspace.onDidCloseTextDocument((textDocument) => {
+        vscode16.workspace.onDidCloseTextDocument((textDocument) => {
           if (textDocument.uri.scheme !== _NotebookDocumentSyncFeature.CellScheme) {
             return;
           }
@@ -11585,7 +11612,7 @@ var require_notebook = __commonJS({
         if (textDocument.uri.scheme !== _NotebookDocumentSyncFeature.CellScheme) {
           return false;
         }
-        if (this.dedicatedChannel !== void 0 && vscode7.languages.match(this.dedicatedChannel, textDocument) > 0) {
+        if (this.dedicatedChannel !== void 0 && vscode16.languages.match(this.dedicatedChannel, textDocument) > 0) {
           return true;
         }
         for (const provider of this.registrations.values()) {
@@ -11605,7 +11632,7 @@ var require_notebook = __commonJS({
       }
       findNotebookDocumentAndCell(textDocument) {
         const uri = textDocument.uri.toString();
-        for (const notebookDocument of vscode7.workspace.notebookDocuments) {
+        for (const notebookDocument of vscode16.workspace.notebookDocuments) {
           for (const cell of notebookDocument.getCells()) {
             if (cell.document.uri.toString() === uri) {
               return [notebookDocument, cell];
@@ -11783,13 +11810,13 @@ var require_configuration = __commonJS({
         });
       }
       extractSettingsInformation(keys) {
-        function ensurePath(config, path2) {
+        function ensurePath(config, path5) {
           let current = config;
-          for (let i = 0; i < path2.length - 1; i++) {
-            let obj = current[path2[i]];
+          for (let i = 0; i < path5.length - 1; i++) {
+            let obj = current[path5[i]];
             if (!obj) {
               obj = /* @__PURE__ */ Object.create(null);
-              current[path2[i]] = obj;
+              current[path5[i]] = obj;
             }
             current = obj;
           }
@@ -11807,8 +11834,8 @@ var require_configuration = __commonJS({
             config = vscode_1.workspace.getConfiguration(void 0, resource).get(key);
           }
           if (config) {
-            let path2 = keys[i].split(".");
-            ensurePath(result, path2)[path2[path2.length - 1]] = toJSONObject(config);
+            let path5 = keys[i].split(".");
+            ensurePath(result, path5)[path5[path5.length - 1]] = toJSONObject(config);
           }
         }
         return result;
@@ -14121,7 +14148,7 @@ var require_semanticTokens = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.SemanticTokensFeature = void 0;
-    var vscode7 = require("vscode");
+    var vscode16 = require("vscode");
     var vscode_languageserver_protocol_1 = require_main3();
     var features_1 = require_features();
     var Is = require_is();
@@ -14199,7 +14226,7 @@ var require_semanticTokens = __commonJS({
         const selector = options.documentSelector;
         const fullProvider = Is.boolean(options.full) ? options.full : options.full !== void 0;
         const hasEditProvider = options.full !== void 0 && typeof options.full !== "boolean" && options.full.delta === true;
-        const eventEmitter = new vscode7.EventEmitter();
+        const eventEmitter = new vscode16.EventEmitter();
         const documentProvider = fullProvider ? {
           onDidChangeSemanticTokens: eventEmitter.event,
           provideDocumentSemanticTokens: (document, token) => {
@@ -14271,12 +14298,12 @@ var require_semanticTokens = __commonJS({
         const legend = client.protocol2CodeConverter.asSemanticTokensLegend(options.legend);
         const documentSelector = client.protocol2CodeConverter.asDocumentSelector(selector);
         if (documentProvider !== void 0) {
-          disposables.push(vscode7.languages.registerDocumentSemanticTokensProvider(documentSelector, documentProvider, legend));
+          disposables.push(vscode16.languages.registerDocumentSemanticTokensProvider(documentSelector, documentProvider, legend));
         }
         if (rangeProvider !== void 0) {
-          disposables.push(vscode7.languages.registerDocumentRangeSemanticTokensProvider(documentSelector, rangeProvider, legend));
+          disposables.push(vscode16.languages.registerDocumentRangeSemanticTokensProvider(documentSelector, rangeProvider, legend));
         }
-        return [new vscode7.Disposable(() => disposables.forEach((item) => item.dispose())), { range: rangeProvider, full: documentProvider, onDidChangeSemanticTokensEmitter: eventEmitter }];
+        return [new vscode16.Disposable(() => disposables.forEach((item) => item.dispose())), { range: rangeProvider, full: documentProvider, onDidChangeSemanticTokensEmitter: eventEmitter }];
       }
     };
     exports2.SemanticTokensFeature = SemanticTokensFeature;
@@ -14375,13 +14402,13 @@ var require_fileOperations = __commonJS({
       async filter(event, prop) {
         const fileMatches = await Promise.all(event.files.map(async (item) => {
           const uri = prop(item);
-          const path2 = uri.fsPath.replace(/\\/g, "/");
+          const path5 = uri.fsPath.replace(/\\/g, "/");
           for (const filters of this._filters.values()) {
             for (const filter of filters) {
               if (filter.scheme !== void 0 && filter.scheme !== uri.scheme) {
                 continue;
               }
-              if (filter.matcher.match(path2)) {
+              if (filter.matcher.match(path5)) {
                 if (filter.kind === void 0) {
                   return true;
                 }
@@ -14395,7 +14422,7 @@ var require_fileOperations = __commonJS({
                 }
               } else if (filter.kind === proto.FileOperationPatternKind.folder) {
                 const fileType = await _FileOperationFeature.getFileType(uri);
-                if (fileType === code.FileType.Directory && filter.matcher.match(`${path2}/`)) {
+                if (fileType === code.FileType.Directory && filter.matcher.match(`${path5}/`)) {
                   return true;
                 }
               }
@@ -17123,12 +17150,12 @@ var require_comparator = __commonJS({
           if (this.value === "") {
             return true;
           }
-          return new Range2(comp.value, options).test(this.value);
+          return new Range3(comp.value, options).test(this.value);
         } else if (comp.operator === "") {
           if (comp.value === "") {
             return true;
           }
-          return new Range2(this.value, options).test(comp.semver);
+          return new Range3(this.value, options).test(comp.semver);
         }
         options = parseOptions(options);
         if (options.includePrerelease && (this.value === "<0.0.0-0" || comp.value === "<0.0.0-0")) {
@@ -17161,7 +17188,7 @@ var require_comparator = __commonJS({
     var cmp = require_cmp();
     var debug = require_debug();
     var SemVer = require_semver();
-    var Range2 = require_range();
+    var Range3 = require_range();
   }
 });
 
@@ -17170,7 +17197,7 @@ var require_range = __commonJS({
   "../../node_modules/.bun/semver@7.7.4/node_modules/semver/classes/range.js"(exports2, module2) {
     "use strict";
     var SPACE_CHARACTERS = /\s+/g;
-    var Range2 = class _Range {
+    var Range3 = class _Range {
       constructor(range, options) {
         options = parseOptions(options);
         if (range instanceof _Range) {
@@ -17308,7 +17335,7 @@ var require_range = __commonJS({
         return false;
       }
     };
-    module2.exports = Range2;
+    module2.exports = Range3;
     var LRU = require_lrucache();
     var cache = new LRU();
     var parseOptions = require_parse_options();
@@ -17546,10 +17573,10 @@ var require_range = __commonJS({
 var require_satisfies = __commonJS({
   "../../node_modules/.bun/semver@7.7.4/node_modules/semver/functions/satisfies.js"(exports2, module2) {
     "use strict";
-    var Range2 = require_range();
+    var Range3 = require_range();
     var satisfies = (version, range, options) => {
       try {
-        range = new Range2(range, options);
+        range = new Range3(range, options);
       } catch (er) {
         return false;
       }
@@ -17625,8 +17652,8 @@ var require_main4 = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.SettingMonitor = exports2.LanguageClient = exports2.TransportKind = void 0;
     var cp = require("child_process");
-    var fs2 = require("fs");
-    var path2 = require("path");
+    var fs7 = require("fs");
+    var path5 = require("path");
     var vscode_1 = require("vscode");
     var Is = require_is();
     var client_1 = require_client();
@@ -18044,19 +18071,19 @@ var require_main4 = __commonJS({
         });
       }
       _getRuntimePath(runtime, serverWorkingDirectory) {
-        if (path2.isAbsolute(runtime)) {
+        if (path5.isAbsolute(runtime)) {
           return runtime;
         }
         const mainRootPath = this._mainGetRootPath();
         if (mainRootPath !== void 0) {
-          const result = path2.join(mainRootPath, runtime);
-          if (fs2.existsSync(result)) {
+          const result = path5.join(mainRootPath, runtime);
+          if (fs7.existsSync(result)) {
             return result;
           }
         }
         if (serverWorkingDirectory !== void 0) {
-          const result = path2.join(serverWorkingDirectory, runtime);
-          if (fs2.existsSync(result)) {
+          const result = path5.join(serverWorkingDirectory, runtime);
+          if (fs7.existsSync(result)) {
             return result;
           }
         }
@@ -18080,7 +18107,7 @@ var require_main4 = __commonJS({
         }
         if (cwd) {
           return new Promise((s) => {
-            fs2.lstat(cwd, (err, stats) => {
+            fs7.lstat(cwd, (err, stats) => {
               s(!err && stats.isDirectory() ? cwd : void 0);
             });
           });
@@ -18147,7 +18174,7 @@ __export(extension_exports, {
 });
 module.exports = __toCommonJS(extension_exports);
 var import_node_child_process = require("node:child_process");
-var vscode6 = __toESM(require("vscode"));
+var vscode15 = __toESM(require("vscode"));
 
 // src/services/FeatureCache.ts
 var FeatureCache = class {
@@ -18262,8 +18289,86 @@ var FeatureWalker = class _FeatureWalker {
   }
 };
 
-// src/providers/CodeLensProvider.ts
+// src/services/FeatureDiagnostics.ts
 var vscode = __toESM(require("vscode"));
+var FeatureDiagnostics = class {
+  constructor() {
+    this.collection = vscode.languages.createDiagnosticCollection("lac-lens");
+  }
+  analyzeUri(uri) {
+    const feature = FeatureWalker.readFeatureFile(uri.fsPath);
+    if (!feature) {
+      this.collection.set(uri, []);
+      return;
+    }
+    this.collection.set(uri, this._diagnose(feature));
+  }
+  clearUri(uri) {
+    this.collection.delete(uri);
+  }
+  async analyzeWorkspace() {
+    const uris = await vscode.workspace.findFiles("**/feature.json", "**/node_modules/**");
+    for (const uri of uris) {
+      this.analyzeUri(uri);
+    }
+  }
+  dispose() {
+    this.collection.dispose();
+  }
+  // ── Rules ──────────────────────────────────────────────────────────────────
+  _diagnose(feature) {
+    const diags = [];
+    const top = new vscode.Range(0, 0, 0, 0);
+    if (!feature.problem?.trim()) {
+      diags.push(
+        this._diag(top, "Feature is missing a problem statement.", vscode.DiagnosticSeverity.Error)
+      );
+    }
+    if (feature.status === "active") {
+      if (!feature.analysis?.trim()) {
+        diags.push(
+          this._diag(
+            top,
+            'Active feature is missing an "analysis" section. Document the investigation that led to this feature.',
+            vscode.DiagnosticSeverity.Warning
+          )
+        );
+      }
+      if (!feature.implementation?.trim()) {
+        diags.push(
+          this._diag(
+            top,
+            'Active feature is missing an "implementation" section. Describe how it was built.',
+            vscode.DiagnosticSeverity.Warning
+          )
+        );
+      }
+      if (!feature.decisions?.length) {
+        diags.push(
+          this._diag(
+            top,
+            'Active feature has no recorded decisions. Use "lac: Add Decision" to log key choices.',
+            vscode.DiagnosticSeverity.Information
+          )
+        );
+      }
+    }
+    if (feature.lineage?.parent && feature.lineage.parent === feature.featureKey) {
+      diags.push(
+        this._diag(top, "Lineage.parent points to self \u2014 this is likely a mistake.", vscode.DiagnosticSeverity.Warning)
+      );
+    }
+    return diags;
+  }
+  _diag(range, message, severity) {
+    const d = new vscode.Diagnostic(range, message, severity);
+    d.source = "lac-lens";
+    return d;
+  }
+};
+
+// src/providers/CodeLensProvider.ts
+var vscode2 = __toESM(require("vscode"));
 var STATUS_ICON = {
   active: "\u2299",
   draft: "\u25CC",
@@ -18271,9 +18376,10 @@ var STATUS_ICON = {
   deprecated: "\u2298"
 };
 function computeCompleteness(feature) {
+  const f = feature;
   const fields = ["analysis", "decisions", "implementation", "knownLimitations", "tags", "annotations"];
-  const filled = fields.filter((f) => {
-    const v = feature[f];
+  const filled = fields.filter((key) => {
+    const v = f[key];
     if (v == null || v === "")
       return false;
     if (Array.isArray(v))
@@ -18291,51 +18397,84 @@ function buildLensTitle(feature) {
 var FeatureCodeLensProvider = class {
   constructor(cache) {
     this.cache = cache;
+    this._onDidChangeCodeLenses = new vscode2.EventEmitter();
+    this.onDidChangeCodeLenses = this._onDidChangeCodeLenses.event;
+  }
+  /** Call this when a feature.json changes so VS Code re-requests code lenses. */
+  refresh() {
+    this._onDidChangeCodeLenses.fire();
+  }
+  dispose() {
+    this._onDidChangeCodeLenses.dispose();
   }
   provideCodeLenses(document) {
-    const config = vscode.workspace.getConfiguration("lacLens");
+    const config = vscode2.workspace.getConfiguration("lacLens");
     if (!config.get("enableCodeLens", true)) {
       return [];
     }
-    const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+    const workspaceFolder = vscode2.workspace.getWorkspaceFolder(document.uri);
     if (!workspaceFolder)
       return [];
     const workspaceRoot = workspaceFolder.uri.fsPath;
     const filePath = document.uri.fsPath;
-    let cached = this.cache.get(filePath);
-    if (!cached) {
-      const found = FeatureWalker.findFeatureAndCache(filePath, workspaceRoot, this.cache);
-      if (!found)
-        return [];
-      cached = { feature: found.feature, featureJsonPath: found.featureJsonPath, expiresAt: 0 };
-    }
+    const cached = this.cache.get(filePath) ?? FeatureWalker.findFeatureAndCache(filePath, workspaceRoot, this.cache);
+    if (!cached)
+      return [];
     const { feature, featureJsonPath } = cached;
-    const range = new vscode.Range(0, 0, 0, 0);
-    const lens = new vscode.CodeLens(range, {
+    return [new vscode2.CodeLens(new vscode2.Range(0, 0, 0, 0), {
       title: buildLensTitle(feature),
       command: "lacLens.openFeatureJson",
       arguments: [featureJsonPath]
-    });
-    return [lens];
+    })];
+  }
+  resolveCodeLens(lens) {
+    return lens;
   }
 };
 
 // src/providers/HoverProvider.ts
-var vscode2 = __toESM(require("vscode"));
+var vscode3 = __toESM(require("vscode"));
 function escapeBackticks(str) {
   return str.replace(/`/g, "\\`");
 }
-function buildHoverContent(feature) {
-  const md = new vscode2.MarkdownString();
+var STATUS_COLOR = {
+  active: "\u{1F7E2}",
+  draft: "\u{1F7E1}",
+  frozen: "\u{1F535}",
+  deprecated: "\u{1F534}"
+};
+function buildHoverContent(feature, featureJsonPath) {
+  const md = new vscode3.MarkdownString();
   md.isTrusted = true;
   const title = escapeBackticks(feature.title);
   const problem = escapeBackticks(feature.problem);
-  md.appendMarkdown(`## ${feature.featureKey} \xB7 ${title} [${feature.status}]
+  const statusBadge = STATUS_COLOR[feature.status] ?? "\u26AA";
+  md.appendMarkdown(`## ${feature.featureKey} \xB7 ${title}
 
 `);
-  md.appendMarkdown(`**Problem:** ${problem}
+  md.appendMarkdown(`${statusBadge} **${feature.status}**`);
+  if (feature.tags && feature.tags.length > 0) {
+    const tagList = feature.tags.map((t) => `\`${t}\``).join(" ");
+    md.appendMarkdown(`  \xB7  ${tagList}`);
+  }
+  md.appendMarkdown(`
+
+**Problem:** ${problem}
 
 `);
+  if (feature.analysis) {
+    const snippet = feature.analysis.length > 150 ? `${escapeBackticks(feature.analysis.slice(0, 150))}\u2026` : escapeBackticks(feature.analysis);
+    md.appendMarkdown(`**Analysis:** ${snippet}
+
+`);
+  }
+  if (feature.lineage?.parent) {
+    md.appendMarkdown(`**Lineage:** spawned from \`${feature.lineage.parent}\``);
+    if (feature.lineage.spawnReason) {
+      md.appendMarkdown(` \u2014 *${escapeBackticks(feature.lineage.spawnReason)}*`);
+    }
+    md.appendMarkdown("\n\n");
+  }
   if (feature.decisions && feature.decisions.length > 0) {
     md.appendMarkdown("---\n\n**Decisions:**\n\n");
     for (const d of feature.decisions) {
@@ -18352,6 +18491,33 @@ function buildHoverContent(feature) {
     }
     md.appendMarkdown("\n");
   }
+  if (feature.annotations && feature.annotations.length > 0) {
+    const ANNOTATION_ICON = {
+      decision: "\u{1F537}",
+      warning: "\u26A0\uFE0F",
+      assumption: "\u{1F4AD}",
+      lesson: "\u{1F4D6}"
+    };
+    const shown = feature.annotations.slice(0, 3);
+    const extra = feature.annotations.length - shown.length;
+    md.appendMarkdown("---\n\n**Annotations:**\n\n");
+    for (const a of shown) {
+      const icon = ANNOTATION_ICON[a.type] ?? "\u{1F4CC}";
+      md.appendMarkdown(`${icon} **${a.type}** *(${a.author}, ${a.date})*: ${escapeBackticks(a.body)}
+
+`);
+    }
+    if (extra > 0) {
+      md.appendMarkdown(`*\u2026 ${extra} more annotation${extra > 1 ? "s" : ""}*
+
+`);
+    }
+  }
+  const args = encodeURIComponent(JSON.stringify([featureJsonPath]));
+  md.appendMarkdown(`---
+
+[$(go-to-file) Open feature.json](command:lacLens.openFeatureJson?${args})
+`);
   return md;
 }
 var FeatureHoverProvider = class {
@@ -18359,34 +18525,30 @@ var FeatureHoverProvider = class {
     this.cache = cache;
   }
   provideHover(document, _position) {
-    const workspaceFolder = vscode2.workspace.getWorkspaceFolder(document.uri);
+    const workspaceFolder = vscode3.workspace.getWorkspaceFolder(document.uri);
     if (!workspaceFolder)
       return null;
     const workspaceRoot = workspaceFolder.uri.fsPath;
     const filePath = document.uri.fsPath;
-    let cached = this.cache.get(filePath);
-    if (!cached) {
-      const found = FeatureWalker.findFeatureAndCache(filePath, workspaceRoot, this.cache);
-      if (!found)
-        return null;
-      cached = { feature: found.feature, featureJsonPath: found.featureJsonPath, expiresAt: 0 };
-    }
-    return new vscode2.Hover(buildHoverContent(cached.feature));
+    const cached = this.cache.get(filePath) ?? FeatureWalker.findFeatureAndCache(filePath, workspaceRoot, this.cache);
+    if (!cached)
+      return null;
+    return new vscode3.Hover(buildHoverContent(cached.feature, cached.featureJsonPath));
   }
 };
 
 // src/statusbar/FeatureStatusBar.ts
-var vscode3 = __toESM(require("vscode"));
+var vscode4 = __toESM(require("vscode"));
 var FeatureStatusBar = class {
   constructor() {
-    this.statusBarItem = vscode3.window.createStatusBarItem(
-      vscode3.StatusBarAlignment.Left,
+    this.statusBarItem = vscode4.window.createStatusBarItem(
+      vscode4.StatusBarAlignment.Left,
       100
     );
-    this.statusBarItem.command = "lacLens.openFeatureJson";
+    this.statusBarItem.command = "lacLens.showFeaturePanel";
   }
   update(feature, featureJsonPath) {
-    const config = vscode3.workspace.getConfiguration("lacLens");
+    const config = vscode4.workspace.getConfiguration("lacLens");
     if (!config.get("enableStatusBar", true) || !feature) {
       this.statusBarItem.hide();
       return;
@@ -18399,15 +18561,27 @@ var FeatureStatusBar = class {
     };
     const icon = icons[feature.status] ?? "\u2299";
     this.statusBarItem.text = `${icon} ${feature.featureKey} \xB7 ${feature.status}`;
-    this.statusBarItem.tooltip = feature.title;
+    const tooltip = new vscode4.MarkdownString();
+    tooltip.isTrusted = true;
+    tooltip.appendMarkdown(`**${feature.title}**
+
+`);
+    tooltip.appendMarkdown(`${icon} ${feature.status}
+
+`);
+    if (feature.problem) {
+      const snippet = feature.problem.length > 120 ? `${feature.problem.slice(0, 120)}\u2026` : feature.problem;
+      tooltip.appendMarkdown(`${snippet}`);
+    }
+    this.statusBarItem.tooltip = tooltip;
     if (featureJsonPath) {
       this.statusBarItem.command = {
-        command: "lacLens.openFeatureJson",
-        title: "Open feature.json",
+        command: "lacLens.showFeaturePanel",
+        title: "Show Feature Panel",
         arguments: [featureJsonPath]
       };
     } else {
-      this.statusBarItem.command = "lacLens.openFeatureJson";
+      this.statusBarItem.command = "lacLens.showFeaturePanel";
     }
     this.statusBarItem.show();
   }
@@ -18416,40 +18590,1338 @@ var FeatureStatusBar = class {
   }
 };
 
-// src/commands/openFeatureJson.ts
-var vscode4 = __toESM(require("vscode"));
-async function openFeatureJsonCommand(featureJsonPath) {
+// src/tree/FeatureTreeProvider.ts
+var vscode5 = __toESM(require("vscode"));
+var STATUS_ICON2 = {
+  active: "\u2299",
+  draft: "\u25CC",
+  frozen: "\u2744",
+  deprecated: "\u2298"
+};
+var STATUS_ORDER = ["active", "draft", "frozen", "deprecated"];
+var THEME_ICONS = {
+  active: "circle-filled",
+  draft: "circle-outline",
+  frozen: "lock",
+  deprecated: "archive"
+};
+var StatusGroupNode = class extends vscode5.TreeItem {
+  constructor(status, count) {
+    super(
+      `${STATUS_ICON2[status] ?? "\u2299"} ${status}  (${count})`,
+      vscode5.TreeItemCollapsibleState.Expanded
+    );
+    this.status = status;
+    this.contextValue = "lacFeatureGroup";
+    this.iconPath = new vscode5.ThemeIcon(THEME_ICONS[status] ?? "circle-filled");
+  }
+};
+var FeatureNode = class extends vscode5.TreeItem {
+  constructor(entry) {
+    super(entry.feature.featureKey, vscode5.TreeItemCollapsibleState.None);
+    this.entry = entry;
+    this.description = entry.feature.title;
+    this.tooltip = new vscode5.MarkdownString(
+      `**${entry.feature.featureKey}** \xB7 ${entry.feature.status}
+
+${entry.feature.problem}`
+    );
+    this.command = {
+      command: "lacLens.showFeaturePanel",
+      title: "Open Feature Panel",
+      arguments: [entry.featureJsonPath]
+    };
+    this.contextValue = "lacFeature";
+    this.iconPath = new vscode5.ThemeIcon(THEME_ICONS[entry.feature.status] ?? "circle-filled");
+  }
+};
+var FeatureTreeProvider = class {
+  constructor() {
+    this._onDidChangeTreeData = new vscode5.EventEmitter();
+    this.onDidChangeTreeData = this._onDidChangeTreeData.event;
+    this._entries = [];
+  }
+  refresh() {
+    this._onDidChangeTreeData.fire();
+  }
+  async reloadAll() {
+    const uris = await vscode5.workspace.findFiles("**/feature.json", "**/node_modules/**");
+    this._entries = [];
+    for (const uri of uris) {
+      const feature = FeatureWalker.readFeatureFile(uri.fsPath);
+      if (feature)
+        this._entries.push({ featureJsonPath: uri.fsPath, feature });
+    }
+    this.refresh();
+  }
+  // ── vscode.TreeDataProvider implementation ─────────────────────────────────
+  getTreeItem(element) {
+    return element;
+  }
+  getChildren(element) {
+    if (!element) {
+      return this._buildStatusGroups();
+    }
+    if (element instanceof StatusGroupNode) {
+      return this._entriesForStatus(element.status).map((e) => new FeatureNode(e));
+    }
+    return [];
+  }
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  _buildStatusGroups() {
+    const grouped = this._groupByStatus();
+    return STATUS_ORDER.filter((s) => (grouped.get(s)?.length ?? 0) > 0).map((s) => new StatusGroupNode(s, grouped.get(s).length));
+  }
+  _entriesForStatus(status) {
+    return this._groupByStatus().get(status) ?? [];
+  }
+  _groupByStatus() {
+    const map = /* @__PURE__ */ new Map();
+    for (const entry of this._entries) {
+      const group = map.get(entry.feature.status) ?? [];
+      group.push(entry);
+      map.set(entry.feature.status, group);
+    }
+    return map;
+  }
+};
+
+// src/commands/showFeaturePanel.ts
+var vscode7 = __toESM(require("vscode"));
+
+// src/webview/FeaturePanel.ts
+var fs2 = __toESM(require("node:fs"));
+var import_node_crypto = require("node:crypto");
+var vscode6 = __toESM(require("vscode"));
+var STATUS_ICON3 = {
+  active: "\u2299",
+  draft: "\u25CC",
+  frozen: "\u2744",
+  deprecated: "\u2298"
+};
+var STATUS_COLOR2 = {
+  active: "var(--vscode-charts-green, #4ec9b0)",
+  draft: "var(--vscode-charts-yellow, #dcdcaa)",
+  frozen: "var(--vscode-charts-blue, #569cd6)",
+  deprecated: "var(--vscode-charts-red, #f44747)"
+};
+var FeaturePanel = class _FeaturePanel {
+  // ── Instance ────────────────────────────────────────────────────────────────
+  constructor(panel, featureJsonPath, context, feature) {
+    this.featureJsonPath = featureJsonPath;
+    this.context = context;
+    this._disposables = [];
+    this._panel = panel;
+    this._feature = feature;
+    this._panel.onDidDispose(() => this._dispose(), null, this._disposables);
+    this._panel.webview.onDidReceiveMessage(
+      (msg) => void this._handleMessage(msg),
+      null,
+      this._disposables
+    );
+  }
+  static {
+    this.panels = /* @__PURE__ */ new Map();
+  }
+  // ── Factory ─────────────────────────────────────────────────────────────────
+  static show(featureJsonPath, feature, context) {
+    const existing = _FeaturePanel.panels.get(featureJsonPath);
+    if (existing) {
+      existing._panel.reveal(vscode6.ViewColumn.Beside);
+      existing._setHtml(feature);
+      return;
+    }
+    const panel = vscode6.window.createWebviewPanel(
+      "lacLens.featurePanel",
+      `${STATUS_ICON3[feature.status] ?? "\u2299"} ${feature.featureKey}`,
+      vscode6.ViewColumn.Beside,
+      { enableScripts: true, retainContextWhenHidden: true }
+    );
+    const fp = new _FeaturePanel(panel, featureJsonPath, context, feature);
+    fp._setHtml(feature);
+    _FeaturePanel.panels.set(featureJsonPath, fp);
+  }
+  /** Sends a live-update postMessage so the active tab is preserved. */
+  static notify(featureJsonPath, feature) {
+    const panel = _FeaturePanel.panels.get(featureJsonPath);
+    if (!panel)
+      return;
+    panel._feature = feature;
+    panel._send({ type: "update", feature });
+    panel._panel.title = `${STATUS_ICON3[feature.status] ?? "\u2299"} ${feature.featureKey}`;
+  }
+  /** Called from the file watcher delete event. */
+  static close(featureJsonPath) {
+    _FeaturePanel.panels.get(featureJsonPath)?._panel.dispose();
+  }
+  _dispose() {
+    _FeaturePanel.panels.delete(this.featureJsonPath);
+    this._panel.dispose();
+    for (const d of this._disposables)
+      d.dispose();
+    this._disposables.length = 0;
+  }
+  _send(msg) {
+    void this._panel.webview.postMessage(msg);
+  }
+  _setHtml(feature) {
+    this._feature = feature;
+    this._panel.title = `${STATUS_ICON3[feature.status] ?? "\u2299"} ${feature.featureKey}`;
+    this._panel.webview.html = buildHtml(feature, this.featureJsonPath);
+  }
+  async _handleMessage(msg) {
+    if (msg.type === "editSave") {
+      await this._handleEditSave(msg.field, msg.value);
+    } else if (msg.type === "openFeature") {
+      await this._handleOpenFeature(msg.featureKey);
+    } else if (msg.type === "exportMarkdown") {
+      await vscode6.commands.executeCommand("lacLens.exportMarkdown", this.featureJsonPath);
+    }
+  }
+  async _handleEditSave(field, value) {
+    const allowedStringFields = ["title", "status", "problem", "analysis", "implementation"];
+    const allowedArrayFields = ["knownLimitations", "tags"];
+    let updated = { ...this._feature };
+    if (allowedStringFields.includes(field) && typeof value === "string") {
+      updated = { ...updated, [field]: value };
+    } else if (allowedArrayFields.includes(field) && typeof value === "string") {
+      const arr = value.split("\n").map((l) => l.trim()).filter(Boolean);
+      updated = { ...updated, [field]: arr };
+    } else {
+      return;
+    }
+    try {
+      fs2.writeFileSync(this.featureJsonPath, JSON.stringify(updated, null, 2) + "\n", "utf-8");
+      this._feature = updated;
+      this._panel.title = `${STATUS_ICON3[updated.status] ?? "\u2299"} ${updated.featureKey}`;
+      this._send({ type: "update", feature: updated });
+    } catch (err) {
+      void vscode6.window.showErrorMessage(
+        `lac: Failed to save feature \u2014 ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+  }
+  async _handleOpenFeature(featureKey) {
+    const uris = await vscode6.workspace.findFiles("**/feature.json", "**/node_modules/**");
+    for (const uri of uris) {
+      const f = FeatureWalker.readFeatureFile(uri.fsPath);
+      if (f?.featureKey === featureKey) {
+        _FeaturePanel.show(uri.fsPath, f, this.context);
+        return;
+      }
+    }
+    void vscode6.window.showWarningMessage(`lac: No feature found with key "${featureKey}"`);
+  }
+};
+function nonce() {
+  return (0, import_node_crypto.randomBytes)(16).toString("hex");
+}
+function esc(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function buildHtml(feature, featureJsonPath) {
+  const n = nonce();
+  const tabs = [];
+  tabs.push({ id: "overview", label: "Overview", body: overviewTab(feature, featureJsonPath) });
+  if (feature.analysis?.trim())
+    tabs.push({ id: "analysis", label: "Analysis", body: markdownTab(feature.analysis, "analysis") });
+  if (feature.decisions?.length)
+    tabs.push({ id: "decisions", label: `Decisions (${feature.decisions.length})`, body: decisionsTab(feature.decisions) });
+  if (feature.implementation?.trim())
+    tabs.push({ id: "implementation", label: "Implementation", body: markdownTab(feature.implementation, "implementation") });
+  if (feature.knownLimitations?.length)
+    tabs.push({ id: "limitations", label: "Limitations", body: limitationsTab(feature.knownLimitations) });
+  if (feature.annotations?.length)
+    tabs.push({ id: "annotations", label: `Annotations (${feature.annotations.length})`, body: annotationsTab(feature.annotations) });
+  const tabBtns = tabs.map(
+    (t, i) => `<button class="tab-btn${i === 0 ? " active" : ""}" data-tab="${t.id}">${esc(t.label)}</button>`
+  ).join("\n");
+  const tabPanels = tabs.map(
+    (t, i) => `<section id="panel-${t.id}" class="tab-panel${i === 0 ? " active" : ""}">${t.body}</section>`
+  ).join("\n");
+  const statusOptions = ["draft", "active", "frozen", "deprecated"].map((s) => `<option value="${s}"${s === feature.status ? " selected" : ""}>${STATUS_ICON3[s] ?? ""} ${s}</option>`).join("");
+  return (
+    /* html */
+    `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${n}'; style-src 'nonce-${n}';">
+<style nonce="${n}">
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    font-family: var(--vscode-font-family, system-ui, sans-serif);
+    font-size: var(--vscode-font-size, 13px);
+    color: var(--vscode-editor-foreground);
+    background: var(--vscode-editor-background);
+    margin: 0; padding: 0; min-height: 100vh;
+  }
+
+  /* \u2500\u2500 Header \u2500\u2500 */
+  .header {
+    padding: 16px 24px 12px;
+    border-bottom: 1px solid var(--vscode-panel-border, rgba(128,128,128,.2));
+  }
+  .header-top {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px;
+  }
+  .feature-key {
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 12px; color: var(--vscode-descriptionForeground); letter-spacing: .04em;
+  }
+  .feature-title {
+    font-size: 18px; font-weight: 600; color: var(--vscode-editor-foreground);
+    margin: 0 0 4px; display: flex; align-items: center; gap: 8px;
+  }
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+    border-radius: 10px; font-size: 11px; font-weight: 600; letter-spacing: .05em;
+    text-transform: uppercase; border: 1px solid currentColor; cursor: pointer;
+  }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .tag {
+    background: var(--vscode-badge-background); color: var(--vscode-badge-foreground);
+    padding: 1px 7px; border-radius: 9px; font-size: 11px;
+  }
+  .header-actions { display: flex; gap: 6px; margin-top: 8px; }
+
+  /* \u2500\u2500 Tab bar \u2500\u2500 */
+  .tab-bar {
+    display: flex; border-bottom: 1px solid var(--vscode-panel-border, rgba(128,128,128,.2));
+    padding: 0 20px; overflow-x: auto;
+  }
+  .tab-btn {
+    background: none; border: none; border-bottom: 2px solid transparent;
+    color: var(--vscode-tab-inactiveForeground, var(--vscode-descriptionForeground));
+    cursor: pointer; font: inherit; font-size: 12px; padding: 8px 14px;
+    margin-bottom: -1px; white-space: nowrap; transition: color .1s, border-color .1s;
+  }
+  .tab-btn:hover { color: var(--vscode-editor-foreground); }
+  .tab-btn.active {
+    color: var(--vscode-editor-foreground);
+    border-bottom-color: var(--vscode-focusBorder, #007acc); font-weight: 500;
+  }
+
+  /* \u2500\u2500 Tab panels \u2500\u2500 */
+  .tab-panel { display: none; padding: 24px; max-width: 860px; }
+  .tab-panel.active { display: block; }
+
+  /* \u2500\u2500 Typography \u2500\u2500 */
+  h1, h2, h3 { color: var(--vscode-editor-foreground); margin: 1.2em 0 .4em; }
+  h2 {
+    font-size: 12px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--vscode-descriptionForeground); margin-top: 1.6em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h3 { font-size: 13px; }
+  p { margin: .5em 0; line-height: 1.65; }
+  a { color: var(--vscode-textLink-foreground); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: var(--vscode-editor-font-family, monospace); font-size: .9em;
+    background: var(--vscode-textBlockQuote-background, rgba(128,128,128,.1));
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre {
+    background: var(--vscode-textCodeBlock-background, var(--vscode-textBlockQuote-background));
+    padding: 12px 16px; border-radius: 4px; overflow-x: auto; margin: .8em 0;
+  }
+  pre code { background: none; padding: 0; }
+  ul, ol { padding-left: 1.5em; margin: .5em 0; }
+  li { margin: .2em 0; line-height: 1.6; }
+
+  /* \u2500\u2500 Buttons \u2500\u2500 */
+  .btn {
+    background: var(--vscode-button-background); color: var(--vscode-button-foreground);
+    border: none; border-radius: 3px; padding: 4px 10px; font: inherit; font-size: 12px;
+    cursor: pointer; white-space: nowrap;
+  }
+  .btn:hover { background: var(--vscode-button-hoverBackground); }
+  .btn-secondary {
+    background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground);
+  }
+  .btn-secondary:hover { background: var(--vscode-button-secondaryHoverBackground); }
+  .btn-ghost {
+    background: none; color: var(--vscode-descriptionForeground); border: none;
+    cursor: pointer; font: inherit; font-size: 11px; padding: 2px 6px; border-radius: 3px;
+    opacity: .7;
+  }
+  .btn-ghost:hover { opacity: 1; background: var(--vscode-toolbar-hoverBackground); }
+
+  /* \u2500\u2500 Inline edit \u2500\u2500 */
+  .section-header { display: flex; align-items: center; justify-content: space-between; }
+  .edit-area {
+    width: 100%; min-height: 100px; background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border, rgba(128,128,128,.4));
+    border-radius: 4px; padding: 8px; font-family: var(--vscode-editor-font-family, monospace);
+    font-size: var(--vscode-editor-font-size, 13px); resize: vertical;
+    display: none; box-sizing: border-box; margin-top: 6px;
+  }
+  .edit-area.visible { display: block; }
+  .edit-actions { display: none; gap: 6px; margin-top: 6px; }
+  .edit-actions.visible { display: flex; }
+  .content-view { }
+  .content-view.hidden { display: none; }
+
+  /* \u2500\u2500 Status selector \u2500\u2500 */
+  .status-select {
+    background: var(--vscode-input-background); color: var(--vscode-input-foreground);
+    border: 1px solid var(--vscode-input-border, rgba(128,128,128,.4)); border-radius: 4px;
+    padding: 3px 6px; font: inherit; font-size: 12px; display: none;
+  }
+  .status-select.visible { display: inline-block; }
+
+  /* \u2500\u2500 Cards \u2500\u2500 */
+  .card {
+    border: 1px solid var(--vscode-panel-border, rgba(128,128,128,.2)); border-radius: 6px;
+    padding: 14px 18px; margin: 12px 0;
+    background: var(--vscode-sideBar-background, transparent);
+  }
+  .card-title { font-weight: 600; font-size: 13px; margin: 0 0 8px; }
+  .card-meta { font-size: 11px; color: var(--vscode-descriptionForeground); margin-bottom: 8px; }
+  .label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--vscode-descriptionForeground); margin: 12px 0 4px;
+  }
+  .annotation-type {
+    display: inline-block; padding: 1px 7px; border-radius: 9px; font-size: 11px;
+    font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
+    background: var(--vscode-badge-background); color: var(--vscode-badge-foreground);
+  }
+
+  /* \u2500\u2500 Lineage \u2500\u2500 */
+  .lineage-block {
+    margin-top: 8px; padding: 10px 14px;
+    border-left: 3px solid var(--vscode-focusBorder, #007acc);
+    background: var(--vscode-textBlockQuote-background, rgba(128,128,128,.05));
+    border-radius: 0 4px 4px 0;
+  }
+  .lineage-link {
+    color: var(--vscode-textLink-foreground); cursor: pointer; font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 12px; text-decoration: none; border-bottom: 1px dashed currentColor;
+  }
+  .lineage-link:hover { text-decoration: none; opacity: .8; }
+
+  /* \u2500\u2500 Problem block \u2500\u2500 */
+  .problem-block {
+    padding: 10px 14px;
+    background: var(--vscode-textBlockQuote-background, rgba(128,128,128,.07));
+    border-left: 3px solid var(--vscode-descriptionForeground);
+    border-radius: 0 4px 4px 0; margin: 8px 0;
+  }
+
+  /* \u2500\u2500 Path \u2500\u2500 */
+  .feature-path {
+    margin-top: 24px; font-size: 11px; color: var(--vscode-descriptionForeground);
+    font-family: var(--vscode-editor-font-family, monospace); word-break: break-all;
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-top">
+    <span class="feature-key">${esc(feature.featureKey)}</span>
+
+    <!-- Status badge \u2014 click to edit -->
+    <span
+      class="status-badge"
+      id="status-badge"
+      style="color:${STATUS_COLOR2[feature.status] ?? "inherit"}"
+      title="Click to change status"
+      onclick="toggleStatusEdit()"
+    >${STATUS_ICON3[feature.status] ?? "\u2299"} ${esc(feature.status)}</span>
+
+    <select id="status-select" class="status-select" onchange="saveStatus(this.value)">
+      ${statusOptions}
+    </select>
+
+    ${feature.tags?.length ? `<div class="tags">${feature.tags.map((t) => `<span class="tag">${esc(t)}</span>`).join("")}</div>` : ""}
+  </div>
+
+  <!-- Title \u2014 double-click to edit -->
+  <h1
+    class="feature-title"
+    id="title-view"
+    title="Double-click to edit"
+    ondblclick="startEdit('title')"
+  >${esc(feature.title)} <button class="btn-ghost" onclick="startEdit('title')" title="Edit title">\u270F</button></h1>
+  <textarea id="title-area" class="edit-area" rows="1" style="min-height:unset;resize:none"
+    onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();commitEdit('title')}"
+  ></textarea>
+  <div id="title-actions" class="edit-actions">
+    <button class="btn" onclick="commitEdit('title')">Save</button>
+    <button class="btn btn-secondary" onclick="cancelEdit('title')">Cancel</button>
+  </div>
+
+  <div class="header-actions">
+    <button class="btn btn-secondary" onclick="vscode.postMessage({type:'exportMarkdown'})" title="Export as markdown">\u2913 Export</button>
+  </div>
+</header>
+
+<nav class="tab-bar">
+${tabBtns}
+</nav>
+
+${tabPanels}
+
+<script nonce="${n}">
+(function() {
+  const vscode = acquireVsCodeApi();
+
+  // \u2500\u2500 Markdown renderer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  function renderMd(raw) {
+    if (!raw) return '';
+    const codeBlocks = [];
+    let rest = raw.replace(/\`\`\`([sS]*?)\`\`\`/g, function(_, inner) {
+      const idx = codeBlocks.length;
+      codeBlocks.push('<pre><code>' + inner.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</code></pre>');
+      return '\0CODE' + idx + '\0';
+    });
+    rest = rest.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+    const lines = rest.split('
+');
+    let html = '', inList = false, listTag = '';
+    function flushList() { if (inList) { html += '</' + listTag + '>'; inList = false; listTag = ''; } }
+    function inline(s) {
+      return s.replace(/\`([^\`]+)\`/g,'<code>$1</code>')
+        .replace(/**([^*]+)**/g,'<strong>$1</strong>')
+        .replace(/*([^*]+)*/g,'<em>$1</em>')
+        .replace(/_([^_]+)_/g,'<em>$1</em>');
+    }
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (/^\0CODEd+\0$/.test(line.trim())) { flushList(); html += line.trim(); continue; }
+      const h3 = line.match(/^### (.+)/); if (h3) { flushList(); html += '<h3>' + inline(h3[1]) + '</h3>'; continue; }
+      const h2 = line.match(/^## (.+)/); if (h2) { flushList(); html += '<h2>' + inline(h2[1]) + '</h2>'; continue; }
+      const h1 = line.match(/^# (.+)/); if (h1) { flushList(); html += '<h1>' + inline(h1[1]) + '</h1>'; continue; }
+      const ul = line.match(/^[-*] (.+)/);
+      if (ul) { if (!inList || listTag!=='ul') { flushList(); html += '<ul>'; inList=true; listTag='ul'; } html += '<li>' + inline(ul[1]) + '</li>'; continue; }
+      const ol = line.match(/^d+. (.+)/);
+      if (ol) { if (!inList || listTag!=='ol') { flushList(); html += '<ol>'; inList=true; listTag='ol'; } html += '<li>' + inline(ol[1]) + '</li>'; continue; }
+      flushList();
+      if (line.trim() === '') { html += '<br>'; continue; }
+      html += '<p>' + inline(line) + '</p>';
+    }
+    flushList();
+    codeBlocks.forEach(function(block, idx) { html = html.replace('\0CODE' + idx + '\0', block); });
+    return html;
+  }
+
+  // \u2500\u2500 Tab switching \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  const btns = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.tab-panel');
+  btns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const target = btn.getAttribute('data-tab');
+      btns.forEach(function(b) { b.classList.remove('active'); });
+      panels.forEach(function(p) { p.classList.remove('active'); });
+      btn.classList.add('active');
+      const panel = document.getElementById('panel-' + target);
+      if (panel) panel.classList.add('active');
+    });
+  });
+
+  // \u2500\u2500 Status edit \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  window.toggleStatusEdit = function() {
+    const badge = document.getElementById('status-badge');
+    const sel = document.getElementById('status-select');
+    const editing = sel.classList.toggle('visible');
+    badge.style.display = editing ? 'none' : '';
+    if (editing) sel.focus();
+  };
+
+  window.saveStatus = function(value) {
+    const sel = document.getElementById('status-select');
+    sel.classList.remove('visible');
+    document.getElementById('status-badge').style.display = '';
+    vscode.postMessage({ type: 'editSave', field: 'status', value: value });
+  };
+
+  // \u2500\u2500 Inline text edit \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  window.startEdit = function(field) {
+    const view = document.getElementById(field + '-view');
+    const area = document.getElementById(field + '-area');
+    const actions = document.getElementById(field + '-actions');
+    if (!area) return;
+    if (view) view.classList.add('hidden');
+    area.value = area.getAttribute('data-original') || '';
+    area.classList.add('visible');
+    actions.classList.add('visible');
+    area.focus();
+    area.setSelectionRange(area.value.length, area.value.length);
+  };
+
+  window.commitEdit = function(field) {
+    const view = document.getElementById(field + '-view');
+    const area = document.getElementById(field + '-area');
+    const actions = document.getElementById(field + '-actions');
+    if (!area) return;
+    area.classList.remove('visible');
+    actions.classList.remove('visible');
+    if (view) view.classList.remove('hidden');
+    vscode.postMessage({ type: 'editSave', field: field, value: area.value });
+  };
+
+  window.cancelEdit = function(field) {
+    const view = document.getElementById(field + '-view');
+    const area = document.getElementById(field + '-area');
+    const actions = document.getElementById(field + '-actions');
+    if (!area) return;
+    area.classList.remove('visible');
+    actions.classList.remove('visible');
+    if (view) view.classList.remove('hidden');
+  };
+
+  // \u2500\u2500 Lineage navigation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  window.openFeature = function(key) {
+    vscode.postMessage({ type: 'openFeature', featureKey: key });
+  };
+
+  // \u2500\u2500 Live update via postMessage \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  window.addEventListener('message', function(event) {
+    const msg = event.data;
+    if (!msg || msg.type !== 'update' || !msg.feature) return;
+
+    const activeBtn = document.querySelector('.tab-btn.active');
+    const activeTab = activeBtn ? activeBtn.getAttribute('data-tab') : 'overview';
+    const f = msg.feature;
+
+    // Re-render markdown tabs
+    const mdFields = { analysis: f.analysis || '', implementation: f.implementation || '' };
+    for (const [tabId, content] of Object.entries(mdFields)) {
+      const panel = document.getElementById('panel-' + tabId);
+      if (panel) panel.innerHTML = '<div class="section-header"><h2>' + tabId.charAt(0).toUpperCase() + tabId.slice(1) + '<button class="btn-ghost" onclick="startEdit('' + tabId + '')" title="Edit">\u270F</button></h2></div><div id="' + tabId + '-view" class="content-view"><div class="md-body">' + renderMd(content) + '</div></div><textarea id="' + tabId + '-area" class="edit-area" data-original="' + content.replace(/"/g, '&quot;') + '">' + content + '</textarea><div id="' + tabId + '-actions" class="edit-actions"><button class="btn" onclick="commitEdit('' + tabId + '')">Save</button><button class="btn btn-secondary" onclick="cancelEdit('' + tabId + '')">Cancel</button></div>';
+    }
+
+    // Update status badge
+    const ICONS = {active:'\u2299',draft:'\u25CC',frozen:'\u2744',deprecated:'\u2298'};
+    const COLORS = {active:'var(--vscode-charts-green,#4ec9b0)',draft:'var(--vscode-charts-yellow,#dcdcaa)',frozen:'var(--vscode-charts-blue,#569cd6)',deprecated:'var(--vscode-charts-red,#f44747)'};
+    const badge = document.getElementById('status-badge');
+    if (badge) { badge.textContent = (ICONS[f.status] || '\u2299') + ' ' + f.status; badge.style.color = COLORS[f.status] || 'inherit'; }
+
+    // Update title
+    const titleView = document.getElementById('title-view');
+    if (titleView) titleView.childNodes[0].textContent = f.title + ' ';
+    const titleArea = document.getElementById('title-area');
+    if (titleArea) { titleArea.setAttribute('data-original', f.title); }
+
+    // Restore tab
+    btns.forEach(function(b) { b.classList.remove('active'); });
+    panels.forEach(function(p) { p.classList.remove('active'); });
+    const targetBtn = document.querySelector('[data-tab="' + activeTab + '"]');
+    const targetPanel = document.getElementById('panel-' + activeTab);
+    if (targetBtn && targetPanel) { targetBtn.classList.add('active'); targetPanel.classList.add('active'); }
+    else {
+      const ob = document.querySelector('[data-tab="overview"]');
+      const op = document.getElementById('panel-overview');
+      if (ob) ob.classList.add('active');
+      if (op) op.classList.add('active');
+    }
+  });
+})();
+</script>
+</body>
+</html>`
+  );
+}
+function overviewTab(feature, featureJsonPath) {
+  const lineageHtml = feature.lineage ? buildLineageHtml(feature.lineage) : "";
+  return `
+<div class="section-header">
+  <h2>Problem <button class="btn-ghost" onclick="startEdit('problem')" title="Edit">\u270F</button></h2>
+</div>
+<div id="problem-view" class="content-view">
+  <div class="problem-block">${mdToHtml(feature.problem)}</div>
+</div>
+<textarea id="problem-area" class="edit-area" data-original="${esc(feature.problem)}"
+  onkeydown="if(event.ctrlKey&&event.key==='Enter')commitEdit('problem')"
+>${esc(feature.problem)}</textarea>
+<div id="problem-actions" class="edit-actions">
+  <button class="btn" onclick="commitEdit('problem')">Save</button>
+  <button class="btn btn-secondary" onclick="cancelEdit('problem')">Cancel</button>
+</div>
+
+${lineageHtml}
+
+<p class="feature-path">${esc(featureJsonPath)}</p>
+`;
+}
+function markdownTab(content, field) {
+  return `
+<div class="section-header">
+  <h2>${field.charAt(0).toUpperCase() + field.slice(1)} <button class="btn-ghost" onclick="startEdit('${field}')" title="Edit">\u270F</button></h2>
+</div>
+<div id="${field}-view" class="content-view">
+  <div class="md-body">${mdToHtml(content)}</div>
+</div>
+<textarea id="${field}-area" class="edit-area" data-original="${esc(content)}"
+  onkeydown="if(event.ctrlKey&&event.key==='Enter')commitEdit('${field}')"
+>${esc(content)}</textarea>
+<div id="${field}-actions" class="edit-actions">
+  <button class="btn" onclick="commitEdit('${field}')">Save</button>
+  <button class="btn btn-secondary" onclick="cancelEdit('${field}')">Cancel</button>
+</div>`;
+}
+function decisionsTab(decisions) {
+  return decisions.map((d, i) => `
+<div class="card">
+  <p class="card-title">${i + 1}. ${esc(d.decision)}</p>
+  ${d.date ? `<p class="card-meta">${esc(d.date)}</p>` : ""}
+  <p class="label">Rationale</p>
+  <div>${mdToHtml(d.rationale)}</div>
+  ${d.alternativesConsidered?.length ? `
+  <p class="label">Alternatives considered</p>
+  <ul>${d.alternativesConsidered.map((a) => `<li>${esc(a)}</li>`).join("")}</ul>
+  ` : ""}
+</div>`).join("");
+}
+function limitationsTab(items) {
+  return `
+<div class="section-header">
+  <h2>Known Limitations <button class="btn-ghost" onclick="startEdit('knownLimitations')" title="Edit (one per line)">\u270F</button></h2>
+</div>
+<div id="knownLimitations-view" class="content-view">
+  <ul>${items.map((l) => `<li>${mdToHtml(l)}</li>`).join("")}</ul>
+</div>
+<textarea id="knownLimitations-area" class="edit-area" data-original="${esc(items.join("\n"))}"
+  placeholder="One limitation per line..."
+>${esc(items.join("\n"))}</textarea>
+<div id="knownLimitations-actions" class="edit-actions">
+  <button class="btn" onclick="commitEdit('knownLimitations')">Save</button>
+  <button class="btn btn-secondary" onclick="cancelEdit('knownLimitations')">Cancel</button>
+</div>`;
+}
+function annotationsTab(annotations) {
+  return annotations.map((a) => `
+<div class="card">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+    <span class="annotation-type">${esc(a.type)}</span>
+    <span class="card-meta" style="margin:0">${esc(a.author)} \xB7 ${esc(a.date)}</span>
+  </div>
+  <div>${mdToHtml(a.body)}</div>
+</div>`).join("");
+}
+function buildLineageHtml(lineage) {
+  if (!lineage.parent && !lineage.children?.length && !lineage.spawnReason)
+    return "";
+  const parentHtml = lineage.parent ? `<p><strong>Parent:</strong> <a class="lineage-link" onclick="openFeature('${esc(lineage.parent)}')" title="Open ${esc(lineage.parent)}">${esc(lineage.parent)} \u2197</a></p>` : "";
+  const spawnHtml = lineage.spawnReason ? `<p><strong>Spawn reason:</strong> ${esc(lineage.spawnReason)}</p>` : "";
+  const childrenHtml = lineage.children?.length ? `<p><strong>Children:</strong> ${lineage.children.map((c) => `<a class="lineage-link" onclick="openFeature('${esc(c)}')" title="Open ${esc(c)}">${esc(c)} \u2197</a>`).join(", ")}</p>` : "";
+  return `
+<h2>Lineage</h2>
+<div class="lineage-block">
+  ${parentHtml}
+  ${spawnHtml}
+  ${childrenHtml}
+</div>`;
+}
+function mdToHtml(raw) {
+  if (!raw)
+    return "";
+  const codeBlocks = [];
+  let s = raw.replace(/```[\s\S]*?```/g, (m) => {
+    const inner = m.slice(3, -3);
+    const idx = codeBlocks.length;
+    codeBlocks.push(`<pre><code>${esc(inner)}</code></pre>`);
+    return `\0CODE${idx}\0`;
+  });
+  s = esc(s);
+  const lines = s.split("\n");
+  let html = "";
+  let inUl = false;
+  let inOl = false;
+  const flush = () => {
+    if (inUl) {
+      html += "</ul>";
+      inUl = false;
+    }
+    if (inOl) {
+      html += "</ol>";
+      inOl = false;
+    }
+  };
+  const inline = (t) => t.replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/\*([^*]+)\*/g, "<em>$1</em>").replace(/_([^_]+)_/g, "<em>$1</em>");
+  for (const line of lines) {
+    if (/^\x00CODE\d+\x00$/.test(line.trim())) {
+      flush();
+      html += line.trim();
+      continue;
+    }
+    const h3 = line.match(/^### (.+)/);
+    if (h3) {
+      flush();
+      html += `<h3>${inline(h3[1])}</h3>`;
+      continue;
+    }
+    const h2 = line.match(/^## (.+)/);
+    if (h2) {
+      flush();
+      html += `<h2>${inline(h2[1])}</h2>`;
+      continue;
+    }
+    const h1 = line.match(/^# (.+)/);
+    if (h1) {
+      flush();
+      html += `<h1>${inline(h1[1])}</h1>`;
+      continue;
+    }
+    const ul = line.match(/^[-*] (.+)/);
+    if (ul) {
+      if (!inUl) {
+        flush();
+        html += "<ul>";
+        inUl = true;
+      }
+      html += `<li>${inline(ul[1])}</li>`;
+      continue;
+    }
+    const ol = line.match(/^(\d+)\. (.+)/);
+    if (ol) {
+      if (!inOl) {
+        flush();
+        html += "<ol>";
+        inOl = true;
+      }
+      html += `<li>${inline(ol[2])}</li>`;
+      continue;
+    }
+    flush();
+    if (!line.trim()) {
+      html += "<br>";
+      continue;
+    }
+    html += `<p>${inline(line)}</p>`;
+  }
+  flush();
+  for (let i = 0; i < codeBlocks.length; i++) {
+    html = html.replace(`\0CODE${i}\0`, codeBlocks[i]);
+  }
+  return html;
+}
+
+// src/commands/showFeaturePanel.ts
+function showFeaturePanelCommand(context) {
+  return async (featureJsonPath) => {
+    let targetPath = featureJsonPath;
+    if (!targetPath) {
+      const editor = vscode7.window.activeTextEditor;
+      if (!editor) {
+        void vscode7.window.showWarningMessage("lac-lens: No active editor to locate feature.json");
+        return;
+      }
+      const workspaceFolder = vscode7.workspace.getWorkspaceFolder(editor.document.uri);
+      if (!workspaceFolder) {
+        void vscode7.window.showWarningMessage("lac-lens: File is not inside a workspace folder");
+        return;
+      }
+      targetPath = FeatureWalker.findFeatureJsonPath(
+        editor.document.uri.fsPath,
+        workspaceFolder.uri.fsPath
+      ) ?? void 0;
+    }
+    if (!targetPath) {
+      void vscode7.window.showWarningMessage("lac-lens: No feature.json found for this file");
+      return;
+    }
+    const feature = FeatureWalker.readFeatureFile(targetPath);
+    if (!feature) {
+      void vscode7.window.showWarningMessage(
+        `lac-lens: Could not parse feature.json at ${targetPath}`
+      );
+      return;
+    }
+    FeaturePanel.show(targetPath, feature, context);
+  };
+}
+
+// src/commands/createFeature.ts
+var path2 = __toESM(require("node:path"));
+var fs3 = __toESM(require("node:fs"));
+var vscode8 = __toESM(require("vscode"));
+var STATUS_ITEMS = [
+  { label: "\u25CC  draft", description: "Work in progress", value: "draft" },
+  { label: "\u2299  active", description: "Currently in use", value: "active" },
+  { label: "\u2744  frozen", description: "Stable, not actively developed", value: "frozen" },
+  { label: "\u2298  deprecated", description: "Being phased out", value: "deprecated" }
+];
+async function createFeatureCommand(context, uri) {
+  let targetDir;
+  if (uri) {
+    const stat = fs3.statSync(uri.fsPath);
+    targetDir = stat.isDirectory() ? uri.fsPath : path2.dirname(uri.fsPath);
+  } else {
+    const editor = vscode8.window.activeTextEditor;
+    if (editor) {
+      targetDir = path2.dirname(editor.document.uri.fsPath);
+    } else {
+      const folders = vscode8.workspace.workspaceFolders;
+      if (folders && folders.length > 0) {
+        const picked = await vscode8.window.showOpenDialog({
+          canSelectFiles: false,
+          canSelectFolders: true,
+          canSelectMany: false,
+          openLabel: "Create feature.json here",
+          defaultUri: folders[0].uri
+        });
+        targetDir = picked?.[0]?.fsPath;
+      }
+    }
+  }
+  if (!targetDir) {
+    void vscode8.window.showWarningMessage("lac: No target directory for new feature.");
+    return;
+  }
+  const featureJsonPath = path2.join(targetDir, "feature.json");
+  if (fs3.existsSync(featureJsonPath)) {
+    const choice = await vscode8.window.showWarningMessage(
+      `feature.json already exists at ${featureJsonPath}`,
+      "Open it",
+      "Cancel"
+    );
+    if (choice === "Open it") {
+      const doc = await vscode8.workspace.openTextDocument(featureJsonPath);
+      await vscode8.window.showTextDocument(doc);
+    }
+    return;
+  }
+  const featureKey = await vscode8.window.showInputBox({
+    title: "New Feature \u2014 Step 1 of 4: Feature Key",
+    prompt: "Unique kebab-case identifier (e.g. auth-otp, payment-v2)",
+    placeHolder: "my-feature",
+    validateInput: (v) => {
+      if (!v.trim())
+        return "Feature key is required";
+      if (!/^[a-z0-9][a-z0-9-]*$/.test(v.trim()))
+        return "Use lowercase letters, numbers, and hyphens only";
+      return void 0;
+    }
+  });
+  if (featureKey === void 0)
+    return;
+  const title = await vscode8.window.showInputBox({
+    title: "New Feature \u2014 Step 2 of 4: Title",
+    prompt: "Human-readable name",
+    placeHolder: "My Amazing Feature",
+    validateInput: (v) => !v.trim() ? "Title is required" : void 0
+  });
+  if (title === void 0)
+    return;
+  const statusPick = await vscode8.window.showQuickPick(STATUS_ITEMS, {
+    title: "New Feature \u2014 Step 3 of 4: Initial Status",
+    placeHolder: "Select status"
+  });
+  if (!statusPick)
+    return;
+  const problem = await vscode8.window.showInputBox({
+    title: "New Feature \u2014 Step 4 of 4: Problem Statement",
+    prompt: "What problem does this feature solve?",
+    placeHolder: "Users need to...",
+    validateInput: (v) => !v.trim() ? "Problem statement is required" : void 0
+  });
+  if (problem === void 0)
+    return;
+  const feature = {
+    featureKey: featureKey.trim(),
+    title: title.trim(),
+    status: statusPick.value,
+    problem: problem.trim()
+  };
+  fs3.writeFileSync(featureJsonPath, JSON.stringify(feature, null, 2) + "\n", "utf-8");
+  FeaturePanel.show(featureJsonPath, feature, context);
+}
+
+// src/commands/createChildFeature.ts
+var path3 = __toESM(require("node:path"));
+var fs4 = __toESM(require("node:fs"));
+var vscode9 = __toESM(require("vscode"));
+var STATUS_ITEMS2 = [
+  { label: "\u25CC  draft", description: "Work in progress", value: "draft" },
+  { label: "\u2299  active", description: "Currently in use", value: "active" },
+  { label: "\u2744  frozen", description: "Stable, not actively developed", value: "frozen" },
+  { label: "\u2298  deprecated", description: "Being phased out", value: "deprecated" }
+];
+async function createChildFeatureCommand(context, parentFeatureJsonPath) {
+  let parentPath = parentFeatureJsonPath;
+  if (!parentPath) {
+    const editor = vscode9.window.activeTextEditor;
+    if (!editor) {
+      void vscode9.window.showWarningMessage("lac: No active editor to find parent feature.");
+      return;
+    }
+    const workspaceFolder = vscode9.workspace.getWorkspaceFolder(editor.document.uri);
+    if (!workspaceFolder) {
+      void vscode9.window.showWarningMessage("lac: File is not inside a workspace folder.");
+      return;
+    }
+    parentPath = FeatureWalker.findFeatureJsonPath(editor.document.uri.fsPath, workspaceFolder.uri.fsPath) ?? void 0;
+  }
+  if (!parentPath) {
+    void vscode9.window.showWarningMessage(
+      "lac: No parent feature.json found. Create a root feature first."
+    );
+    return;
+  }
+  const parentFeature = FeatureWalker.readFeatureFile(parentPath);
+  if (!parentFeature) {
+    void vscode9.window.showWarningMessage("lac: Could not read parent feature.json.");
+    return;
+  }
+  const parentDir = path3.dirname(parentPath);
+  const childKey = await vscode9.window.showInputBox({
+    title: `Child of "${parentFeature.featureKey}" \u2014 Step 1 of 4: Child Key`,
+    prompt: "Unique kebab-case identifier",
+    placeHolder: `${parentFeature.featureKey}-sub`,
+    validateInput: (v) => {
+      if (!v.trim())
+        return "Feature key is required";
+      if (!/^[a-z0-9][a-z0-9-]*$/.test(v.trim()))
+        return "Use lowercase letters, numbers, and hyphens only";
+      const childDir2 = path3.join(parentDir, v.trim());
+      if (fs4.existsSync(path3.join(childDir2, "feature.json")))
+        return "A feature with this key already exists here";
+      return void 0;
+    }
+  });
+  if (childKey === void 0)
+    return;
+  const title = await vscode9.window.showInputBox({
+    title: `Child of "${parentFeature.featureKey}" \u2014 Step 2 of 4: Title`,
+    placeHolder: "Child Feature Title",
+    validateInput: (v) => !v.trim() ? "Title is required" : void 0
+  });
+  if (title === void 0)
+    return;
+  const statusPick = await vscode9.window.showQuickPick(STATUS_ITEMS2, {
+    title: `Child of "${parentFeature.featureKey}" \u2014 Step 3 of 4: Status`,
+    placeHolder: "Select status"
+  });
+  if (!statusPick)
+    return;
+  const problem = await vscode9.window.showInputBox({
+    title: `Child of "${parentFeature.featureKey}" \u2014 Step 4 of 4: Problem`,
+    prompt: "What specific problem does this child feature solve?",
+    placeHolder: "Narrower scope: ...",
+    validateInput: (v) => !v.trim() ? "Problem is required" : void 0
+  });
+  if (problem === void 0)
+    return;
+  const spawnReason = await vscode9.window.showInputBox({
+    title: "Spawn Reason (optional \u2014 press Escape to skip)",
+    prompt: "Why was this split out from the parent?",
+    placeHolder: "e.g. Scope became too large to manage in a single feature"
+  });
+  const childDir = path3.join(parentDir, childKey.trim());
+  if (!fs4.existsSync(childDir))
+    fs4.mkdirSync(childDir, { recursive: true });
+  const childFeaturePath = path3.join(childDir, "feature.json");
+  const childFeature = {
+    featureKey: childKey.trim(),
+    title: title.trim(),
+    status: statusPick.value,
+    problem: problem.trim(),
+    lineage: {
+      parent: parentFeature.featureKey,
+      ...spawnReason?.trim() ? { spawnReason: spawnReason.trim() } : {}
+    }
+  };
+  fs4.writeFileSync(childFeaturePath, JSON.stringify(childFeature, null, 2) + "\n", "utf-8");
+  const updatedChildren = [.../* @__PURE__ */ new Set([...parentFeature.lineage?.children ?? [], childKey.trim()])];
+  const updatedParent = {
+    ...parentFeature,
+    lineage: {
+      ...parentFeature.lineage,
+      children: updatedChildren
+    }
+  };
+  fs4.writeFileSync(parentPath, JSON.stringify(updatedParent, null, 2) + "\n", "utf-8");
+  FeaturePanel.notify(parentPath, updatedParent);
+  FeaturePanel.show(childFeaturePath, childFeature, context);
+}
+
+// src/commands/changeStatus.ts
+var fs5 = __toESM(require("node:fs"));
+var vscode10 = __toESM(require("vscode"));
+async function changeStatusCommand() {
+  const editor = vscode10.window.activeTextEditor;
+  if (!editor) {
+    void vscode10.window.showWarningMessage("lac: No active editor.");
+    return;
+  }
+  const workspaceFolder = vscode10.workspace.getWorkspaceFolder(editor.document.uri);
+  if (!workspaceFolder) {
+    void vscode10.window.showWarningMessage("lac: File is not in a workspace.");
+    return;
+  }
+  const featureJsonPath = FeatureWalker.findFeatureJsonPath(
+    editor.document.uri.fsPath,
+    workspaceFolder.uri.fsPath
+  );
+  if (!featureJsonPath) {
+    void vscode10.window.showWarningMessage("lac: No feature.json found for this file.");
+    return;
+  }
+  const feature = FeatureWalker.readFeatureFile(featureJsonPath);
+  if (!feature) {
+    void vscode10.window.showWarningMessage("lac: Could not read feature.json.");
+    return;
+  }
+  const STATUSES = [
+    { label: "\u25CC  draft", value: "draft" },
+    { label: "\u2299  active", value: "active" },
+    { label: "\u2744  frozen", value: "frozen" },
+    { label: "\u2298  deprecated", value: "deprecated" }
+  ];
+  const picked = await vscode10.window.showQuickPick(
+    STATUSES.map((s) => ({
+      ...s,
+      description: s.value === feature.status ? "\u2190 current" : void 0
+    })),
+    { title: `Change Status \u2014 ${feature.featureKey}` }
+  );
+  if (!picked || picked.value === feature.status)
+    return;
+  const updated = { ...feature, status: picked.value };
+  fs5.writeFileSync(featureJsonPath, JSON.stringify(updated, null, 2) + "\n", "utf-8");
+  FeaturePanel.notify(featureJsonPath, updated);
+  void vscode10.window.showInformationMessage(
+    `lac: ${feature.featureKey} is now ${picked.value}`
+  );
+}
+
+// src/commands/searchFeatures.ts
+var vscode11 = __toESM(require("vscode"));
+var STATUS_ICON4 = {
+  active: "\u2299",
+  draft: "\u25CC",
+  frozen: "\u2744",
+  deprecated: "\u2298"
+};
+async function searchFeaturesCommand(context) {
+  const folders = vscode11.workspace.workspaceFolders;
+  if (!folders || folders.length === 0) {
+    void vscode11.window.showWarningMessage("lac: No workspace folder open.");
+    return;
+  }
+  const uris = await vscode11.workspace.findFiles("**/feature.json", "**/node_modules/**");
+  const items = [];
+  for (const uri of uris) {
+    const feature = FeatureWalker.readFeatureFile(uri.fsPath);
+    if (!feature)
+      continue;
+    items.push({
+      label: `${STATUS_ICON4[feature.status] ?? "\u2299"} ${feature.featureKey}`,
+      description: feature.title,
+      detail: feature.tags?.length ? `tags: ${feature.tags.join(", ")}` : feature.problem.slice(0, 80),
+      featureJsonPath: uri.fsPath,
+      feature
+    });
+  }
+  if (items.length === 0) {
+    void vscode11.window.showInformationMessage("lac: No feature.json files found in workspace.");
+    return;
+  }
+  const ORDER = ["active", "draft", "frozen", "deprecated"];
+  items.sort((a, b) => ORDER.indexOf(a.feature.status) - ORDER.indexOf(b.feature.status));
+  const picked = await vscode11.window.showQuickPick(items, {
+    title: `lac: Search Features \u2014 ${items.length} found`,
+    placeHolder: "Type to filter by key, title, tags, or problem...",
+    matchOnDescription: true,
+    matchOnDetail: true
+  });
+  if (!picked)
+    return;
+  FeaturePanel.show(picked.featureJsonPath, picked.feature, context);
+}
+
+// src/commands/addDecision.ts
+var fs6 = __toESM(require("node:fs"));
+var vscode12 = __toESM(require("vscode"));
+async function addDecisionCommand() {
+  const editor = vscode12.window.activeTextEditor;
+  if (!editor) {
+    void vscode12.window.showWarningMessage("lac: No active editor.");
+    return;
+  }
+  const workspaceFolder = vscode12.workspace.getWorkspaceFolder(editor.document.uri);
+  if (!workspaceFolder) {
+    void vscode12.window.showWarningMessage("lac: File is not in a workspace.");
+    return;
+  }
+  const featureJsonPath = FeatureWalker.findFeatureJsonPath(
+    editor.document.uri.fsPath,
+    workspaceFolder.uri.fsPath
+  );
+  if (!featureJsonPath) {
+    void vscode12.window.showWarningMessage("lac: No feature.json found for this file.");
+    return;
+  }
+  const feature = FeatureWalker.readFeatureFile(featureJsonPath);
+  if (!feature) {
+    void vscode12.window.showWarningMessage("lac: Could not read feature.json.");
+    return;
+  }
+  const decision = await vscode12.window.showInputBox({
+    title: `Add Decision to "${feature.featureKey}" \u2014 Step 1 of 2`,
+    prompt: "What was decided?",
+    placeHolder: "e.g. Use PostgreSQL over MongoDB for ACID compliance",
+    validateInput: (v) => !v.trim() ? "Decision is required" : void 0
+  });
+  if (decision === void 0)
+    return;
+  const rationale = await vscode12.window.showInputBox({
+    title: `Add Decision to "${feature.featureKey}" \u2014 Step 2 of 2`,
+    prompt: "Why was this decided?",
+    placeHolder: "e.g. We need strong consistency guarantees for financial data",
+    validateInput: (v) => !v.trim() ? "Rationale is required" : void 0
+  });
+  if (rationale === void 0)
+    return;
+  const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+  const updated = {
+    ...feature,
+    decisions: [
+      ...feature.decisions ?? [],
+      { decision: decision.trim(), rationale: rationale.trim(), date: today }
+    ]
+  };
+  fs6.writeFileSync(featureJsonPath, JSON.stringify(updated, null, 2) + "\n", "utf-8");
+  FeaturePanel.notify(featureJsonPath, updated);
+  void vscode12.window.showInformationMessage(
+    `lac: Decision added to ${feature.featureKey} (${updated.decisions.length} total)`
+  );
+}
+
+// src/commands/exportMarkdown.ts
+var path4 = __toESM(require("node:path"));
+var vscode13 = __toESM(require("vscode"));
+async function exportMarkdownCommand(featureJsonPath) {
   let targetPath = featureJsonPath;
   if (!targetPath) {
-    const editor = vscode4.window.activeTextEditor;
+    const editor = vscode13.window.activeTextEditor;
     if (!editor) {
-      void vscode4.window.showWarningMessage("lac-lens: No active editor to locate feature.json");
+      void vscode13.window.showWarningMessage("lac: No active editor.");
       return;
     }
-    const workspaceFolder = vscode4.workspace.getWorkspaceFolder(editor.document.uri);
+    const workspaceFolder = vscode13.workspace.getWorkspaceFolder(editor.document.uri);
     if (!workspaceFolder) {
-      void vscode4.window.showWarningMessage("lac-lens: File is not inside a workspace folder");
+      void vscode13.window.showWarningMessage("lac: File is not in a workspace.");
       return;
     }
-    const found = FeatureWalker.findFeatureJsonPath(
-      editor.document.uri.fsPath,
-      workspaceFolder.uri.fsPath
-    );
-    if (!found) {
-      void vscode4.window.showInformationMessage("lac-lens: No feature.json found above this file");
-      return;
-    }
-    targetPath = found;
+    targetPath = FeatureWalker.findFeatureJsonPath(editor.document.uri.fsPath, workspaceFolder.uri.fsPath) ?? void 0;
   }
-  const uri = vscode4.Uri.file(targetPath);
-  await vscode4.window.showTextDocument(uri, {
-    viewColumn: vscode4.ViewColumn.Beside,
-    preserveFocus: false
+  if (!targetPath) {
+    void vscode13.window.showWarningMessage("lac: No feature.json found.");
+    return;
+  }
+  const feature = FeatureWalker.readFeatureFile(targetPath);
+  if (!feature) {
+    void vscode13.window.showWarningMessage("lac: Could not read feature.json.");
+    return;
+  }
+  const md = featureToMarkdown(feature);
+  const doc = await vscode13.workspace.openTextDocument({
+    content: md,
+    language: "markdown"
   });
+  await vscode13.window.showTextDocument(doc, vscode13.ViewColumn.Beside);
+  const outputPath = path4.join(path4.dirname(targetPath), `${feature.featureKey}.md`);
+  const save = await vscode13.window.showInformationMessage(
+    `lac: Export ready. Save as ${path4.basename(outputPath)}?`,
+    "Save",
+    "Discard"
+  );
+  if (save === "Save") {
+    const encoder = new TextEncoder();
+    await vscode13.workspace.fs.writeFile(vscode13.Uri.file(outputPath), encoder.encode(md));
+    void vscode13.window.showInformationMessage(`lac: Saved \u2192 ${outputPath}`);
+  }
+}
+function featureToMarkdown(f) {
+  const ICONS = {
+    active: "\u2299",
+    draft: "\u25CC",
+    frozen: "\u2744",
+    deprecated: "\u2298"
+  };
+  const icon = ICONS[f.status] ?? "\u2299";
+  const lines = [];
+  lines.push(`# ${icon} ${f.title}`);
+  lines.push("");
+  lines.push(`**Key:** \`${f.featureKey}\` \xB7 **Status:** \`${f.status}\``);
+  if (f.tags?.length)
+    lines.push(`**Tags:** ${f.tags.map((t) => `\`${t}\``).join(" ")}`);
+  lines.push("");
+  lines.push("## Problem");
+  lines.push("");
+  lines.push(f.problem);
+  lines.push("");
+  if (f.lineage?.parent || f.lineage?.children?.length || f.lineage?.spawnReason) {
+    lines.push("## Lineage");
+    lines.push("");
+    if (f.lineage.parent)
+      lines.push(`- **Parent:** \`${f.lineage.parent}\``);
+    if (f.lineage.spawnReason)
+      lines.push(`- **Spawn reason:** ${f.lineage.spawnReason}`);
+    if (f.lineage.children?.length)
+      lines.push(`- **Children:** ${f.lineage.children.map((c) => `\`${c}\``).join(", ")}`);
+    lines.push("");
+  }
+  if (f.analysis?.trim()) {
+    lines.push("## Analysis");
+    lines.push("");
+    lines.push(f.analysis);
+    lines.push("");
+  }
+  if (f.decisions?.length) {
+    lines.push("## Decisions");
+    lines.push("");
+    for (const d of f.decisions) {
+      lines.push(`### ${d.decision}`);
+      if (d.date)
+        lines.push(`*${d.date}*`);
+      lines.push("");
+      lines.push(`**Rationale:** ${d.rationale}`);
+      if (d.alternativesConsidered?.length) {
+        lines.push("");
+        lines.push("**Alternatives considered:**");
+        for (const a of d.alternativesConsidered)
+          lines.push(`- ${a}`);
+      }
+      lines.push("");
+    }
+  }
+  if (f.implementation?.trim()) {
+    lines.push("## Implementation");
+    lines.push("");
+    lines.push(f.implementation);
+    lines.push("");
+  }
+  if (f.knownLimitations?.length) {
+    lines.push("## Known Limitations");
+    lines.push("");
+    for (const l of f.knownLimitations)
+      lines.push(`- ${l}`);
+    lines.push("");
+  }
+  if (f.annotations?.length) {
+    lines.push("## Annotations");
+    lines.push("");
+    for (const a of f.annotations) {
+      lines.push(`### [${a.type.toUpperCase()}] ${a.author} \xB7 ${a.date}`);
+      lines.push("");
+      lines.push(a.body);
+      lines.push("");
+    }
+  }
+  return lines.join("\n");
 }
 
 // src/lsp/LacLspClient.ts
-var vscode5 = __toESM(require("vscode"));
+var vscode14 = __toESM(require("vscode"));
 var import_node = __toESM(require_node3());
 function createLacLspClient(serverPath, workspaceRoot, context) {
   const serverOptions = {
@@ -18473,13 +19945,13 @@ function createLacLspClient(serverPath, workspaceRoot, context) {
     synchronize: {
       // Tell the server when feature.json files change via the standard
       // workspace/didChangeWatchedFiles notification
-      fileEvents: vscode5.workspace.createFileSystemWatcher("**/feature.json")
+      fileEvents: vscode14.workspace.createFileSystemWatcher("**/feature.json")
     },
     initializationOptions: {
       workspaceRoot
     },
     initializationFailedHandler: (error) => {
-      void vscode5.window.showErrorMessage(
+      void vscode14.window.showErrorMessage(
         `lac-lsp failed to initialize: ${error instanceof Error ? error.message : String(error)}`
       );
       return false;
@@ -18514,15 +19986,16 @@ function isLacLspAvailable(serverPath) {
     const result = (0, import_node_child_process.spawnSync)(serverPath, ["--help"], {
       timeout: 2e3,
       stdio: "ignore",
-      windowsHide: true
+      windowsHide: true,
+      shell: process.platform === "win32"
     });
-    return result.error === void 0 && result.status !== null;
+    return result.error === void 0 && result.status === 0;
   } catch {
     return false;
   }
 }
 function activate(context) {
-  const cfg = vscode6.workspace.getConfiguration("lacLens");
+  const cfg = vscode15.workspace.getConfiguration("lacLens");
   const lspServerPath = cfg.get("lspServerPath", "lac-lsp");
   const httpPort = cfg.get("httpPort", 7474);
   const lspModeInspect = cfg.inspect("lspMode");
@@ -18531,36 +20004,82 @@ function activate(context) {
   const lspAvailable = isLacLspAvailable(lspServerPath);
   if (!isExplicit && !useLsp && lspAvailable) {
     useLsp = true;
-    void vscode6.window.showInformationMessage(
+    void vscode15.window.showInformationMessage(
       'lac-lsp detected \u2014 switching to LSP mode automatically. Set "lacLens.lspMode": false to disable.'
     );
   } else if (isExplicit && useLsp && !lspAvailable) {
-    void vscode6.window.showErrorMessage(
+    void vscode15.window.showErrorMessage(
       `lac-lsp not found at "${lspServerPath}". Install it: npm i -g @life-as-code/lac-lsp`,
       "Install instructions"
     ).then((action) => {
       if (action === "Install instructions") {
-        void vscode6.env.openExternal(
-          vscode6.Uri.parse("https://github.com/life-as-code/life-as-code")
+        void vscode15.env.openExternal(
+          vscode15.Uri.parse("https://github.com/life-as-code/life-as-code")
         );
       }
     });
     useLsp = false;
   }
+  const openPanel = showFeaturePanelCommand(context);
   context.subscriptions.push(
-    vscode6.commands.registerCommand("lacLens.openFeatureJson", openFeatureJsonCommand),
-    vscode6.commands.registerCommand("lac.openFeatureJson", openFeatureJsonCommand)
+    vscode15.commands.registerCommand("lacLens.openFeatureJson", openPanel),
+    vscode15.commands.registerCommand("lac.openFeatureJson", openPanel),
+    vscode15.commands.registerCommand("lacLens.showFeaturePanel", openPanel)
   );
+  context.subscriptions.push(
+    vscode15.commands.registerCommand(
+      "lacLens.createFeature",
+      (uri) => createFeatureCommand(context, uri)
+    )
+  );
+  context.subscriptions.push(
+    vscode15.commands.registerCommand("lacLens.createChildFeature", (uri) => {
+      const path5 = uri?.fsPath;
+      return createChildFeatureCommand(context, path5);
+    })
+  );
+  context.subscriptions.push(
+    vscode15.commands.registerCommand("lacLens.changeStatus", () => changeStatusCommand())
+  );
+  context.subscriptions.push(
+    vscode15.commands.registerCommand(
+      "lacLens.searchFeatures",
+      () => searchFeaturesCommand(context)
+    )
+  );
+  context.subscriptions.push(
+    vscode15.commands.registerCommand("lacLens.addDecision", () => addDecisionCommand())
+  );
+  context.subscriptions.push(
+    vscode15.commands.registerCommand(
+      "lacLens.exportMarkdown",
+      (featureJsonPath) => exportMarkdownCommand(featureJsonPath)
+    )
+  );
+  const treeProvider = new FeatureTreeProvider();
+  const treeView = vscode15.window.createTreeView("lacLensFeatures", {
+    treeDataProvider: treeProvider,
+    showCollapseAll: true
+  });
+  context.subscriptions.push(treeView);
+  void treeProvider.reloadAll();
+  context.subscriptions.push(
+    vscode15.commands.registerCommand("lacLens.refreshTree", () => {
+      void treeProvider.reloadAll();
+    })
+  );
+  const cache = activateLocalFeatures(context, treeProvider, { withCodeLens: true });
+  activateDiagnostics(context);
   if (useLsp) {
     activateLspMode(context, lspServerPath, httpPort);
   } else {
-    activateDirectMode(context);
+    activateDirectMode(context, cache);
   }
 }
 function activateLspMode(context, serverPath, httpPort) {
-  const workspaceFolders = vscode6.workspace.workspaceFolders;
+  const workspaceFolders = vscode15.workspace.workspaceFolders;
   if (!workspaceFolders || workspaceFolders.length === 0) {
-    vscode6.window.showWarningMessage(
+    vscode15.window.showWarningMessage(
       "lac-lsp: no workspace folder open \u2014 LSP mode requires an open folder."
     );
     return;
@@ -18571,22 +20090,20 @@ function activateLspMode(context, serverPath, httpPort) {
     lspClient = createLacLspClient(serverPath, workspaceRoot, context);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    vscode6.window.showErrorMessage(`lac-lsp: failed to create client \u2014 ${msg}`);
+    vscode15.window.showErrorMessage(`lac-lsp: failed to create client \u2014 ${msg}`);
     return;
   }
   lspClient.start().catch((err) => {
     const msg = err instanceof Error ? err.message : String(err);
-    vscode6.window.showErrorMessage(
+    vscode15.window.showErrorMessage(
       `lac-lsp: server failed to start (is "lac-lsp" installed?) \u2014 ${msg}`
     );
   });
-  context.subscriptions.push({
-    dispose: () => void lspClient.stop()
-  });
+  context.subscriptions.push({ dispose: () => void lspClient.stop() });
   const statusBar = new FeatureStatusBar();
   context.subscriptions.push(statusBar);
   context.subscriptions.push(
-    vscode6.window.onDidChangeActiveTextEditor(async (editor) => {
+    vscode15.window.onDidChangeActiveTextEditor(async (editor) => {
       if (!editor) {
         statusBar.update(null);
         return;
@@ -18609,43 +20126,84 @@ function activateLspMode(context, serverPath, httpPort) {
     })
   );
 }
-function activateDirectMode(context) {
+function activateLocalFeatures(context, treeProvider, { withCodeLens = true } = {}) {
   const cache = new FeatureCache();
   const statusBar = new FeatureStatusBar();
+  const codeLensProvider = new FeatureCodeLensProvider(cache);
+  if (withCodeLens) {
+    context.subscriptions.push(
+      vscode15.languages.registerCodeLensProvider(
+        { scheme: "file", pattern: "**/*" },
+        codeLensProvider
+      ),
+      codeLensProvider
+    );
+  }
+  const updateStatusBar = (editor) => {
+    if (!editor) {
+      statusBar.update(null);
+      return;
+    }
+    const workspaceFolder = vscode15.workspace.getWorkspaceFolder(editor.document.uri);
+    if (!workspaceFolder) {
+      statusBar.update(null);
+      return;
+    }
+    const entry = cache.get(editor.document.uri.fsPath) ?? FeatureWalker.findFeatureAndCache(editor.document.uri.fsPath, workspaceFolder.uri.fsPath, cache);
+    statusBar.update(entry?.feature ?? null, entry?.featureJsonPath);
+  };
+  context.subscriptions.push(vscode15.window.onDidChangeActiveTextEditor(updateStatusBar));
+  updateStatusBar(vscode15.window.activeTextEditor);
+  const watcher = vscode15.workspace.createFileSystemWatcher("**/feature.json");
+  watcher.onDidChange((uri) => {
+    cache.invalidate(uri.fsPath);
+    codeLensProvider.refresh();
+    const updated = FeatureWalker.readFeatureFile(uri.fsPath);
+    if (updated)
+      FeaturePanel.notify(uri.fsPath, updated);
+    void treeProvider.reloadAll();
+  });
+  watcher.onDidCreate((_uri) => {
+    void treeProvider.reloadAll();
+  });
+  watcher.onDidDelete((uri) => {
+    cache.invalidate(uri.fsPath);
+    codeLensProvider.refresh();
+    FeaturePanel.close(uri.fsPath);
+    void treeProvider.reloadAll();
+  });
+  context.subscriptions.push(watcher, statusBar);
+  return cache;
+}
+function activateDiagnostics(context) {
+  const diags = new FeatureDiagnostics();
+  context.subscriptions.push(diags);
+  void diags.analyzeWorkspace();
   context.subscriptions.push(
-    vscode6.languages.registerCodeLensProvider(
-      { scheme: "file", pattern: "**/*" },
-      new FeatureCodeLensProvider(cache)
-    )
+    vscode15.workspace.onDidOpenTextDocument((doc) => {
+      if (doc.fileName.endsWith("feature.json")) {
+        diags.analyzeUri(doc.uri);
+      }
+    }),
+    vscode15.workspace.onDidSaveTextDocument((doc) => {
+      if (doc.fileName.endsWith("feature.json")) {
+        diags.analyzeUri(doc.uri);
+      }
+    }),
+    vscode15.workspace.onDidCloseTextDocument((doc) => {
+      if (doc.fileName.endsWith("feature.json")) {
+        diags.clearUri(doc.uri);
+      }
+    })
   );
+}
+function activateDirectMode(context, cache) {
   context.subscriptions.push(
-    vscode6.languages.registerHoverProvider(
+    vscode15.languages.registerHoverProvider(
       { scheme: "file", pattern: "**/*" },
       new FeatureHoverProvider(cache)
     )
   );
-  context.subscriptions.push(
-    vscode6.window.onDidChangeActiveTextEditor((editor) => {
-      if (!editor) {
-        statusBar.update(null);
-        return;
-      }
-      const workspaceFolder = vscode6.workspace.getWorkspaceFolder(editor.document.uri);
-      if (!workspaceFolder) {
-        statusBar.update(null);
-        return;
-      }
-      const workspaceRoot = workspaceFolder.uri.fsPath;
-      const filePath = editor.document.uri.fsPath;
-      const entry = cache.get(filePath) ?? FeatureWalker.findFeatureAndCache(filePath, workspaceRoot, cache);
-      statusBar.update(entry?.feature ?? null, entry?.featureJsonPath);
-    })
-  );
-  const watcher = vscode6.workspace.createFileSystemWatcher("**/feature.json");
-  watcher.onDidChange((uri) => cache.invalidate(uri.fsPath));
-  watcher.onDidDelete((uri) => cache.invalidate(uri.fsPath));
-  context.subscriptions.push(watcher);
-  context.subscriptions.push(statusBar);
 }
 function deactivate() {
 }

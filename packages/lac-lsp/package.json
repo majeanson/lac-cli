@@ -1,6 +1,6 @@
 {
   "name": "@life-as-code/lac-lsp",
-  "version": "0.1.0",
+  "version": "3.0.0",
   "description": "LSP server + HTTP API for life-as-code feature provenance",
   "type": "module",
   "bin": {
@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "tsdown src/index.ts --format esm --dts --out-dir dist",
+    "build:exe": "bun run build && bun build --compile ./bin/lac-lsp.js --outfile ~/.bun/bin/lac-lsp.exe",
     "dev": "tsdown src/index.ts --format esm --dts --out-dir dist --watch",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "typecheck": "tsc --noEmit",

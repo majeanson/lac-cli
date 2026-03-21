@@ -1,0 +1,12 @@
+{
+  "featureKey": "feat-2026-002",
+  "title": "Subscription Billing",
+  "status": "draft",
+  "problem": "Users need to subscribe to a paid plan and have their access updated automatically on payment.",
+  "owner": "marc",
+  "tags": ["billing", "stripe"],
+  "lineage": {
+    "parent": "feat-2026-001",
+    "spawnReason": "Billing requires authenticated users, so auth must be in place first."
+  }
+}

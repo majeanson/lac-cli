@@ -9,7 +9,7 @@ export class FeatureStatusBar {
       vscode.StatusBarAlignment.Left,
       100,
     )
-    this.statusBarItem.command = 'lacLens.openFeatureJson'
+    this.statusBarItem.command = 'lacLens.showFeaturePanel'
   }
 
   update(feature: Feature | null, featureJsonPath?: string): void {
@@ -28,16 +28,26 @@ export class FeatureStatusBar {
     }
     const icon = icons[feature.status] ?? '⊙'
     this.statusBarItem.text = `${icon} ${feature.featureKey} · ${feature.status}`
-    this.statusBarItem.tooltip = feature.title
+    const tooltip = new vscode.MarkdownString()
+    tooltip.isTrusted = true
+    tooltip.appendMarkdown(`**${feature.title}**\n\n`)
+    tooltip.appendMarkdown(`${icon} ${feature.status}\n\n`)
+    if (feature.problem) {
+      const snippet = feature.problem.length > 120
+        ? `${feature.problem.slice(0, 120)}…`
+        : feature.problem
+      tooltip.appendMarkdown(`${snippet}`)
+    }
+    this.statusBarItem.tooltip = tooltip
     // Pass the featureJsonPath as the command argument when available
     if (featureJsonPath) {
       this.statusBarItem.command = {
-        command: 'lacLens.openFeatureJson',
-        title: 'Open feature.json',
+        command: 'lacLens.showFeaturePanel',
+        title: 'Show Feature Panel',
         arguments: [featureJsonPath],
       }
     } else {
-      this.statusBarItem.command = 'lacLens.openFeatureJson'
+      this.statusBarItem.command = 'lacLens.showFeaturePanel'
     }
     this.statusBarItem.show()
   }

@@ -1,12 +1,31 @@
 {
   "name": "lac-lens",
   "displayName": "life-as-code Lens",
-  "description": "View feature provenance inline in your editor",
-  "version": "0.1.0",
-  "private": true,
-  "engines": { "vscode": "^1.85.0" },
-  "categories": ["Other"],
-  "activationEvents": ["onStartupFinished"],
+  "description": "View feature provenance inline in your editor — code lens, hover, status bar, tree view, and rich panel for feature.json files.",
+  "version": "3.0.0",
+  "publisher": "majeanson",
+  "icon": "icon.png",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/majeanson/lac-cli.git"
+  },
+  "keywords": [
+    "feature",
+    "provenance",
+    "lac",
+    "life-as-code",
+    "codelens"
+  ],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -17,15 +36,149 @@
       {
         "command": "lac.openFeatureJson",
         "title": "lac: Open feature.json"
+      },
+      {
+        "command": "lacLens.showFeaturePanel",
+        "title": "lac: Show Feature Panel"
+      },
+      {
+        "command": "lacLens.createFeature",
+        "title": "lac: New Feature here…",
+        "icon": "$(add)"
+      },
+      {
+        "command": "lacLens.createChildFeature",
+        "title": "lac: New Child Feature…",
+        "icon": "$(type-hierarchy-sub)"
+      },
+      {
+        "command": "lacLens.changeStatus",
+        "title": "lac: Change Feature Status…",
+        "icon": "$(symbol-enum)"
+      },
+      {
+        "command": "lacLens.searchFeatures",
+        "title": "lac: Search Features…",
+        "icon": "$(search)"
+      },
+      {
+        "command": "lacLens.addDecision",
+        "title": "lac: Add Decision…",
+        "icon": "$(checklist)"
+      },
+      {
+        "command": "lacLens.exportMarkdown",
+        "title": "lac: Export Feature as Markdown",
+        "icon": "$(markdown)"
+      },
+      {
+        "command": "lacLens.refreshTree",
+        "title": "Refresh",
+        "icon": "$(refresh)"
       }
     ],
+    "views": {
+      "explorer": [
+        {
+          "id": "lacLensFeatures",
+          "name": "Features",
+          "icon": "$(symbol-event)",
+          "contextualTitle": "life-as-code Features"
+        }
+      ]
+    },
     "menus": {
-      "editor/context": [
+      "view/title": [
+        {
+          "command": "lacLens.createFeature",
+          "when": "view == lacLensFeatures",
+          "group": "navigation@1"
+        },
+        {
+          "command": "lacLens.searchFeatures",
+          "when": "view == lacLensFeatures",
+          "group": "navigation@2"
+        },
+        {
+          "command": "lacLens.refreshTree",
+          "when": "view == lacLensFeatures",
+          "group": "navigation@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "lacLens.showFeaturePanel",
+          "when": "view == lacLensFeatures && viewItem == lacFeature",
+          "group": "inline@1"
+        },
+        {
+          "command": "lacLens.createChildFeature",
+          "when": "view == lacLensFeatures && viewItem == lacFeature",
+          "group": "lac@1"
+        },
+        {
+          "command": "lacLens.changeStatus",
+          "when": "view == lacLensFeatures && viewItem == lacFeature",
+          "group": "lac@2"
+        },
+        {
+          "command": "lacLens.exportMarkdown",
+          "when": "view == lacLensFeatures && viewItem == lacFeature",
+          "group": "lac@3"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "lacLens.createFeature",
+          "group": "lacLens@1"
+        },
+        {
+          "command": "lacLens.showFeaturePanel",
+          "group": "lacLens@2",
+          "when": "editorIsOpen"
+        },
         {
           "command": "lacLens.openFeatureJson",
-          "group": "lacLens@1",
+          "group": "lacLens@3",
           "when": "editorIsOpen"
         }
+      ],
+      "editor/context": [
+        {
+          "command": "lacLens.showFeaturePanel",
+          "group": "lacLens@1",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "lacLens.createChildFeature",
+          "group": "lacLens@2",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "lacLens.changeStatus",
+          "group": "lacLens@3",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "lacLens.addDecision",
+          "group": "lacLens@4",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "lacLens.exportMarkdown",
+          "group": "lacLens@5",
+          "when": "editorIsOpen"
+        }
+      ],
+      "commandPalette": [
+        { "command": "lacLens.createFeature" },
+        { "command": "lacLens.createChildFeature" },
+        { "command": "lacLens.changeStatus" },
+        { "command": "lacLens.searchFeatures" },
+        { "command": "lacLens.addDecision" },
+        { "command": "lacLens.exportMarkdown" },
+        { "command": "lacLens.showFeaturePanel" },
+        { "command": "lacLens.refreshTree" }
       ]
     },
     "configuration": {
@@ -62,7 +215,7 @@
   "scripts": {
     "build": "node esbuild.config.mjs",
     "watch": "node esbuild.config.mjs --watch",
-    "vsce:package": "vsce package",
+    "vsce:package": "vsce package --no-dependencies",
     "lint": "oxlint src",
     "typecheck": "tsc --noEmit"
   },

@@ -8,15 +8,45 @@ function escapeBackticks(str: string): string {
   return str.replace(/`/g, '\\`')
 }
 
-function buildHoverContent(feature: Feature): vscode.MarkdownString {
+const STATUS_COLOR: Record<string, string> = {
+  active: '🟢',
+  draft: '🟡',
+  frozen: '🔵',
+  deprecated: '🔴',
+}
+
+function buildHoverContent(feature: Feature, featureJsonPath: string): vscode.MarkdownString {
   const md = new vscode.MarkdownString()
   md.isTrusted = true
 
   const title = escapeBackticks(feature.title)
   const problem = escapeBackticks(feature.problem)
+  const statusBadge = STATUS_COLOR[feature.status] ?? '⚪'
 
-  md.appendMarkdown(`## ${feature.featureKey} · ${title} [${feature.status}]\n\n`)
-  md.appendMarkdown(`**Problem:** ${problem}\n\n`)
+  md.appendMarkdown(`## ${feature.featureKey} · ${title}\n\n`)
+  md.appendMarkdown(`${statusBadge} **${feature.status}**`)
+
+  if (feature.tags && feature.tags.length > 0) {
+    const tagList = feature.tags.map(t => `\`${t}\``).join(' ')
+    md.appendMarkdown(`  ·  ${tagList}`)
+  }
+
+  md.appendMarkdown(`\n\n**Problem:** ${problem}\n\n`)
+
+  if (feature.analysis) {
+    const snippet = feature.analysis.length > 150
+      ? `${escapeBackticks(feature.analysis.slice(0, 150))}…`
+      : escapeBackticks(feature.analysis)
+    md.appendMarkdown(`**Analysis:** ${snippet}\n\n`)
+  }
+
+  if (feature.lineage?.parent) {
+    md.appendMarkdown(`**Lineage:** spawned from \`${feature.lineage.parent}\``)
+    if (feature.lineage.spawnReason) {
+      md.appendMarkdown(` — *${escapeBackticks(feature.lineage.spawnReason)}*`)
+    }
+    md.appendMarkdown('\n\n')
+  }
 
   if (feature.decisions && feature.decisions.length > 0) {
     md.appendMarkdown('---\n\n**Decisions:**\n\n')
@@ -34,6 +64,28 @@ function buildHoverContent(feature: Feature): vscode.MarkdownString {
     md.appendMarkdown('\n')
   }
 
+  if (feature.annotations && feature.annotations.length > 0) {
+    const ANNOTATION_ICON: Record<string, string> = {
+      decision: '🔷',
+      warning: '⚠️',
+      assumption: '💭',
+      lesson: '📖',
+    }
+    const shown = feature.annotations.slice(0, 3)
+    const extra = feature.annotations.length - shown.length
+    md.appendMarkdown('---\n\n**Annotations:**\n\n')
+    for (const a of shown) {
+      const icon = ANNOTATION_ICON[a.type] ?? '📌'
+      md.appendMarkdown(`${icon} **${a.type}** *(${a.author}, ${a.date})*: ${escapeBackticks(a.body)}\n\n`)
+    }
+    if (extra > 0) {
+      md.appendMarkdown(`*… ${extra} more annotation${extra > 1 ? 's' : ''}*\n\n`)
+    }
+  }
+
+  const args = encodeURIComponent(JSON.stringify([featureJsonPath]))
+  md.appendMarkdown(`---\n\n[$(go-to-file) Open feature.json](command:lacLens.openFeatureJson?${args})\n`)
+
   return md
 }
 
@@ -49,13 +101,9 @@ export class FeatureHoverProvider implements vscode.HoverProvider {
     const workspaceRoot = workspaceFolder.uri.fsPath
     const filePath = document.uri.fsPath
 
-    let cached = this.cache.get(filePath)
-    if (!cached) {
-      const found = FeatureWalker.findFeatureAndCache(filePath, workspaceRoot, this.cache)
-      if (!found) return null
-      cached = { feature: found.feature, featureJsonPath: found.featureJsonPath, expiresAt: 0 }
-    }
+    const cached = this.cache.get(filePath) ?? FeatureWalker.findFeatureAndCache(filePath, workspaceRoot, this.cache)
+    if (!cached) return null
 
-    return new vscode.Hover(buildHoverContent(cached.feature))
+    return new vscode.Hover(buildHoverContent(cached.feature, cached.featureJsonPath))
   }
 }

@@ -10,10 +10,11 @@ const STATUS_ICON: Record<FeatureStatus, string> = {
   deprecated: '⊘',
 }
 
-function computeCompleteness(feature: Record<string, unknown>): number {
+function computeCompleteness(feature: Feature): number {
+  const f = feature as unknown as Record<string, unknown>
   const fields = ['analysis', 'decisions', 'implementation', 'knownLimitations', 'tags', 'annotations']
-  const filled = fields.filter(f => {
-    const v = feature[f]
+  const filled = fields.filter(key => {
+    const v = f[key]
     if (v == null || v === '') return false
     if (Array.isArray(v)) return v.length > 0
     return typeof v === 'string' && v.trim().length > 0
@@ -23,13 +24,25 @@ function computeCompleteness(feature: Record<string, unknown>): number {
 
 function buildLensTitle(feature: Feature): string {
   const icon = STATUS_ICON[feature.status] ?? '⊙'
-  const completeness = computeCompleteness(feature as unknown as Record<string, unknown>)
+  const completeness = computeCompleteness(feature)
   const pctSuffix = completeness > 0 ? ` · ${completeness}%` : ''
   return `${icon} ${feature.featureKey} · ${feature.title} · ${feature.status}${pctSuffix}`
 }
 
 export class FeatureCodeLensProvider implements vscode.CodeLensProvider {
+  private readonly _onDidChangeCodeLenses = new vscode.EventEmitter<void>()
+  readonly onDidChangeCodeLenses = this._onDidChangeCodeLenses.event
+
   constructor(private readonly cache: FeatureCache) {}
+
+  /** Call this when a feature.json changes so VS Code re-requests code lenses. */
+  refresh(): void {
+    this._onDidChangeCodeLenses.fire()
+  }
+
+  dispose(): void {
+    this._onDidChangeCodeLenses.dispose()
+  }
 
   provideCodeLenses(document: vscode.TextDocument): vscode.CodeLens[] {
     const config = vscode.workspace.getConfiguration('lacLens')
@@ -42,21 +55,18 @@ export class FeatureCodeLensProvider implements vscode.CodeLensProvider {
     const workspaceRoot = workspaceFolder.uri.fsPath
     const filePath = document.uri.fsPath
 
-    let cached = this.cache.get(filePath)
-    if (!cached) {
-      const found = FeatureWalker.findFeatureAndCache(filePath, workspaceRoot, this.cache)
-      if (!found) return []
-      cached = { feature: found.feature, featureJsonPath: found.featureJsonPath, expiresAt: 0 }
-    }
+    const cached = this.cache.get(filePath) ?? FeatureWalker.findFeatureAndCache(filePath, workspaceRoot, this.cache)
+    if (!cached) return []
 
     const { feature, featureJsonPath } = cached
-    const range = new vscode.Range(0, 0, 0, 0)
-    const lens = new vscode.CodeLens(range, {
+    return [new vscode.CodeLens(new vscode.Range(0, 0, 0, 0), {
       title: buildLensTitle(feature),
       command: 'lacLens.openFeatureJson',
       arguments: [featureJsonPath],
-    })
+    })]
+  }
 
-    return [lens]
+  resolveCodeLens(lens: vscode.CodeLens): vscode.CodeLens {
+    return lens
   }
 }

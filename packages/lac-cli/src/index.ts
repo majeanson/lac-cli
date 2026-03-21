@@ -1,5 +1,7 @@
 import { Command } from 'commander'
 import { archiveCommand } from './commands/archive.js'
+import { fillCommand } from './commands/fill.js'
+import { genCommand } from './commands/gen.js'
 import { blameCommand } from './commands/blame.js'
 import { diffCommand } from './commands/diff.js'
 import { doctorCommand } from './commands/doctor.js'
@@ -21,7 +23,7 @@ const program = new Command()
 program
   .name('lac')
   .description('life-as-code CLI — provenance for your features')
-  .version('0.1.0')
+  .version('1.0.0')
 
 program.addCommand(workspaceCommand)
 program.addCommand(spawnCommand)
@@ -40,5 +42,7 @@ program.addCommand(lineageCommand)
 program.addCommand(diffCommand)
 program.addCommand(renameCommand)
 program.addCommand(importCommand)
+program.addCommand(fillCommand)
+program.addCommand(genCommand)
 
 program.parse()

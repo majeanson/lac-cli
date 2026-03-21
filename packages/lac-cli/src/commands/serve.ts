@@ -65,7 +65,7 @@ export const serveCommand = new Command('serve')
     child.on('error', (err) => {
       process.stderr.write(`Error: could not start lac-lsp — ${err.message}\n`)
       process.stderr.write(
-        `Make sure lac-lsp is installed: npm i -g @life-as-code/lac-lsp\n`,
+        `Try reinstalling: npm i -g @majeanson/lac\n`,
       )
       process.exit(1)
     })

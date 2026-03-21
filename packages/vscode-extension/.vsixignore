@@ -1,0 +1,7 @@
+# Exclude everything by default, then whitelist what's needed
+**
+!out/extension.js
+!package.json
+!readme.md
+!icon.png
+!feature.json

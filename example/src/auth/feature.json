@@ -1,0 +1,20 @@
+{
+  "featureKey": "feat-2026-001",
+  "title": "User Authentication",
+  "status": "active",
+  "problem": "Users need a secure way to log in and maintain sessions across the app.",
+  "owner": "marc",
+  "analysis": "JWT-based auth with refresh tokens stored in httpOnly cookies. Stateless server, tokens expire in 15 minutes.",
+  "tags": ["auth", "security"],
+  "decisions": [
+    {
+      "decision": "Use JWT over server-side sessions",
+      "rationale": "Stateless servers make horizontal scaling trivial and remove the need for a session store.",
+      "alternativesConsidered": ["Redis-backed sessions", "Database sessions"],
+      "date": "2026-01-10"
+    }
+  ],
+  "knownLimitations": [
+    "Token revocation requires waiting for expiry unless a denylist is added"
+  ]
+}

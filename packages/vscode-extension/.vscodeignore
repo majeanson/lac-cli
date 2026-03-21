@@ -5,3 +5,5 @@ tsconfig.json
 esbuild.config.mjs
 **/*.ts
 !out/**
+!README.md
+!icon.png

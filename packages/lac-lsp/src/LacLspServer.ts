@@ -101,7 +101,7 @@ export class LacLspServer {
     // Start LSP stdio server
     // ------------------------------------------------------------------
     if (enableLsp) {
-      const connection = createLspConnection(this.index)
+      const connection = createLspConnection(this.index, LAC_LSP_VERSION)
       connection.listen()
       // Note: once connection.listen() is called, stdin/stdout are owned
       // by the LSP protocol. All logging must go via connection.console.*
