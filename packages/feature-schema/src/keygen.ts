@@ -132,3 +132,70 @@ export function generateFeatureKey(fromDir: string, prefix = 'feat'): string {
 
   return featureKey
 }
+
+/**
+ * Registers an externally-supplied featureKey in `.lac/keys` so that future
+ * auto-generated keys never collide with it. Also advances the counter if
+ * the key's sequence number is ≥ the current counter value for this year.
+ *
+ * If no `.lac/` directory is found the call is a no-op (workspace hasn't
+ * been initialised yet; the key simply won't be tracked).
+ *
+ * Idempotent — safe to call multiple times with the same key.
+ */
+export function registerFeatureKey(fromDir: string, key: string): void {
+  const lacDir = findLacDir(fromDir)
+  if (!lacDir) return // workspace not yet initialised — silently skip
+
+  const counterPath = path.join(lacDir, COUNTER_FILE)
+  const keysPath = path.join(lacDir, KEYS_FILE)
+  const year = getCurrentYear()
+
+  // Load existing keys
+  let existingKeys: Set<string> = new Set()
+  if (fs.existsSync(keysPath)) {
+    existingKeys = new Set(
+      fs.readFileSync(keysPath, 'utf-8').trim().split('\n').filter(Boolean),
+    )
+  }
+
+  if (existingKeys.has(key)) return // already registered — nothing to do
+
+  // Read current counter (default 0 if file is absent or year has changed)
+  let currentCounter = 0
+  if (fs.existsSync(counterPath)) {
+    try {
+      const raw = fs.readFileSync(counterPath, 'utf-8').trim()
+      const lines = raw.split('\n').map((l) => l.trim())
+      const storedYear = parseInt(lines[0] ?? '', 10)
+      const storedCounter = parseInt(lines[1] ?? '', 10)
+      if (!isNaN(storedYear) && !isNaN(storedCounter) && storedYear === year) {
+        currentCounter = storedCounter
+      }
+    } catch {
+      // ignore — treat as fresh
+    }
+  }
+
+  // If the key follows the standard <prefix>-YYYY-NNN pattern and its sequence
+  // number is ahead of the current counter, advance the counter so the next
+  // auto-generated key won't collide with this one.
+  const match = /^[a-z][a-z0-9]*-(\d{4})-(\d{3})$/.exec(key)
+  let newCounter = currentCounter
+  if (match) {
+    const keyYear = parseInt(match[1]!, 10)
+    const keyNum = parseInt(match[2]!, 10)
+    if (keyYear === year && keyNum > currentCounter) {
+      newCounter = keyNum
+    }
+  }
+
+  existingKeys.add(key)
+
+  const counterTmp = counterPath + '.tmp'
+  const keysTmp = keysPath + '.tmp'
+  fs.writeFileSync(counterTmp, `${year}\n${newCounter}\n`, 'utf-8')
+  fs.writeFileSync(keysTmp, Array.from(existingKeys).join('\n') + '\n', 'utf-8')
+  fs.renameSync(counterTmp, counterPath)
+  fs.renameSync(keysTmp, keysPath)
+}

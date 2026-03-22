@@ -44,7 +44,7 @@ lac serve
 
 | Command | What it does |
 |---|---|
-| `lac init` | Scaffold a `feature.json` interactively |
+| `lac init` | Scaffold a `feature.json` — key is auto-generated from workspace counter |
 | `lac blame <path>` | Show which feature owns a file or path |
 | `lac search <query>` | Full-text search across all features |
 | `lac lineage <key>` | Print the parent → key → children tree |
@@ -52,7 +52,7 @@ lac serve
 | `lac diff` | Features changed since a git ref |
 | `lac lint` | Validate all `feature.json` files |
 | `lac serve` | Start the HTTP dashboard in your browser |
-| `lac spawn <key>` | Create a child feature with lineage wired |
+| `lac spawn <key>` | Create a child feature with lineage wired; auto-links parent's `lineage.children` |
 | `lac archive <key>` | Deprecate a feature |
 | `lac doctor` | Workspace health check |
 
@@ -68,6 +68,9 @@ Full documentation: [github.com/majeanson/lac-cli](https://github.com/majeanson/
   "title": "Checkout flow redesign",
   "status": "active",
   "problem": "Cart abandonment spikes at the shipping step.",
+  "successCriteria": "Cart abandonment rate drops below 20% within 30 days of launch.",
+  "domain": "payments",
+  "priority": 1,
   "decisions": [
     {
       "decision": "Single-page checkout, no step redirects",
@@ -83,6 +86,12 @@ Full documentation: [github.com/majeanson/lac-cli](https://github.com/majeanson/
 Plain JSON. Committed with your code. Validated by a Zod schema. Indexed by the CLI and optionally the LSP server.
 
 Feature keys follow the pattern `<domain>-YYYY-NNN`. The domain is yours: `feat-`, `proc-`, `goal-`, `adr-`.
+
+| Field             | Type      | Description |
+|-------------------|-----------|-------------|
+| `successCriteria` | `string`  | Plain-language definition of done |
+| `domain`          | `string`  | Free-form grouping tag (e.g. `"auth"`, `"payments"`) |
+| `priority`        | `1`–`5`   | 1 = highest; controls sibling ordering in lineage trees |
 
 ---
 
@@ -119,6 +128,21 @@ lac export --json | curl -X POST https://your-api/features \
 ```
 
 This package ships with `lac` (CLI) and `lac-lsp` (LSP server + HTTP API) bundled together — one install, two binaries.
+
+---
+
+## Changelog highlights
+
+### 3.1.x
+- **Auto-key generation** — `lac init` and the VS Code extension derive the next safe key from the workspace counter; no manual entry required
+- **spawn auto-links parent** — `lac spawn` now writes the child key into `lineage.children` on the parent feature automatically
+- **priority field** — `priority: 1–5` on `feature.json` controls sibling ordering in lineage trees, the MCP graph, and the web UI
+- **successCriteria + domain fields** — explicit definition-of-done and domain tagging on every feature
+- **MCP `create_feature` improvement** — `featureKey` is now optional; omit it to get the next workspace-counter key and avoid duplicates
+- **MCP `get_lineage` fix** — tree is now derived from parent references, not `lineage.children`, so it works even on legacy files without that array
+
+### 3.0.0
+- AI fill command (`lac fill`), full MCP server, rich VS Code extension with webview panels
 
 ---
 

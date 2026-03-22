@@ -1,2 +1,2 @@
 #!/usr/bin/env node
-import '../dist/lsp.mjs'
+import "../dist/lsp.mjs";

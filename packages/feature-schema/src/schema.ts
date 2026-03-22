@@ -47,4 +47,5 @@ export const FeatureSchema = z.object({
   lineage: LineageSchema.optional(),
   successCriteria: z.string().optional(),  // plain-language definition of done
   domain: z.string().optional(),           // free-form domain tag, e.g. "auth", "payments"
+  priority: z.number().int().min(1).max(5).optional(), // 1 = highest, 5 = lowest; controls sibling ordering
 })

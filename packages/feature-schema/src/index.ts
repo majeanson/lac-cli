@@ -2,4 +2,4 @@ export { FeatureSchema, FeatureStatusSchema, DecisionSchema, AnnotationSchema, L
 export type { Feature, FeatureStatus } from './types'
 export { validateFeature } from './validate'
 export type { ValidateFeatureResult } from './validate'
-export { generateFeatureKey, getCurrentYear, padCounter } from './keygen'
+export { generateFeatureKey, registerFeatureKey, getCurrentYear, padCounter } from './keygen'

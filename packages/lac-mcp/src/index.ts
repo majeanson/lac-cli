@@ -10,7 +10,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js'
 
 import type { Feature } from '@life-as-code/feature-schema'
-import { validateFeature } from '@life-as-code/feature-schema'
+import { validateFeature, generateFeatureKey, registerFeatureKey } from '@life-as-code/feature-schema'
 import {
   fillFeature,
   genFromFeature,
@@ -133,7 +133,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
           featureKey: {
             type: 'string',
-            description: 'Feature key (e.g. feat-2026-042)',
+            description: 'Feature key (e.g. feat-2026-042). Omit to auto-generate the next key from the workspace counter — recommended to avoid duplicates.',
           },
           title: { type: 'string', description: 'Feature title' },
           problem: { type: 'string', description: 'Problem statement' },
@@ -143,7 +143,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
             description: 'Status (default: draft)',
           },
         },
-        required: ['dir', 'featureKey', 'title', 'problem'],
+        required: ['dir', 'title', 'problem'],
       },
     },
     {
@@ -301,17 +301,26 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             content: [{ type: 'text', text: `feature.json already exists at "${featurePath}".` }],
           }
         }
+        fs.mkdirSync(dir, { recursive: true })
+        // Auto-generate key from workspace counter (prevents duplicates with CLI / VS Code).
+        // If the caller supplies a key, register it so the counter advances past it.
+        let featureKey: string
+        if (a.featureKey) {
+          featureKey = String(a.featureKey)
+          registerFeatureKey(dir, featureKey)
+        } else {
+          featureKey = generateFeatureKey(dir)
+        }
         const feature: Feature = {
-          featureKey: String(a.featureKey),
+          featureKey,
           title: String(a.title),
           status: (String(a.status ?? 'draft')) as Feature['status'],
           problem: String(a.problem),
           schemaVersion: 1,
         }
-        fs.mkdirSync(dir, { recursive: true })
         fs.writeFileSync(featurePath, JSON.stringify(feature, null, 2) + '\n', 'utf-8')
         return {
-          content: [{ type: 'text', text: `Created feature.json at "${featurePath}".` }],
+          content: [{ type: 'text', text: `Created feature.json at "${featurePath}" with key "${featureKey}".` }],
         }
       }
 
@@ -325,7 +334,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             content: [{ type: 'text', text: `Feature "${featureKey}" not found.` }],
           }
         }
-        const tree = buildLineageTree(root, featureMap, 0)
+        // Build a children map by scanning parent references (works even if lineage.children is missing)
+        const childrenOf = new Map<string, string[]>()
+        for (const { feature } of features) {
+          const parent = feature.lineage?.parent
+          if (parent) {
+            const existing = childrenOf.get(parent) ?? []
+            existing.push(feature.featureKey)
+            childrenOf.set(parent, existing)
+          }
+        }
+        const tree = buildLineageTree(root, featureMap, childrenOf, 0)
         return { content: [{ type: 'text', text: tree }] }
       }
 
@@ -509,6 +528,7 @@ function formatFeatureSummary(feature: ScannedFeature['feature']): string {
   if (feature.analysis) lines.push(`Analysis  : ${feature.analysis.slice(0, 200)}`)
   if (feature.successCriteria) lines.push(`Success   : ${feature.successCriteria}`)
   if (feature.domain) lines.push(`Domain    : ${feature.domain}`)
+  if (feature.priority) lines.push(`Priority  : P${feature.priority}/5`)
   if (feature.decisions?.length)
     lines.push(`Decisions : ${feature.decisions.length} recorded`)
   if (feature.lineage?.parent) lines.push(`Parent    : ${feature.lineage.parent}`)
@@ -520,14 +540,24 @@ function formatFeatureSummary(feature: ScannedFeature['feature']): string {
 function buildLineageTree(
   feature: ScannedFeature['feature'],
   map: Map<string, ScannedFeature['feature']>,
+  childrenOf: Map<string, string[]>,
   depth: number,
 ): string {
   const indent = '    '.repeat(depth)
   const line = `${indent}${statusIcon(feature.status)} ${feature.featureKey} (${feature.status}) — ${feature.title}`
-  const children = feature.lineage?.children ?? []
+  // Prefer the scanned childrenOf map (derived from parent refs) so the tree
+  // works even when lineage.children arrays are absent or stale.
+  // Sort siblings by priority (1 = highest) then by key for stable order.
+  const children = (childrenOf.get(feature.featureKey) ?? feature.lineage?.children ?? [])
+    .slice()
+    .sort((a, b) => {
+      const pa = map.get(a)?.priority ?? 9999
+      const pb = map.get(b)?.priority ?? 9999
+      return pa !== pb ? pa - pb : a.localeCompare(b)
+    })
   const childLines = children.flatMap((key) => {
     const child = map.get(key)
-    return child ? [buildLineageTree(child, map, depth + 1)] : []
+    return child ? [buildLineageTree(child, map, childrenOf, depth + 1)] : []
   })
   return [line, ...childLines].join('\n')
 }

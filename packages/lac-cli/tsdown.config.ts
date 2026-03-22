@@ -7,6 +7,7 @@ export default defineConfig([
     dts: true,
     shims: true,
     outDir: 'dist',
+    noExternal: ['@life-as-code/feature-schema', '@life-as-code/lac-claude'],
   },
   {
     entry: { lsp: '../lac-lsp/src/index.ts' },
@@ -22,6 +23,10 @@ export default defineConfig([
     dts: false,
     shims: true,
     outDir: 'dist',
-    noExternal: ['@modelcontextprotocol/sdk'],
+    noExternal: [
+      '@modelcontextprotocol/sdk',
+      '@life-as-code/lac-claude',
+      '@life-as-code/feature-schema',
+    ],
   },
 ])

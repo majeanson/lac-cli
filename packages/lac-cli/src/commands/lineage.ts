@@ -9,6 +9,7 @@ interface FeatureNode {
   key: string
   status: string
   title: string
+  priority?: number
   children: FeatureNode[]
 }
 
@@ -33,10 +34,13 @@ function buildTree(
     }
   }
 
+  children.sort((a, b) => (a.priority ?? 9999) - (b.priority ?? 9999))
+
   return {
     key,
     status: feature?.status ?? 'unknown',
     title: feature?.title ?? '(unknown)',
+    priority: feature?.priority,
     children,
   }
 }

@@ -6,4 +6,5 @@ export default defineConfig({
   dts: true,
   shims: true,
   outDir: 'dist',
+  noExternal: ['@life-as-code/feature-schema'],
 })

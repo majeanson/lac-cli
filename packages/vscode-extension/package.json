@@ -221,6 +221,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@life-as-code/feature-schema": "workspace:*",
     "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {

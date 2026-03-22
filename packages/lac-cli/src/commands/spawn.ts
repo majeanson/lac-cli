@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import process from 'node:process'
 
@@ -181,6 +181,21 @@ export const spawnCommand = new Command('spawn')
     const featureJsonPath = join(newFeatureDir, 'feature.json')
     await writeFile(featureJsonPath, JSON.stringify(validation.data, null, 2) + '\n', 'utf-8')
 
-    // 9. Print success
+    // 9. Update parent's lineage.children array
+    try {
+      const parentRaw = await readFile(parentEntry.filePath, 'utf-8')
+      const parentData = JSON.parse(parentRaw) as Record<string, unknown>
+      const lineage = (parentData['lineage'] ?? {}) as Record<string, unknown>
+      const children = Array.isArray(lineage['children']) ? [...lineage['children'] as string[]] : []
+      if (!children.includes(featureKey)) {
+        children.push(featureKey)
+        parentData['lineage'] = { ...lineage, children }
+        await writeFile(parentEntry.filePath, JSON.stringify(parentData, null, 2) + '\n', 'utf-8')
+      }
+    } catch {
+      // Non-fatal — child was written successfully; parent update is best-effort
+    }
+
+    // 10. Print success
     process.stdout.write(`✓ Spawned ${featureKey} from ${parentKey} in ${newFeatureDir}\n`)
   })
