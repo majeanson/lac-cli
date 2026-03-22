@@ -15,6 +15,7 @@ const MAX_TOTAL_CHARS = 320000 // ~80k tokens total
 export interface SourceFile {
   relativePath: string
   content: string
+  truncated?: boolean
 }
 
 export interface FeatureContext {
@@ -22,17 +23,23 @@ export interface FeatureContext {
   featurePath: string
   sourceFiles: SourceFile[]
   gitLog: string
+  truncatedFiles: string[]
 }
 
-export function buildContext(featureDir: string, feature: Feature): FeatureContext {
+export interface BuildContextOptions {
+  maxFileChars?: number
+}
+
+export function buildContext(featureDir: string, feature: Feature, opts: BuildContextOptions = {}): FeatureContext {
   const featurePath = path.join(featureDir, 'feature.json')
-  const sourceFiles = gatherSourceFiles(featureDir)
+  const { files: sourceFiles, truncatedPaths } = gatherSourceFiles(featureDir, opts.maxFileChars)
   const gitLog = getGitLog(featureDir)
-  return { feature, featurePath, sourceFiles, gitLog }
+  return { feature, featurePath, sourceFiles, gitLog, truncatedFiles: truncatedPaths }
 }
 
-function gatherSourceFiles(dir: string): SourceFile[] {
+function gatherSourceFiles(dir: string, maxFileChars = MAX_FILE_CHARS): { files: SourceFile[], truncatedPaths: string[] } {
   const files: SourceFile[] = []
+  const truncatedPaths: string[] = []
   let totalChars = 0
 
   // Priority 1: high-signal config files
@@ -42,8 +49,10 @@ function gatherSourceFiles(dir: string): SourceFile[] {
     if (fs.existsSync(p)) {
       try {
         const raw = fs.readFileSync(p, 'utf-8')
+        const wasTruncated = raw.length > 4000
         const content = truncate(raw, 4000)
-        files.push({ relativePath: name, content })
+        files.push({ relativePath: name, content, truncated: wasTruncated || undefined })
+        if (wasTruncated) truncatedPaths.push(name)
         totalChars += content.length
       } catch {
         // ignore unreadable files
@@ -72,16 +81,18 @@ function gatherSourceFiles(dir: string): SourceFile[] {
     if (priorityNames.includes(path.basename(filePath))) continue
     try {
       const raw = fs.readFileSync(filePath, 'utf-8')
-      const content = truncate(raw, MAX_FILE_CHARS)
+      const wasTruncated = raw.length > maxFileChars
+      const content = truncate(raw, maxFileChars)
       const relativePath = path.relative(dir, filePath)
-      files.push({ relativePath, content })
+      files.push({ relativePath, content, truncated: wasTruncated || undefined })
+      if (wasTruncated) truncatedPaths.push(relativePath)
       totalChars += content.length
     } catch {
       // ignore unreadable files
     }
   }
 
-  return files
+  return { files, truncatedPaths }
 }
 
 function walkDir(dir: string): string[] {
@@ -128,6 +139,13 @@ function getGitLog(dir: string): string {
 export function contextToString(ctx: FeatureContext): string {
   const parts: string[] = []
 
+  if (ctx.truncatedFiles.length > 0) {
+    parts.push(
+      `⚠ WARNING: ${ctx.truncatedFiles.length} file(s) were truncated — extraction may be incomplete:\n` +
+      ctx.truncatedFiles.map(f => `  - ${f}`).join('\n'),
+    )
+  }
+
   parts.push('=== feature.json ===')
   parts.push(JSON.stringify(ctx.feature, null, 2))
 
@@ -137,7 +155,7 @@ export function contextToString(ctx: FeatureContext): string {
   }
 
   for (const file of ctx.sourceFiles) {
-    parts.push(`\n=== ${file.relativePath} ===`)
+    parts.push(`\n=== ${file.relativePath}${file.truncated ? ' [truncated]' : ''} ===`)
     parts.push(file.content)
   }
 

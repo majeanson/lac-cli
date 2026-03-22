@@ -8,7 +8,9 @@ import { scanFeatures } from '../lib/scanner.js'
 export const statCommand = new Command('stat')
   .description('Show workspace statistics: feature counts, status breakdown, completeness, top tags')
   .option('-d, --dir <path>', 'Directory to scan (default: cwd)')
-  .action(async (options: { dir?: string }) => {
+  .option('--tags <tags>', 'Comma-separated tags to filter by — scope stats to features with at least one matching tag (OR logic)')
+  .option('--by-tag', 'Group output by tag — show per-tag feature counts and status breakdown')
+  .action(async (options: { dir?: string; tags?: string; byTag?: boolean }) => {
     const scanDir = options.dir ?? process.cwd()
 
     let features: Awaited<ReturnType<typeof scanFeatures>>
@@ -18,6 +20,13 @@ export const statCommand = new Command('stat')
       const message = err instanceof Error ? err.message : String(err)
       process.stderr.write(`Error scanning "${scanDir}": ${message}\n`)
       process.exit(1)
+    }
+
+    if (options.tags) {
+      const tagsToMatch = options.tags.split(',').map((t) => t.trim()).filter(Boolean)
+      features = features.filter(({ feature }) =>
+        tagsToMatch.some((tag) => feature.tags?.includes(tag)),
+      )
     }
 
     const total = features.length
@@ -92,6 +101,27 @@ export const statCommand = new Command('stat')
       lines.push('Top 5 tags:')
       for (const [tag, count] of topTags) {
         lines.push(`  ${tag.padEnd(20)}: ${count}`)
+      }
+    }
+
+    if (options.byTag) {
+      lines.push('')
+      lines.push('By tag:')
+      const allTags = Array.from(tagCounts.keys()).sort()
+      for (const tag of allTags) {
+        const tagged = features.filter(({ feature }) => feature.tags?.includes(tag))
+        const byStatus: Record<string, number> = {}
+        for (const { feature } of tagged) {
+          byStatus[feature.status] = (byStatus[feature.status] ?? 0) + 1
+        }
+        const statusSummary = Object.entries(byStatus)
+          .map(([s, n]) => `${s}:${n}`)
+          .join('  ')
+        lines.push(`  ${tag.padEnd(22)} ${tagged.length.toString().padStart(3)} features  (${statusSummary})`)
+      }
+      const untagged = features.filter(({ feature }) => !feature.tags || feature.tags.length === 0)
+      if (untagged.length > 0) {
+        lines.push(`  ${'(untagged)'.padEnd(22)} ${untagged.length.toString().padStart(3)} features`)
       }
     }
 

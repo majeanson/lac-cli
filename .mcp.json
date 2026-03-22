@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "lac": {
+      "command": "lac-mcp",
+      "args": [],
+      "type": "stdio"
+    }
+  }
+}

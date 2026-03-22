@@ -15,10 +15,15 @@ import {
   getMissingFields,
   type FillableField,
 } from './prompts.js'
+import { appendPromptLog, hashPrompt, type PromptLogEntry } from './prompt-log.js'
 
 export type { FillableField }
 export { buildContext, contextToString } from './context-builder.js'
 export { getMissingFields, ALL_FILLABLE_FIELDS, FILL_PROMPTS, JSON_FIELDS } from './prompts.js'
+export { extractFeature } from './extract.js'
+export type { ExtractedFeatureFields } from './extract.js'
+export { appendPromptLog, hashPrompt, PROMPT_LOG_FILENAME } from './prompt-log.js'
+export type { PromptLogEntry } from './prompt-log.js'
 
 export interface FillOptions {
   /** Absolute path to the feature folder (contains feature.json) */
@@ -31,6 +36,8 @@ export interface FillOptions {
   skipConfirm?: boolean
   /** Model override */
   model?: string
+  /** Pre-fill the revision author prompt (from lac.config.json defaultAuthor) */
+  defaultAuthor?: string
 }
 
 export interface FillResult {
@@ -49,7 +56,7 @@ export interface GenOptions {
 }
 
 export async function fillFeature(options: FillOptions): Promise<FillResult> {
-  const { featureDir, dryRun = false, skipConfirm = false, model = 'claude-sonnet-4-6' } = options
+  const { featureDir, dryRun = false, skipConfirm = false, model = 'claude-sonnet-4-6', defaultAuthor = '' } = options
 
   const featurePath = path.join(featureDir, 'feature.json')
 
@@ -96,6 +103,8 @@ export async function fillFeature(options: FillOptions): Promise<FillResult> {
   // Fill each field
   const patch: Record<string, unknown> = {}
   const diffs: FieldDiff[] = []
+  // Track raw responses for prompt log (keyed by field)
+  const rawResponses = new Map<string, { raw: string; systemPrompt: string }>()
 
   for (const field of fieldsToFill) {
     const prompt = FILL_PROMPTS[field]
@@ -110,6 +119,8 @@ export async function fillFeature(options: FillOptions): Promise<FillResult> {
         `${contextStr}\n\n${prompt.userSuffix}`,
         model,
       )
+
+      rawResponses.set(field, { raw: rawValue, systemPrompt: prompt.system })
 
       let value: unknown = rawValue.trim()
 
@@ -179,9 +190,53 @@ export async function fillFeature(options: FillOptions): Promise<FillResult> {
     }
   }
 
+  // Collect revision note only for intent-critical fields that were previously non-empty (true changes, not first fills)
+  const INTENT_CRITICAL = new Set(['problem', 'analysis', 'implementation', 'decisions', 'successCriteria'])
+  const changedCritical = Object.keys(patch).filter((k) => {
+    if (!INTENT_CRITICAL.has(k)) return false
+    const existing = (feature as Record<string, unknown>)[k]
+    if (existing === undefined || existing === null) return false
+    if (typeof existing === 'string') return existing.trim().length > 0
+    if (Array.isArray(existing)) return existing.length > 0
+    return false
+  })
+
+  const base = parsed as Record<string, unknown>
+  let updatedRevisions = (base.revisions as unknown[]) ?? []
+
+  if (!skipConfirm && changedCritical.length > 0) {
+    process.stdout.write(`\n  Intent-critical fields changed: ${changedCritical.join(', ')}\n`)
+    const authorPrompt = defaultAuthor ? `  Revision author [${defaultAuthor}]: ` : '  Revision author: '
+    const authorInput = await askUser(authorPrompt)
+    const author = authorInput || defaultAuthor
+    const reason = await askUser('  Reason for change: ')
+    if (author && reason) {
+      const today = new Date().toISOString().split('T')[0]
+      updatedRevisions = [
+        ...updatedRevisions,
+        { date: today, author, fields_changed: changedCritical, reason },
+      ]
+    }
+  }
+
   // Write to disk
-  const updated = { ...(parsed as Record<string, unknown>), ...patch }
+  const updated = { ...base, ...patch, ...(updatedRevisions.length > 0 ? { revisions: updatedRevisions } : {}) }
   fs.writeFileSync(featurePath, JSON.stringify(updated, null, 2) + '\n', 'utf-8')
+
+  // Append prompt log entries for every field actually written
+  const now = new Date().toISOString()
+  const logEntries: PromptLogEntry[] = Object.keys(patch).map((field) => {
+    const captured = rawResponses.get(field)
+    return {
+      date: now,
+      field,
+      source: 'lac fill',
+      model,
+      prompt_hash: captured ? hashPrompt(captured.systemPrompt) : undefined,
+      response_preview: captured ? captured.raw.slice(0, 120) : undefined,
+    }
+  })
+  appendPromptLog(featureDir, logEntries)
 
   const count = Object.keys(patch).length
   process.stdout.write(

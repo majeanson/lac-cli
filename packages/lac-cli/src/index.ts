@@ -1,7 +1,12 @@
 import { Command } from 'commander'
 import { archiveCommand } from './commands/archive.js'
+import { extractAllCommand } from './commands/extract-all.js'
 import { fillCommand } from './commands/fill.js'
 import { genCommand } from './commands/gen.js'
+import { logCommand } from './commands/log.js'
+import { mergeCommand } from './commands/merge.js'
+import { revisionsCommand } from './commands/revisions.js'
+import { supersedeCommand } from './commands/supersede.js'
 import { blameCommand } from './commands/blame.js'
 import { diffCommand } from './commands/diff.js'
 import { doctorCommand } from './commands/doctor.js'
@@ -16,6 +21,7 @@ import { searchCommand } from './commands/search.js'
 import { serveCommand } from './commands/serve.js'
 import { spawnCommand } from './commands/spawn.js'
 import { statCommand } from './commands/stat.js'
+import { stripCommand } from './commands/strip.js'
 import { tagCommand } from './commands/tag.js'
 import { workspaceCommand } from './commands/workspace.js'
 
@@ -43,6 +49,12 @@ program.addCommand(diffCommand)
 program.addCommand(renameCommand)
 program.addCommand(importCommand)
 program.addCommand(fillCommand)
+program.addCommand(extractAllCommand)
 program.addCommand(genCommand)
+program.addCommand(logCommand)
+program.addCommand(mergeCommand)
+program.addCommand(revisionsCommand)
+program.addCommand(supersedeCommand)
+program.addCommand(stripCommand)
 
 program.parse()

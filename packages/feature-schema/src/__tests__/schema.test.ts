@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { StatusTransitionSchema } from '../schema.js'
 import { validateFeature } from '../validate.js'
 
 const VALID_FEATURE = {
@@ -129,7 +130,8 @@ describe('validateFeature', () => {
     expect(result.success).toBe(true)
   })
 
-  it('rejects invalid annotation type', () => {
+  it('accepts any non-empty annotation type (free-form — configured per workspace)', () => {
+    // AnnotationSchema.type is z.string().min(1) — intentionally open, not an enum
     const result = validateFeature({
       ...VALID_FEATURE,
       annotations: [
@@ -137,12 +139,12 @@ describe('validateFeature', () => {
           id: 'ann-1',
           author: 'marc',
           date: '2026-01-01',
-          type: 'invalid-type',
+          type: 'custom-workspace-type',
           body: 'body',
         },
       ],
     })
-    expect(result.success).toBe(false)
+    expect(result.success).toBe(true)
   })
 
   it('accepts optional lineage with parent and children', () => {
@@ -178,5 +180,134 @@ describe('validateFeature', () => {
       expect(Array.isArray(result.errors)).toBe(true)
       expect(result.errors.length).toBeGreaterThan(0)
     }
+  })
+
+  it('accepts a valid feature with a statusHistory array', () => {
+    const result = validateFeature({
+      ...VALID_FEATURE,
+      statusHistory: [
+        {
+          from: 'draft',
+          to: 'active',
+          date: '2026-01-10',
+          reason: 'Feature was approved',
+        },
+        {
+          from: 'active',
+          to: 'frozen',
+          date: '2026-03-01',
+        },
+      ],
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.statusHistory).toHaveLength(2)
+    }
+  })
+
+  it('rejects a StatusTransitionSchema entry with invalid status values', () => {
+    const result = StatusTransitionSchema.safeParse({
+      from: 'archived',   // not a valid FeatureStatus
+      to: 'active',
+      date: '2026-01-10',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects a statusHistory entry with an invalid date format', () => {
+    const result = validateFeature({
+      ...VALID_FEATURE,
+      statusHistory: [
+        {
+          from: 'draft',
+          to: 'active',
+          date: '10-01-2026', // wrong format — must be YYYY-MM-DD
+        },
+      ],
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('StatusTransitionSchema is exported from index', async () => {
+    const exports = await import('../index.js')
+    expect(exports.StatusTransitionSchema).toBeDefined()
+    expect(typeof exports.StatusTransitionSchema.parse).toBe('function')
+  })
+
+  it('accepts componentFile as a string', () => {
+    const result = validateFeature({ ...VALID_FEATURE, componentFile: 'src/components/Foo.tsx' })
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.componentFile).toBe('src/components/Foo.tsx')
+  })
+
+  it('accepts npmPackages as a string array', () => {
+    const result = validateFeature({ ...VALID_FEATURE, npmPackages: ['d3', 'react-query'] })
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.npmPackages).toEqual(['d3', 'react-query'])
+  })
+
+  it('accepts publicInterface array', () => {
+    const result = validateFeature({
+      ...VALID_FEATURE,
+      publicInterface: [
+        { name: 'onSelect', type: '(id: string) => void', description: 'Called when a feature is selected' },
+        { name: 'feature', type: 'Feature' },
+      ],
+    })
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.publicInterface).toHaveLength(2)
+  })
+
+  it('rejects publicInterface entry missing required name', () => {
+    const result = validateFeature({
+      ...VALID_FEATURE,
+      publicInterface: [{ type: '() => void' }],
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('accepts externalDependencies as a string array', () => {
+    const result = validateFeature({
+      ...VALID_FEATURE,
+      externalDependencies: ['feat-2026-003', 'src/utils/shared.ts'],
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts a valid lastVerifiedDate', () => {
+    const result = validateFeature({ ...VALID_FEATURE, lastVerifiedDate: '2026-03-22' })
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.lastVerifiedDate).toBe('2026-03-22')
+  })
+
+  it('rejects lastVerifiedDate with wrong format', () => {
+    const result = validateFeature({ ...VALID_FEATURE, lastVerifiedDate: '22-03-2026' })
+    expect(result.success).toBe(false)
+  })
+
+  it('accepts codeSnippets array', () => {
+    const result = validateFeature({
+      ...VALID_FEATURE,
+      codeSnippets: [
+        { label: 'glob pattern', snippet: "import.meta.glob('./.lac/**/feature.json')" },
+        { label: 'key format', snippet: 'feat-YYYY-NNN' },
+      ],
+    })
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.codeSnippets).toHaveLength(2)
+  })
+
+  it('rejects codeSnippet entry missing required snippet', () => {
+    const result = validateFeature({
+      ...VALID_FEATURE,
+      codeSnippets: [{ label: 'glob pattern' }],
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('PublicInterfaceEntrySchema and CodeSnippetSchema are exported from index', async () => {
+    const exports = await import('../index.js')
+    expect(exports.PublicInterfaceEntrySchema).toBeDefined()
+    expect(exports.CodeSnippetSchema).toBeDefined()
   })
 })

@@ -81,6 +81,89 @@
     },
     "lineage": {
       "$ref": "#/definitions/Lineage"
+    },
+    "successCriteria": {
+      "type": "string",
+      "description": "Plain-language definition of done for this feature."
+    },
+    "domain": {
+      "type": "string",
+      "description": "Free-form domain tag, e.g. \"auth\", \"payments\"."
+    },
+    "priority": {
+      "type": "integer",
+      "description": "Priority level 1–5 (1 = highest). Controls sibling ordering.",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "statusHistory": {
+      "type": "array",
+      "description": "Append-only log of status transitions.",
+      "items": {
+        "$ref": "#/definitions/StatusTransition"
+      }
+    },
+    "revisions": {
+      "type": "array",
+      "description": "Append-only log of intent-critical field changes with author and reason.",
+      "items": {
+        "$ref": "#/definitions/Revision"
+      }
+    },
+    "superseded_by": {
+      "type": "string",
+      "description": "featureKey of the feature that supersedes this one.",
+      "pattern": "^[a-z][a-z0-9]*-\\d{4}-\\d{3}$"
+    },
+    "superseded_from": {
+      "type": "array",
+      "description": "featureKeys of features that this one supersedes.",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9]*-\\d{4}-\\d{3}$"
+      }
+    },
+    "merged_into": {
+      "type": "string",
+      "description": "featureKey of the feature this one was merged into.",
+      "pattern": "^[a-z][a-z0-9]*-\\d{4}-\\d{3}$"
+    },
+    "merged_from": {
+      "type": "array",
+      "description": "featureKeys of features that were merged into this one.",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9]*-\\d{4}-\\d{3}$"
+      }
+    },
+    "componentFile": {
+      "type": "string",
+      "description": "Relative path to the primary source file that implements this feature, e.g. \"src/components/FeatureCard.tsx\"."
+    },
+    "npmPackages": {
+      "type": "array",
+      "description": "npm packages this feature directly depends on at runtime.",
+      "items": { "type": "string" }
+    },
+    "publicInterface": {
+      "type": "array",
+      "description": "Exported props, function signatures, or API surface that consumers of this feature depend on.",
+      "items": { "$ref": "#/definitions/PublicInterfaceEntry" }
+    },
+    "externalDependencies": {
+      "type": "array",
+      "description": "Cross-feature runtime dependencies not captured by lineage — featureKeys or relative file paths.",
+      "items": { "type": "string" }
+    },
+    "lastVerifiedDate": {
+      "type": "string",
+      "description": "YYYY-MM-DD date when this feature.json was last confirmed accurate.",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "codeSnippets": {
+      "type": "array",
+      "description": "Critical one-liners worth preserving verbatim — glob patterns, API calls, architectural pivots.",
+      "items": { "$ref": "#/definitions/CodeSnippet" }
     }
   },
   "definitions": {
@@ -142,6 +225,94 @@
         "body": {
           "type": "string",
           "description": "The annotation content.",
+          "minLength": 1
+        }
+      }
+    },
+    "StatusTransition": {
+      "type": "object",
+      "required": ["from", "to", "date"],
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "type": "string",
+          "enum": ["draft", "active", "frozen", "deprecated"]
+        },
+        "to": {
+          "type": "string",
+          "enum": ["draft", "active", "frozen", "deprecated"]
+        },
+        "date": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "Revision": {
+      "type": "object",
+      "required": ["date", "author", "fields_changed", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "date": {
+          "type": "string",
+          "description": "ISO 8601 date when this revision was recorded (YYYY-MM-DD).",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "author": {
+          "type": "string",
+          "description": "Who made the change.",
+          "minLength": 1
+        },
+        "fields_changed": {
+          "type": "array",
+          "description": "Which intent-critical fields were changed.",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "reason": {
+          "type": "string",
+          "description": "Why these fields were changed.",
+          "minLength": 1
+        }
+      }
+    },
+    "PublicInterfaceEntry": {
+      "type": "object",
+      "required": ["name", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Prop, function, or export name.",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "description": "TypeScript type signature.",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "description": "What this export does or when to use it."
+        }
+      }
+    },
+    "CodeSnippet": {
+      "type": "object",
+      "required": ["label", "snippet"],
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Short human label, e.g. \"glob pattern\", \"API call\".",
+          "minLength": 1
+        },
+        "snippet": {
+          "type": "string",
+          "description": "The actual one-liner or short code block to preserve verbatim.",
           "minLength": 1
         }
       }

@@ -9,12 +9,18 @@ export interface ScannedFeature {
   feature: Feature
 }
 
+export interface ScanOptions {
+  /** Include features inside _archive/ directories (default: false) */
+  includeArchived?: boolean
+}
+
 /**
  * Recursively finds all feature.json files under a directory.
  * Returns an array of { filePath, feature } for each valid feature.json found.
  * Files that fail validation are skipped with a warning printed to stderr.
+ * Skips _archive/ directories unless includeArchived is true.
  */
-export async function scanFeatures(dir: string): Promise<ScannedFeature[]> {
+export async function scanFeatures(dir: string, scanOptions: ScanOptions = {}): Promise<ScannedFeature[]> {
   const results: ScannedFeature[] = []
 
   async function walk(currentDir: string): Promise<void> {
@@ -42,8 +48,11 @@ export async function scanFeatures(dir: string): Promise<ScannedFeature[]> {
       const fullPath = join(currentDir, entry.name)
 
       if (entry.isDirectory()) {
-        // Skip hidden directories and node_modules
+        // Skip hidden directories, node_modules, and _archive/ (unless opted in)
         if (entry.name.startsWith('.') || entry.name === 'node_modules') {
+          continue
+        }
+        if (entry.name === '_archive' && !scanOptions.includeArchived) {
           continue
         }
         await walk(fullPath)

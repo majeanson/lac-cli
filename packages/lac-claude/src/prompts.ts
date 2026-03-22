@@ -9,6 +9,12 @@ export type FillableField =
   | 'annotations'
   | 'successCriteria'
   | 'domain'
+  | 'componentFile'
+  | 'npmPackages'
+  | 'publicInterface'
+  | 'externalDependencies'
+  | 'lastVerifiedDate'
+  | 'codeSnippets'
 
 export interface FieldPrompt {
   system: string
@@ -77,6 +83,53 @@ Return ONLY a valid JSON array — no other text:
     system: `You are a software engineering analyst. Identify the primary technical domain for this feature from its code and problem statement. Return a single lowercase word or short hyphenated phrase (e.g. "auth", "payments", "notifications", "data-pipeline"). Return only the domain value — nothing else.`,
     userSuffix: 'Identify the domain for this feature.',
   },
+  componentFile: {
+    system: `You are a software engineering analyst. Given a feature.json and its source code, identify the single primary file that implements this feature. Return a relative path from the project root (e.g. "src/components/FeatureCard.tsx", "packages/lac-mcp/src/index.ts"). Return only the path — nothing else.`,
+    userSuffix: 'Identify the primary source file for this feature.',
+  },
+  npmPackages: {
+    system: `You are a software engineering analyst. Given a feature.json and its source code, list the npm packages this feature directly imports or depends on at runtime. Exclude dev-only tools (vitest, eslint, etc.). Exclude Node built-ins.
+
+Return ONLY a valid JSON array of package name strings — no other text:
+["package-a", "package-b"]`,
+    userSuffix: 'List the npm packages this feature depends on.',
+  },
+  publicInterface: {
+    system: `You are a software engineering analyst. Given a feature.json and its source code, extract the public interface — exported props, function signatures, or API surface that consumers of this feature depend on.
+
+Return ONLY a valid JSON array — no other text:
+[
+  {
+    "name": "string",
+    "type": "string",
+    "description": "string"
+  }
+]`,
+    userSuffix: 'Extract the public interface for this feature.',
+  },
+  externalDependencies: {
+    system: `You are a software engineering analyst. Given a feature.json and its source code, identify runtime dependencies on other features or internal modules that are NOT captured by the lineage (parent/children). These are cross-feature implementation dependencies — e.g. a feature that calls into another feature's API at runtime, or imports a shared utility that belongs to a distinct feature.
+
+Return ONLY a valid JSON array of featureKey strings or relative file paths — no other text:
+["feat-2026-003", "src/utils/shared.ts"]`,
+    userSuffix: 'List the external runtime dependencies for this feature.',
+  },
+  lastVerifiedDate: {
+    system: `You are a software engineering analyst. Return today's date in YYYY-MM-DD format as the lastVerifiedDate — marking that this feature.json was reviewed and confirmed accurate right now. Return only the date string — nothing else.`,
+    userSuffix: `Return today's date as the lastVerifiedDate.`,
+  },
+  codeSnippets: {
+    system: `You are a software engineering analyst. Given a feature.json and its source code, extract 2-5 critical one-liners or short code blocks that are the most important to preserve verbatim — glob patterns, key API calls, non-obvious configuration, or architectural pivots. These are the snippets someone would need to reconstruct this feature accurately.
+
+Return ONLY a valid JSON array — no other text:
+[
+  {
+    "label": "string",
+    "snippet": "string"
+  }
+]`,
+    userSuffix: 'Extract the critical code snippets for this feature.',
+  },
 }
 
 // Fields whose AI response is JSON (needs parsing) vs plain text
@@ -85,6 +138,10 @@ export const JSON_FIELDS = new Set<FillableField>([
   'knownLimitations',
   'tags',
   'annotations',
+  'npmPackages',
+  'publicInterface',
+  'externalDependencies',
+  'codeSnippets',
 ])
 
 export const ALL_FILLABLE_FIELDS: FillableField[] = [
@@ -95,6 +152,12 @@ export const ALL_FILLABLE_FIELDS: FillableField[] = [
   'tags',
   'successCriteria',
   'domain',
+  'componentFile',
+  'npmPackages',
+  'publicInterface',
+  'externalDependencies',
+  'lastVerifiedDate',
+  'codeSnippets',
 ]
 
 export function getMissingFields(feature: Feature): FillableField[] {

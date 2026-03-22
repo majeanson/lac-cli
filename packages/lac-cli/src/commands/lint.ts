@@ -8,7 +8,10 @@ import { validateFeature } from '@life-as-code/feature-schema'
 import { Command } from 'commander'
 
 import { computeCompleteness, loadConfig } from '../lib/config.js'
-import { scanFeatures } from '../lib/scanner.js'
+import { scanFeatures, type ScanOptions } from '../lib/scanner.js'
+
+/** Intent-critical fields that should have a revision entry when non-empty */
+const INTENT_CRITICAL_FIELDS = ['problem', 'analysis', 'implementation', 'decisions', 'successCriteria'] as const
 
 interface LintResult {
   featureKey: string
@@ -18,6 +21,7 @@ interface LintResult {
   missingRequired: string[]
   belowThreshold: boolean
   pass: boolean
+  warnings: string[]
 }
 
 function checkFeature(
@@ -25,6 +29,7 @@ function checkFeature(
   filePath: string,
   requiredFields: string[],
   threshold: number,
+  revisionWarnings = true,
 ): LintResult {
   const raw = feature as unknown as Record<string, unknown>
   const completeness = computeCompleteness(raw)
@@ -38,6 +43,30 @@ function checkFeature(
 
   const belowThreshold = threshold > 0 && completeness < threshold
 
+  // Warn if any intent-critical fields are filled but no revisions exist
+  const warnings: string[] = []
+  const hasRevisions = Array.isArray(raw.revisions) && (raw.revisions as unknown[]).length > 0
+  if (revisionWarnings && !hasRevisions) {
+    const filledCritical = INTENT_CRITICAL_FIELDS.filter((field) => {
+      const val = raw[field]
+      if (val === undefined || val === null) return false
+      if (typeof val === 'string') return val.trim().length > 0
+      if (Array.isArray(val)) return val.length > 0
+      return false
+    })
+    if (filledCritical.length > 0) {
+      warnings.push(`no revisions recorded — consider adding a revision entry for: ${filledCritical.join(', ')}`)
+    }
+  }
+
+  // Warn if superseded_by or merged_into is set but status is still active/draft
+  if (raw.superseded_by && feature.status !== 'deprecated') {
+    warnings.push(`superseded_by is set but status is "${feature.status}" — consider deprecating`)
+  }
+  if (raw.merged_into && feature.status !== 'deprecated') {
+    warnings.push(`merged_into is set but status is "${feature.status}" — consider deprecating`)
+  }
+
   return {
     featureKey: feature.featureKey,
     filePath,
@@ -46,6 +75,7 @@ function checkFeature(
     missingRequired,
     belowThreshold,
     pass: missingRequired.length === 0 && !belowThreshold,
+    warnings,
   }
 }
 
@@ -106,6 +136,9 @@ export const lintCommand = new Command('lint')
   .option('--json', 'Output results as JSON')
   .option('--watch', 'Re-run lint on every feature.json change')
   .option('--fix', 'Auto-insert default values for missing required fields')
+  .option('--include-archived', 'Include features inside _archive/ directories')
+  .option('--no-revision-warnings', 'Suppress "no revisions recorded" warnings (useful during migration)')
+  .option('--tags <tags>', 'Comma-separated tags to filter by — only lint features with at least one matching tag (OR logic)')
   .action(async (dir: string | undefined, options: {
     require?: string
     threshold?: number
@@ -113,6 +146,9 @@ export const lintCommand = new Command('lint')
     json?: boolean
     watch?: boolean
     fix?: boolean
+    includeArchived?: boolean
+    revisionWarnings?: boolean
+    tags?: string
   }) => {
     const scanDir = resolve(dir ?? process.cwd())
     const config = loadConfig(scanDir)
@@ -123,11 +159,14 @@ export const lintCommand = new Command('lint')
 
     const threshold = options.threshold !== undefined ? options.threshold : config.ciThreshold
 
+    const scanOpts: ScanOptions = { includeArchived: options.includeArchived ?? false }
+    const revisionWarnings = options.revisionWarnings ?? true
+
     async function runLint(): Promise<number> {
       // Scan
       let scanned: Awaited<ReturnType<typeof scanFeatures>>
       try {
-        scanned = await scanFeatures(scanDir)
+        scanned = await scanFeatures(scanDir, scanOpts)
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err)
         process.stderr.write(`Error scanning "${scanDir}": ${message}\n`)
@@ -140,13 +179,54 @@ export const lintCommand = new Command('lint')
       }
 
       // Filter to lintable statuses
-      const toCheck = scanned.filter(({ feature }) =>
+      let toCheck = scanned.filter(({ feature }) =>
         (config.lintStatuses as string[]).includes(feature.status),
       )
 
+      if (options.tags) {
+        const tagsToMatch = options.tags.split(',').map((t) => t.trim()).filter(Boolean)
+        toCheck = toCheck.filter(({ feature }) =>
+          tagsToMatch.some((tag) => feature.tags?.includes(tag)),
+        )
+      }
+
       const results = toCheck.map(({ feature, filePath }) =>
-        checkFeature(feature, filePath, requiredFields, threshold),
+        checkFeature(feature, filePath, requiredFields, threshold, revisionWarnings),
       )
+
+      // Bidirectional pointer consistency checks (uses full scanned set, not just lintable statuses)
+      const featureByKey = new Map(scanned.map(({ feature }) => [feature.featureKey, feature as unknown as Record<string, unknown>]))
+      for (const result of results) {
+        const raw = featureByKey.get(result.featureKey)
+        if (!raw) continue
+        // merged_into: A.merged_into=B → B.merged_from should include A
+        if (raw.merged_into) {
+          const target = featureByKey.get(String(raw.merged_into))
+          if (target) {
+            const mergedFrom = (target.merged_from as string[] | undefined) ?? []
+            if (!mergedFrom.includes(result.featureKey)) {
+              result.warnings.push(`merged_into "${raw.merged_into}" but that feature does not list this key in merged_from`)
+            }
+          }
+        }
+        // merged_from: for each source B in A.merged_from → B.merged_into should be A
+        for (const sourceKey of (raw.merged_from as string[] | undefined) ?? []) {
+          const source = featureByKey.get(sourceKey)
+          if (source && source.merged_into !== result.featureKey) {
+            result.warnings.push(`merged_from includes "${sourceKey}" but that feature does not point merged_into this key`)
+          }
+        }
+        // superseded_by: A.superseded_by=B → B.superseded_from should include A
+        if (raw.superseded_by) {
+          const successor = featureByKey.get(String(raw.superseded_by))
+          if (successor) {
+            const supersededFrom = (successor.superseded_from as string[] | undefined) ?? []
+            if (!supersededFrom.includes(result.featureKey)) {
+              result.warnings.push(`superseded_by "${raw.superseded_by}" but that feature does not list this key in superseded_from`)
+            }
+          }
+        }
+      }
 
       // --fix: auto-repair missing required fields, then re-validate to confirm
       if (options.fix) {
@@ -172,7 +252,7 @@ export const lintCommand = new Command('lint')
         // Re-scan and re-lint to confirm the fixes actually pass validation
         let rescanned: Awaited<ReturnType<typeof scanFeatures>>
         try {
-          rescanned = await scanFeatures(scanDir)
+          rescanned = await scanFeatures(scanDir, scanOpts)
         } catch {
           process.stdout.write(`\n✓ Fixed ${totalFixed} field${totalFixed === 1 ? '' : 's'}. Could not re-validate — run "lac lint" to confirm.\n`)
           return 0
@@ -181,7 +261,7 @@ export const lintCommand = new Command('lint')
           (config.lintStatuses as string[]).includes(feature.status),
         )
         const reResults = reFiltered.map(({ feature, filePath }) =>
-          checkFeature(feature, filePath, requiredFields, threshold),
+          checkFeature(feature, filePath, requiredFields, threshold, revisionWarnings),
         )
         const stillFailing = reResults.filter((r) => !r.pass)
         if (stillFailing.length === 0) {
@@ -198,8 +278,10 @@ export const lintCommand = new Command('lint')
       const failures = results.filter((r) => !r.pass)
       const passes = results.filter((r) => r.pass)
 
+      const warnings = results.filter((r) => r.warnings.length > 0)
+
       if (options.json) {
-        process.stdout.write(JSON.stringify({ results, failures: failures.length, passes: passes.length }, null, 2) + '\n')
+        process.stdout.write(JSON.stringify({ results, failures: failures.length, passes: passes.length, warningCount: warnings.length }, null, 2) + '\n')
         return failures.length > 0 ? 1 : 0
       }
 
@@ -224,7 +306,16 @@ export const lintCommand = new Command('lint')
         }
       }
 
-      process.stdout.write(`\n${passes.length} passed, ${failures.length} failed — ${results.length} features checked\n`)
+      if (!options.quiet && warnings.length > 0) {
+        process.stdout.write('\nWarnings:\n')
+        for (const r of warnings) {
+          for (const w of r.warnings) {
+            process.stdout.write(`  ⚠  ${col(r.featureKey, 18)}  ${w}\n`)
+          }
+        }
+      }
+
+      process.stdout.write(`\n${passes.length} passed, ${failures.length} failed, ${warnings.length} warned — ${results.length} features checked\n`)
 
       if (failures.length > 0) {
         if (!options.quiet) {

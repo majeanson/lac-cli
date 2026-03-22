@@ -10,9 +10,17 @@ export const searchCommand = new Command('search')
   .option('-d, --dir <path>', 'Directory to scan (default: cwd)')
   .option('--json', 'Output results as JSON')
   .option('--field <fields>', 'Comma-separated fields to search (default: all)')
-  .action(async (query: string, options: { dir?: string; json?: boolean; field?: string }) => {
+  .option('--tags <tags>', 'Comma-separated tags to filter by — only features with at least one matching tag are searched (OR logic)')
+  .action(async (query: string, options: { dir?: string; json?: boolean; field?: string; tags?: string }) => {
     const scanDir = options.dir ?? process.cwd()
-    const features = await scanFeatures(scanDir)
+    let features = await scanFeatures(scanDir)
+
+    if (options.tags) {
+      const tagsToMatch = options.tags.split(',').map((t) => t.trim()).filter(Boolean)
+      features = features.filter(({ feature }) =>
+        tagsToMatch.some((tag) => feature.tags?.includes(tag)),
+      )
+    }
 
     const searchFields = options.field
       ? options.field.split(',').map((f) => f.trim())

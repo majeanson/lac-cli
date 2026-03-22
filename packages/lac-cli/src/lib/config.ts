@@ -25,6 +25,11 @@ export interface LacConfig {
    * Example: `"domain": "proc"` → keys like `proc-2026-001`.
    */
   domain?: string
+  /**
+   * Default author name pre-filled in revision prompts (lac fill, lac revisions baseline).
+   * Each team member sets this in their local lac.config.json.
+   */
+  defaultAuthor?: string
 }
 
 const DEFAULTS: Required<LacConfig> = {
@@ -33,6 +38,7 @@ const DEFAULTS: Required<LacConfig> = {
   ciThreshold: 0,
   lintStatuses: ['active', 'draft'],
   domain: 'feat',
+  defaultAuthor: '',
 }
 
 export function loadConfig(fromDir?: string): Required<LacConfig> {
@@ -49,6 +55,7 @@ export function loadConfig(fromDir?: string): Required<LacConfig> {
       ciThreshold: parsed.ciThreshold ?? DEFAULTS.ciThreshold,
       lintStatuses: parsed.lintStatuses ?? DEFAULTS.lintStatuses,
       domain: parsed.domain ?? DEFAULTS.domain,
+      defaultAuthor: parsed.defaultAuthor ?? DEFAULTS.defaultAuthor,
     }
   } catch {
     process.stderr.write(`Warning: could not parse lac.config.json at "${configPath}" — using defaults\n`)
