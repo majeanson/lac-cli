@@ -86,6 +86,10 @@
       "type": "string",
       "description": "Plain-language definition of done for this feature."
     },
+    "userGuide": {
+      "type": "string",
+      "description": "Plain-language guide for end users — what the feature does and how to use it. Not acceptance criteria. Written from the user's perspective."
+    },
     "domain": {
       "type": "string",
       "description": "Free-form domain tag, e.g. \"auth\", \"payments\"."

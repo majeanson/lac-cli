@@ -33280,6 +33280,7 @@ var FeatureSchema = external_exports.object({
   superseded_from: external_exports.array(external_exports.string().regex(FEATURE_KEY_PATTERN, "each superseded_from entry must be a valid featureKey")).optional(),
   merged_into: external_exports.string().regex(FEATURE_KEY_PATTERN, "merged_into must be a valid featureKey").optional(),
   merged_from: external_exports.array(external_exports.string().regex(FEATURE_KEY_PATTERN, "each merged_from entry must be a valid featureKey")).optional(),
+  userGuide: external_exports.string().optional(),
   componentFile: external_exports.string().optional(),
   npmPackages: external_exports.array(external_exports.string()).optional(),
   publicInterface: external_exports.array(PublicInterfaceEntrySchema).optional(),

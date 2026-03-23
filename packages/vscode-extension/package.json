@@ -2,7 +2,7 @@
   "name": "lac-lens",
   "displayName": "life-as-code Lens",
   "description": "View feature provenance inline in your editor — code lens, hover, status bar, tree view, and rich panel for feature.json files.",
-  "version": "3.0.0",
+  "version": "3.3.0",
   "publisher": "majeanson",
   "icon": "icon.png",
   "license": "MIT",

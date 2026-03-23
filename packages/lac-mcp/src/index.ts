@@ -76,7 +76,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: 'create_feature',
-      description: 'Create a new feature.json in the specified directory.',
+      description: 'Create a new feature.json in the specified directory. After creating, immediately call read_feature_context on the same path to analyze surrounding code and fill all required fields before calling advance_feature.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -563,6 +563,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           for (const key of (raw.merged_from as string[] | undefined) ?? []) {
             if (!featureKeys.has(key)) issues.push(`broken merged_from ref: "${key}" not found`)
           }
+          // Pre-freeze warnings: surface fields that will block advance_feature(frozen) while still active/draft
+          if (feature.status === 'active' || feature.status === 'draft') {
+            const preFreeze = getMissingForTransition(feature, 'frozen')
+            if (preFreeze.length > 0) {
+              warnings.push(`will block freeze — missing: ${preFreeze.join(', ')}`)
+            }
+          }
           // Lifecycle warnings
           if (raw.superseded_by && feature.status !== 'deprecated') {
             warnings.push(`superseded_by set but status is "${feature.status}" — consider deprecating`)
@@ -674,6 +681,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const contextStr = contextToString(ctx)
         const missingFields = getMissingFields(feature)
 
+        // Check componentFile paths exist on disk — catches stale file references
+        let componentFileWarning = ''
+        if (feature.componentFile) {
+          const filePaths = feature.componentFile.split(',').map((s) => s.trim()).filter(Boolean)
+          const notFound = filePaths.filter((p) => {
+            const candidates = [
+              path.resolve(featureDir, p),
+              path.resolve(workspaceRoot, p),
+            ]
+            return candidates.every((c) => !fs.existsSync(c))
+          })
+          if (notFound.length > 0) {
+            componentFileWarning = `\n## ⚠ componentFile drift\nThese paths do not exist on disk — update componentFile to match actual source files:\n${notFound.map((p) => `  - ${p}`).join('\n')}\n`
+          }
+        }
+
         // Build per-field instructions so Claude knows exactly what to generate
         const fieldInstructions = missingFields.map((field) => {
           const prompt = FILL_PROMPTS[field]
@@ -690,12 +713,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const instructions =
           missingFields.length === 0
             ? staleWarning || 'All fillable fields are already populated. No generation needed.'
-            : `${staleWarning}## Missing fields to fill (${missingFields.join(', ')})\n\nGenerate each field described below, then call write_feature_fields with all values at once. After writing, call advance_feature to check if the feature is ready to transition.\n\n${fieldInstructions}`
+            : `${staleWarning}## Missing fields to fill (${missingFields.join(', ')})\n\nGenerate each field described below, then call write_feature_fields with all values at once. Fill ALL missing fields before calling advance_feature.\n\n${fieldInstructions}`
 
         return {
           content: [{
             type: 'text',
-            text: `${instructions}\n\n## Context\n\n${contextStr}`,
+            text: `${componentFileWarning}${instructions}\n\n## Context\n\n${contextStr}`,
           }],
         }
       }
@@ -720,6 +743,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         const updated = { ...existing, ...fields }
 
+        // Always bump lastVerifiedDate on any write
+        updated.lastVerifiedDate = new Date().toISOString().split('T')[0]
+
         // Handle revision
         const revisionInput = a.revision as { author: string; reason: string } | undefined
         let revisionWarning = ''
@@ -731,6 +757,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               ...existingRevisions,
               { date: today, author: revisionInput.author, fields_changed: changingCritical, reason: revisionInput.reason },
             ]
+            // Clear stale-review annotations — fields have been actively revised
+            const existingAnnotations = (existing.annotations as Array<{ type: string }> | undefined) ?? []
+            updated.annotations = existingAnnotations.filter((ann) => ann.type !== 'stale-review')
           } else {
             revisionWarning = `\n\n⚠ Intent-critical fields changed (${changingCritical.join(', ')}) without a revision entry. Pass a "revision" object with author and reason to attribute this change.`
           }
@@ -751,7 +780,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const afterResult = validateFeature(afterWrite)
         const stillMissing = afterResult.success ? getMissingFields(afterResult.data) : []
         const nextHint = stillMissing.length > 0
-          ? `${stillMissing.length} field(s) still missing: ${stillMissing.join(', ')}. Continue filling or call advance_feature to check if the current fields are sufficient to transition.`
+          ? `${stillMissing.length} field(s) still missing: ${stillMissing.join(', ')}. Fill all remaining fields with write_feature_fields before calling advance_feature.`
           : `All AI fields filled. Call advance_feature to transition status when ready.`
         return {
           content: [{
@@ -811,6 +840,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         const today = new Date().toISOString().split('T')[0]
         const updated: Record<string, unknown> = { ...parsed, status: to }
+
+        // Freezing is a comprehensive review — stamp lastVerifiedDate
+        if (to === 'frozen') updated.lastVerifiedDate = today
 
         // Always append to statusHistory
         const existingHistory = (updated.statusHistory as unknown[]) ?? []
@@ -1649,6 +1681,7 @@ function statusIcon(status: string): string {
 const REQUIRED_FOR_ACTIVE: (keyof Feature)[] = ['analysis', 'implementation', 'successCriteria']
 const REQUIRED_FOR_FROZEN: (keyof Feature)[] = [
   'analysis', 'implementation', 'successCriteria', 'knownLimitations', 'tags',
+  'userGuide', 'componentFile',
 ]
 
 function getMissingForTransition(feature: Feature, to: Feature['status']): string[] {

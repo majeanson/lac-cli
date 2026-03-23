@@ -8,7 +8,23 @@ import { Command } from 'commander'
 
 import { scanFeatures, type ScannedFeature } from '../lib/scanner.js'
 import { generateHtmlWiki } from '../lib/htmlGenerator.js'
+import { generateRawHtml } from '../lib/rawHtmlGenerator.js'
 import { generateSite } from '../lib/siteGenerator.js'
+import { generatePostcard } from '../lib/postcardGenerator.js'
+import { generatePrint } from '../lib/printGenerator.js'
+import { generateResume } from '../lib/resumeGenerator.js'
+import { generateSlides } from '../lib/slideGenerator.js'
+import { generateQuiz } from '../lib/quizGenerator.js'
+import { generateStory } from '../lib/storyGenerator.js'
+import { generateGraph } from '../lib/graphGenerator.js'
+import { generateHeatmap } from '../lib/heatmapGenerator.js'
+import { generateDiff } from '../lib/diffGenerator.js'
+import { generateTreemap } from '../lib/treemapGenerator.js'
+import { generateKanban } from '../lib/kanbanGenerator.js'
+import { generateHealth } from '../lib/healthGenerator.js'
+import { generateEmbed } from '../lib/embedGenerator.js'
+import { generateDecisionLog } from '../lib/decisionLogGenerator.js'
+import { VIEWS, VIEW_NAMES, applyView, applyViewForHtml, type ViewName } from '../lib/views.js'
 
 /**
  * Walks up the directory tree from `startDir` to find the nearest feature.json.
@@ -37,9 +53,9 @@ function featureToMarkdown(feature: ReturnType<typeof JSON.parse>): string {
 
   lines.push(`# ${f['title'] as string}`)
   lines.push('')
-  lines.push(`**Key:** \`${f['featureKey'] as string}\`  `)
-  lines.push(`**Status:** ${f['status'] as string}`)
-  lines.push('')
+  if (f['featureKey']) lines.push(`**Key:** \`${f['featureKey'] as string}\`  `)
+  if (f['status']) lines.push(`**Status:** ${f['status'] as string}`)
+  if (f['featureKey'] || f['status']) lines.push('')
 
   if (f['problem']) {
     lines.push('## Problem')
@@ -59,6 +75,13 @@ function featureToMarkdown(feature: ReturnType<typeof JSON.parse>): string {
     lines.push('## Implementation')
     lines.push('')
     lines.push(f['implementation'] as string)
+    lines.push('')
+  }
+
+  if (f['userGuide']) {
+    lines.push('## User Guide')
+    lines.push('')
+    lines.push(f['userGuide'] as string)
     lines.push('')
   }
 
@@ -291,14 +314,98 @@ export function buildReconstructionPrompt(
 }
 
 export const exportCommand = new Command('export')
-  .description('Export feature.json as JSON, Markdown, or generate a static HTML wiki')
+  .description('Export feature.json as JSON, Markdown, or generate a static HTML view')
   .option('--out <path>', 'Output file or directory path')
-  .option('--html [dir]', 'Scan <dir> (default: cwd) and emit a single self-contained HTML wiki file')
-  .option('--site <dir>', 'Scan <dir> for feature.json files and generate a static HTML site (outputs index.html in --out dir)')
-  .option('--prompt [dir]', 'Scan <dir> for all feature.json files and emit a single reconstruction prompt (default: cwd)')
-  .option('--markdown', 'Output feature as a Markdown document instead of JSON')
-  .option('--tags <tags>', 'Comma-separated tags to filter by in --site/--html mode — only features with at least one matching tag are exported (OR logic)')
-  .action(async (options: { out?: string; html?: string | boolean; site?: string; prompt?: string | boolean; markdown?: boolean; tags?: string }) => {
+  .option('--html [dir]',     'Scan <dir> (default: cwd) and emit a single self-contained HTML wiki')
+  .option('--raw [dir]',      'Raw field-by-field HTML dump with sidebar navigation')
+  .option('--print [dir]',    'Print-ready HTML document (A4, all features, @media print CSS)')
+  .option('--postcard',       'Beautiful single-feature shareable card (nearest feature.json)')
+  .option('--resume [dir]',   'Portfolio page from all frozen features')
+  .option('--slide [dir]',    'Full-screen HTML slideshow, one slide per feature')
+  .option('--graph [dir]',    'Interactive force-directed feature lineage graph')
+  .option('--heatmap [dir]',  'Completeness heatmap — fields × features grid')
+  .option('--quiz [dir]',     'Flashcard-style quiz to test knowledge of your feature set')
+  .option('--story [dir]',    'Long-form narrative document — product case study from feature data')
+  .option('--treemap [dir]',  'Rectangular treemap — features sized by decisions × completeness, grouped by domain')
+  .option('--kanban [dir]',   'Kanban board — Active / Frozen / Draft columns with sortable, filterable cards')
+  .option('--health [dir]',   'Project health scorecard — completeness, coverage, tech debt, and health score')
+  .option('--embed [dir]',    'Compact embeddable stats widget (iframe-ready)')
+  .option('--decisions [dir]','Consolidated ADR — all decisions from all features, searchable by domain')
+  .option('--diff <dir-b>',   'Compare cwd workspace against <dir-b> and show added/removed/changed')
+  .option('--site <dir>',     'Generate a multi-page static site → --out dir (default: ./lac-site)')
+  .option('--prompt [dir]',   'AI reconstruction prompt for all features (stdout or --out file)')
+  .option('--markdown',       'Single feature as Markdown (nearest feature.json)')
+  .option('--tags <tags>',    'Comma-separated tags to filter by (OR logic) — applies to all multi-feature modes')
+  .option('--view <name>',    `Audience view — filters and shapes exported fields. One of: ${VIEW_NAMES.join(', ')}`)
+  .addHelpText('after', `
+Examples:
+  lac export --html                          HTML wiki (cwd) → lac-wiki.html
+  lac export --raw                           Raw field dump  → lac-raw.html
+  lac export --print                         Print-ready doc → lac-print.html
+  lac export --postcard                      Single-feature card → lac-postcard.html
+  lac export --resume                        Frozen-features portfolio → lac-resume.html
+  lac export --slide                         Slideshow → lac-slides.html
+  lac export --quiz                          Flashcard quiz → lac-quiz.html
+  lac export --story                         Narrative story → lac-story.html
+  lac export --treemap                       Domain treemap → lac-treemap.html
+  lac export --kanban                        Kanban board → lac-kanban.html
+  lac export --health                        Health scorecard → lac-health.html
+  lac export --embed                         Stats widget → lac-embed.html
+  lac export --decisions                     Decision log (ADR) → lac-decisions.html
+  lac export --graph                         Lineage graph → lac-graph.html
+  lac export --heatmap                       Completeness heatmap → lac-heatmap.html
+  lac export --diff ./other-workspace        Diff vs another directory → lac-diff.html
+
+  lac export --site ./src --out ./public     Multi-page static site
+  lac export --prompt --out REBUILD.md       AI reconstruction spec
+  lac export --markdown                      Single feature as Markdown
+  lac export                                 Single feature as JSON
+
+  # All multi-feature modes support --tags and --view:
+  lac export --slide --tags "auth,feed" --view product
+
+Views (--view):
+  user     Plain-language guide for end users
+  support  Known limitations and annotations for support teams
+  product  Business problem, success criteria, and strategic decisions (no code)
+  dev      Full implementation context — code, decisions, snippets, and lineage
+  tech     Complete technical record — all fields including history and revisions`)
+  .action(async (options: {
+    out?: string
+    html?: string | boolean
+    raw?: string | boolean
+    print?: string | boolean
+    postcard?: boolean
+    resume?: string | boolean
+    slide?: string | boolean
+    quiz?: string | boolean
+    story?: string | boolean
+    treemap?: string | boolean
+    kanban?: string | boolean
+    health?: string | boolean
+    embed?: string | boolean
+    decisions?: string | boolean
+    graph?: string | boolean
+    heatmap?: string | boolean
+    diff?: string
+    site?: string
+    prompt?: string | boolean
+    markdown?: boolean
+    tags?: string
+    view?: string
+  }) => {
+    // ── View validation ──────────────────────────────────────────────────────
+    let activeView = options.view
+      ? VIEWS[options.view as ViewName]
+      : undefined
+
+    if (options.view && !activeView) {
+      process.stderr.write(
+        `Error: unknown view "${options.view}". Valid views: ${VIEW_NAMES.join(', ')}\n`,
+      )
+      process.exit(1)
+    }
+
     // ── Reconstruction prompt mode ──────────────────────────────────────────
     if (options.prompt !== undefined) {
       const promptDir = typeof options.prompt === 'string'
@@ -320,7 +427,10 @@ export const exportCommand = new Command('export')
       }
 
       const projectName = basename(promptDir)
-      const prompt = buildReconstructionPrompt(features, projectName, promptDir)
+      const promptFeatures = activeView
+        ? features.map(f => ({ ...f, feature: applyView(f.feature as Record<string, unknown>, activeView) as typeof f.feature }))
+        : features
+      const prompt = buildReconstructionPrompt(promptFeatures, projectName, promptDir)
 
       if (options.out) {
         const outPath = resolve(options.out)
@@ -366,7 +476,10 @@ export const exportCommand = new Command('export')
       }
 
       const projectName = basename(htmlDir)
-      const html = generateHtmlWiki(features.map(f => f.feature), projectName)
+      const htmlFeatures = activeView
+        ? features.map(f => applyViewForHtml(f.feature as Record<string, unknown>, activeView) as typeof f.feature)
+        : features.map(f => f.feature)
+      const html = generateHtmlWiki(htmlFeatures, projectName, activeView?.label, activeView?.name)
 
       const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-wiki.html')
       try {
@@ -377,6 +490,287 @@ export const exportCommand = new Command('export')
         process.stderr.write(`Error writing "${outFile}": ${message}\n`)
         process.exit(1)
       }
+      return
+    }
+
+    // ── Raw HTML mode ────────────────────────────────────────────────────────
+    if (options.raw !== undefined) {
+      const rawDir = typeof options.raw === 'string'
+        ? resolve(options.raw)
+        : resolve(process.cwd())
+
+      let features: Awaited<ReturnType<typeof scanFeatures>>
+      try {
+        features = await scanFeatures(rawDir)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        process.stderr.write(`Error scanning "${rawDir}": ${message}\n`)
+        process.exit(1)
+      }
+
+      if (options.tags) {
+        const tagsToMatch = options.tags.split(',').map((t) => t.trim()).filter(Boolean)
+        features = features.filter(({ feature }) =>
+          tagsToMatch.some((tag) => feature.tags?.includes(tag)),
+        )
+      }
+
+      if (features.length === 0) {
+        process.stdout.write(`No valid feature.json files found in "${rawDir}".\n`)
+        process.exit(0)
+      }
+
+      const projectName = basename(rawDir)
+      const rawFeatures = activeView
+        ? features.map(f => applyViewForHtml(f.feature as Record<string, unknown>, activeView) as typeof f.feature)
+        : features.map(f => f.feature)
+      const html = generateRawHtml(rawFeatures, projectName, activeView?.label, activeView?.name)
+
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-raw.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Raw HTML (${features.length} features) → ${options.out ?? 'lac-raw.html'}\n`)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        process.stderr.write(`Error writing "${outFile}": ${message}\n`)
+        process.exit(1)
+      }
+      return
+    }
+
+    // ── Postcard mode (single feature) ──────────────────────────────────────
+    if (options.postcard) {
+      const featureJsonPath = findNearestFeatureJson(process.cwd())
+      if (!featureJsonPath) {
+        process.stderr.write('Error: no feature.json found in the current directory or any of its parents.\n')
+        process.exit(1)
+      }
+      let raw: string
+      try { raw = await readFile(featureJsonPath, 'utf-8') }
+      catch (err) { process.stderr.write(`Error reading "${featureJsonPath}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      let parsed: unknown
+      try { parsed = JSON.parse(raw) }
+      catch { process.stderr.write(`Error: "${featureJsonPath}" contains invalid JSON.\n`); process.exit(1) }
+      const result = validateFeature(parsed)
+      if (!result.success) { process.stderr.write(`Error: "${featureJsonPath}" failed validation:\n  ${result.errors.join('\n  ')}\n`); process.exit(1) }
+      const projectName = basename(dirname(featureJsonPath))
+      const html = generatePostcard(result.data, projectName)
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-postcard.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Postcard → ${options.out ?? 'lac-postcard.html'}\n`)
+      } catch (err) {
+        process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1)
+      }
+      return
+    }
+
+    // ── Helper: scan + filter features for multi-feature modes ───────────────
+    async function scanAndFilter(dir: string): Promise<Awaited<ReturnType<typeof scanFeatures>>> {
+      let features: Awaited<ReturnType<typeof scanFeatures>>
+      try { features = await scanFeatures(dir) }
+      catch (err) { process.stderr.write(`Error scanning "${dir}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      if (options.tags) {
+        const tagsToMatch = options.tags!.split(',').map(t => t.trim()).filter(Boolean)
+        features = features.filter(({ feature }) => tagsToMatch.some(tag => feature.tags?.includes(tag)))
+      }
+      return features
+    }
+
+    // ── Print mode ───────────────────────────────────────────────────────────
+    if (options.print !== undefined) {
+      const dir = typeof options.print === 'string' ? resolve(options.print) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = activeView ? features.map(f => applyViewForHtml(f.feature as Record<string, unknown>, activeView) as typeof f.feature) : features.map(f => f.feature)
+      const html = generatePrint(fs, basename(dir), activeView?.label)
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-print.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Print HTML (${features.length} features) → ${options.out ?? 'lac-print.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── Resume mode ──────────────────────────────────────────────────────────
+    if (options.resume !== undefined) {
+      const dir = typeof options.resume === 'string' ? resolve(options.resume) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const html = generateResume(fs, basename(dir))
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-resume.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Resume (${features.filter(f => f.feature.status === 'frozen').length} frozen features) → ${options.out ?? 'lac-resume.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── Slide mode ───────────────────────────────────────────────────────────
+    if (options.slide !== undefined) {
+      const dir = typeof options.slide === 'string' ? resolve(options.slide) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = activeView ? features.map(f => applyViewForHtml(f.feature as Record<string, unknown>, activeView) as typeof f.feature) : features.map(f => f.feature)
+      const html = generateSlides(fs, basename(dir), activeView?.label)
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-slides.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Slides (${features.length} features) → ${options.out ?? 'lac-slides.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── Quiz mode ────────────────────────────────────────────────────────────
+    if (options.quiz !== undefined) {
+      const dir = typeof options.quiz === 'string' ? resolve(options.quiz) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const html = generateQuiz(fs, basename(dir))
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-quiz.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Quiz (${features.length} features) → ${options.out ?? 'lac-quiz.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── Story mode ───────────────────────────────────────────────────────────
+    if (options.story !== undefined) {
+      const dir = typeof options.story === 'string' ? resolve(options.story) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const html = generateStory(fs, basename(dir))
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-story.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Story (${features.length} features) → ${options.out ?? 'lac-story.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── Treemap mode ─────────────────────────────────────────────────────────
+    if (options.treemap !== undefined) {
+      const dir = typeof options.treemap === 'string' ? resolve(options.treemap) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const html = generateTreemap(fs, basename(dir))
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-treemap.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Treemap (${features.length} features) → ${options.out ?? 'lac-treemap.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── Kanban mode ──────────────────────────────────────────────────────────
+    if (options.kanban !== undefined) {
+      const dir = typeof options.kanban === 'string' ? resolve(options.kanban) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const html = generateKanban(fs, basename(dir))
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-kanban.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Kanban (${features.length} features) → ${options.out ?? 'lac-kanban.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── Health mode ──────────────────────────────────────────────────────────
+    if (options.health !== undefined) {
+      const dir = typeof options.health === 'string' ? resolve(options.health) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const html = generateHealth(fs, basename(dir))
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-health.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Health scorecard (${features.length} features) → ${options.out ?? 'lac-health.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── Embed mode ───────────────────────────────────────────────────────────
+    if (options.embed !== undefined) {
+      const dir = typeof options.embed === 'string' ? resolve(options.embed) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const html = generateEmbed(fs, basename(dir))
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-embed.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Embed widget (${features.length} features) → ${options.out ?? 'lac-embed.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── Decision log mode ────────────────────────────────────────────────────
+    if (options.decisions !== undefined) {
+      const dir = typeof options.decisions === 'string' ? resolve(options.decisions) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const totalDecisions = fs.reduce((n, f) => n + (f.decisions?.length ?? 0), 0)
+      const html = generateDecisionLog(fs, basename(dir))
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-decisions.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Decision log (${totalDecisions} decisions across ${features.length} features) → ${options.out ?? 'lac-decisions.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── Graph mode ───────────────────────────────────────────────────────────
+    if (options.graph !== undefined) {
+      const dir = typeof options.graph === 'string' ? resolve(options.graph) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const html = generateGraph(fs, basename(dir))
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-graph.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Graph (${features.length} nodes) → ${options.out ?? 'lac-graph.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── Heatmap mode ─────────────────────────────────────────────────────────
+    if (options.heatmap !== undefined) {
+      const dir = typeof options.heatmap === 'string' ? resolve(options.heatmap) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const html = generateHeatmap(fs, basename(dir))
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-heatmap.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Heatmap (${features.length} features) → ${options.out ?? 'lac-heatmap.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── Diff mode ─────────────────────────────────────────────────────────────
+    if (options.diff !== undefined) {
+      const dirA = resolve(process.cwd())
+      const dirB = resolve(options.diff)
+      const [featuresA, featuresB] = await Promise.all([scanAndFilter(dirA), scanAndFilter(dirB)])
+      const fsA = featuresA.map(f => f.feature)
+      const fsB = featuresB.map(f => f.feature)
+      const html = generateDiff(fsA, fsB, basename(dirA), basename(dirB))
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-diff.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Diff (${fsA.length} → ${fsB.length} features) → ${options.out ?? 'lac-diff.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
       return
     }
 
@@ -406,8 +800,12 @@ export const exportCommand = new Command('export')
         process.exit(0)
       }
 
+      const siteFeatures = activeView
+        ? features.map(f => ({ ...f, feature: applyViewForHtml(f.feature as Record<string, unknown>, activeView) as typeof f.feature }))
+        : features
+
       try {
-        await generateSite(features, outDir)
+        await generateSite(siteFeatures, outDir, activeView?.label, activeView?.name)
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err)
         process.stderr.write(`Error generating site: ${message}\n`)
@@ -455,9 +853,13 @@ export const exportCommand = new Command('export')
       process.exit(1)
     }
 
+    const exportData = activeView
+      ? applyView(result.data as Record<string, unknown>, activeView) as typeof result.data
+      : result.data
+
     // Markdown mode
     if (options.markdown) {
-      const mdOutput = featureToMarkdown(result.data)
+      const mdOutput = featureToMarkdown(exportData)
       if (options.out) {
         const outPath = resolve(options.out)
         try {
@@ -474,7 +876,7 @@ export const exportCommand = new Command('export')
       return
     }
 
-    const output = JSON.stringify(result.data, null, 2) + '\n'
+    const output = JSON.stringify(exportData, null, 2) + '\n'
 
     if (options.out) {
       const outPath = resolve(options.out)

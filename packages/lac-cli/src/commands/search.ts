@@ -24,7 +24,7 @@ export const searchCommand = new Command('search')
 
     const searchFields = options.field
       ? options.field.split(',').map((f) => f.trim())
-      : ['featureKey', 'title', 'problem', 'tags', 'analysis', 'implementation']
+      : ['featureKey', 'title', 'problem', 'tags', 'analysis', 'implementation', 'userGuide']
 
     const q = query.toLowerCase()
 

@@ -80,6 +80,9 @@ export const FeatureSchema = z.object({
   merged_into: z.string().regex(FEATURE_KEY_PATTERN, 'merged_into must be a valid featureKey').optional(),
   merged_from: z.array(z.string().regex(FEATURE_KEY_PATTERN, 'each merged_from entry must be a valid featureKey')).optional(),
 
+  // User-facing documentation
+  userGuide: z.string().optional(),   // plain-language guide for end users: what the feature does and how to use it (not acceptance criteria)
+
   // Reconstruction-critical fields (derived from experiment: features are not reconstructable without these)
   componentFile: z.string().optional(),                              // relative path to the primary source file, e.g. "src/components/FeatureCard.tsx"
   npmPackages: z.array(z.string()).optional(),                       // npm packages this feature directly depends on, e.g. ["d3", "react-query"]

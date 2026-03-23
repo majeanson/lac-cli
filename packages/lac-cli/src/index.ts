@@ -31,30 +31,93 @@ program
   .description('life-as-code CLI — provenance for your features')
   .version('1.0.0')
 
-program.addCommand(workspaceCommand)
-program.addCommand(spawnCommand)
+// ── Core workflow ──────────────────────────────────────────────────────────
 program.addCommand(initCommand)
-program.addCommand(exportCommand)
+program.addCommand(spawnCommand)
+program.addCommand(workspaceCommand)
 program.addCommand(lintCommand)
-program.addCommand(blameCommand)
-program.addCommand(hooksCommand)
-program.addCommand(serveCommand)
-program.addCommand(tagCommand)
-program.addCommand(archiveCommand)
-program.addCommand(doctorCommand)
 program.addCommand(searchCommand)
 program.addCommand(statCommand)
-program.addCommand(lineageCommand)
-program.addCommand(diffCommand)
+program.addCommand(exportCommand)
+
+// ── Authoring & enrichment ─────────────────────────────────────────────────
+program.addCommand(fillCommand)
+program.addCommand(genCommand)
+program.addCommand(tagCommand)
 program.addCommand(renameCommand)
 program.addCommand(importCommand)
-program.addCommand(fillCommand)
 program.addCommand(extractAllCommand)
-program.addCommand(genCommand)
+
+// ── History & analysis ─────────────────────────────────────────────────────
 program.addCommand(logCommand)
-program.addCommand(mergeCommand)
+program.addCommand(lineageCommand)
+program.addCommand(diffCommand)
+program.addCommand(blameCommand)
 program.addCommand(revisionsCommand)
+
+// ── Lifecycle management ───────────────────────────────────────────────────
+program.addCommand(archiveCommand)
 program.addCommand(supersedeCommand)
+program.addCommand(mergeCommand)
 program.addCommand(stripCommand)
+
+// ── Tooling & infra ────────────────────────────────────────────────────────
+program.addCommand(serveCommand)
+program.addCommand(hooksCommand)
+program.addCommand(doctorCommand)
+
+// Custom help formatter — groups commands with section dividers
+const GROUPS: Array<{ label: string; names: string[] }> = [
+  { label: 'Core workflow', names: ['init', 'spawn', 'workspace', 'lint', 'search', 'stat', 'export'] },
+  { label: 'Authoring & enrichment', names: ['fill', 'gen', 'tag', 'rename', 'import', 'extract-all'] },
+  { label: 'History & analysis', names: ['log', 'lineage', 'diff', 'blame', 'revisions'] },
+  { label: 'Lifecycle management', names: ['archive', 'supersede', 'merge', 'strip'] },
+  { label: 'Tooling & infra', names: ['serve', 'hooks', 'doctor'] },
+]
+
+program.configureHelp({
+  formatHelp(cmd, helper) {
+    const termWidth = helper.helpWidth ?? 80
+    const indent = '  '
+
+    const lines: string[] = []
+
+    // Usage
+    lines.push(`Usage: ${helper.commandUsage(cmd)}`, '')
+
+    // Description
+    const desc = helper.commandDescription(cmd)
+    if (desc) lines.push(desc, '')
+
+    // Options
+    const opts = helper.visibleOptions(cmd)
+    if (opts.length) {
+      lines.push('Options:')
+      for (const opt of opts) {
+        const term = helper.optionTerm(opt).padEnd(28)
+        lines.push(`${indent}${term}${helper.optionDescription(opt)}`)
+      }
+      lines.push('')
+    }
+
+    // Grouped commands
+    const allCmds = helper.visibleCommands(cmd)
+    const cmdMap = new Map(allCmds.map(c => [c.name(), c]))
+
+    lines.push('Commands:')
+    for (const group of GROUPS) {
+      lines.push(`${indent}── ${group.label} ${'─'.repeat(Math.max(0, termWidth - indent.length - group.label.length - 5))}`)
+      for (const name of group.names) {
+        const c = cmdMap.get(name)
+        if (!c) continue
+        const term = helper.subcommandTerm(c).padEnd(28)
+        lines.push(`${indent}${term}${helper.subcommandDescription(c)}`)
+      }
+    }
+    lines.push('')
+
+    return lines.join('\n')
+  },
+})
 
 program.parse()

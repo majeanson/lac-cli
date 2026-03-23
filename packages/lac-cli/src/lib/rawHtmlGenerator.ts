@@ -1,8 +1,12 @@
+/**
+ * Raw HTML generator — same shell/navigation as the wiki, but renders every
+ * feature.json field verbatim (pre blocks, key-value rows, tables) instead of
+ * interpreting markdown or hiding structural data.
+ */
+
 import type { ScannedFeature } from './scanner.js'
 
 type Feature = ScannedFeature['feature']
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
 
 function esc(s: string): string {
   return s
@@ -12,65 +16,8 @@ function esc(s: string): string {
     .replace(/"/g, '&quot;')
 }
 
-/** Tiny inline markdown renderer: bold, inline code, bullet lists, paragraphs */
-function md(text: string): string {
-  const lines = esc(text).split('\n')
-  const result: string[] = []
-  let inList = false
-
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (trimmed.match(/^[-*] /)) {
-      if (!inList) { result.push('<ul>'); inList = true }
-      result.push(`<li>${renderInline(trimmed.slice(2))}</li>`)
-    } else {
-      if (inList) { result.push('</ul>'); inList = false }
-      result.push(line)
-    }
-  }
-  if (inList) result.push('</ul>')
-
-  // Split on blank lines → paragraphs
-  const blocks = result.join('\n').split(/\n{2,}/)
-  return blocks.map(block => {
-    const t = block.trim()
-    if (!t) return ''
-    if (t.startsWith('<ul>') || t.startsWith('<li>')) return t
-    return `<p>${renderInline(t.replace(/\n/g, '<br>'))}</p>`
-  }).filter(Boolean).join('\n')
-}
-
-function renderInline(s: string): string {
-  return s
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`([^`\n]+)`/g, '<code>$1</code>')
-}
-
-function completeness(f: Feature): number {
-  const checks = [
-    !!f.analysis,
-    !!f.implementation,
-    !!(f.decisions && f.decisions.length > 0),
-    !!f.successCriteria,
-    !!(f.knownLimitations && f.knownLimitations.length > 0),
-    !!(f.tags && f.tags.length > 0),
-    !!f.domain,
-  ]
-  return Math.round(checks.filter(Boolean).length / checks.length * 100)
-}
-
-// ── Main generator ─────────────────────────────────────────────────────────────
-
-export function generateHtmlWiki(features: Feature[], projectName: string, viewLabel?: string, viewName?: string): string {
-  // Safe JSON embedding — prevent </script> injection
+export function generateRawHtml(features: Feature[], projectName: string, viewLabel?: string, viewName?: string): string {
   const dataJson = JSON.stringify(features).replace(/<\/script>/gi, '<\\/script>')
-
-  const statusCounts = {
-    active:     features.filter(f => f.status === 'active').length,
-    frozen:     features.filter(f => f.status === 'frozen').length,
-    draft:      features.filter(f => f.status === 'draft').length,
-    deprecated: features.filter(f => f.status === 'deprecated').length,
-  }
 
   const domains = [...new Set(features.map(f => f.domain).filter(Boolean) as string[])].sort()
 
@@ -79,7 +26,7 @@ export function generateHtmlWiki(features: Feature[], projectName: string, viewL
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${esc(projectName)}${viewLabel ? ` · ${esc(viewLabel)}` : ''} — LAC Wiki</title>
+<title>${esc(projectName)}${viewLabel ? ` · ${esc(viewLabel)}` : ''} — LAC Raw</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -130,6 +77,16 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
 .topbar-logo { font-family: var(--mono); font-size: 13px; color: var(--accent); letter-spacing: 0.05em; }
 .topbar-sep  { color: var(--border); }
 .topbar-project { font-family: var(--mono); font-size: 12px; color: var(--text-mid); }
+.topbar-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
 .topbar-count { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--text-soft); }
 
 .body-row { display: flex; flex: 1; min-height: 0; }
@@ -175,7 +132,6 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
 .nav-tree::-webkit-scrollbar { width: 4px; }
 .nav-tree::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-/* Domain group */
 .nav-group { margin-bottom: 2px; }
 
 .nav-domain {
@@ -199,7 +155,6 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
 .nav-group-items { overflow: hidden; }
 .nav-group.collapsed .nav-group-items { display: none; }
 
-/* Feature item */
 .nav-item {
   display: flex;
   align-items: baseline;
@@ -270,7 +225,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
 .content::-webkit-scrollbar { width: 6px; }
 .content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-/* Home / welcome */
+/* Home page */
 .home-page {
   max-width: 680px;
   margin: 0 auto;
@@ -296,7 +251,6 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
   color: var(--text-mid);
   margin-bottom: 40px;
 }
-
 .stat-row {
   display: flex;
   gap: 16px;
@@ -348,9 +302,9 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
 }
 .domain-chip:hover { border-color: var(--accent); color: var(--accent); }
 
-/* Feature page */
+/* Feature page (raw) */
 .feature-page {
-  max-width: 760px;
+  max-width: 820px;
   margin: 0 auto;
   padding: 48px 40px 80px;
 }
@@ -362,7 +316,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
   flex-wrap: wrap;
   margin-bottom: 20px;
 }
-.feature-key {
+.feature-key-label {
   font-family: var(--mono);
   font-size: 11px;
   color: var(--text-soft);
@@ -383,140 +337,113 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
 .badge-draft      { color: var(--status-draft);      background: var(--status-draft-bg);      border: 1px solid rgba(196,162,85,0.25); }
 .badge-frozen     { color: var(--status-frozen);     background: var(--status-frozen-bg);     border: 1px solid rgba(91,130,204,0.25); }
 .badge-deprecated { color: var(--status-deprecated); background: var(--status-deprecated-bg); border: 1px solid rgba(204,91,91,0.25); }
-
-.badge-domain {
-  color: var(--text-mid);
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-}
+.badge-domain { color: var(--text-mid); background: var(--bg-card); border: 1px solid var(--border); }
 
 .feature-title {
   font-size: 26px;
   font-weight: 700;
   color: var(--text);
   line-height: 1.25;
-  margin-bottom: 6px;
-}
-.feature-completeness {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text-soft);
   margin-bottom: 32px;
 }
-.completeness-bar {
-  display: inline-block;
-  width: 80px;
-  height: 4px;
-  background: var(--border);
-  border-radius: 2px;
-  vertical-align: middle;
-  margin-right: 6px;
-  position: relative;
-  top: -1px;
-  overflow: hidden;
-}
-.completeness-fill {
-  height: 100%;
-  border-radius: 2px;
-  background: var(--accent);
-}
 
-/* Sections */
-.section { margin-bottom: 36px; }
+/* Raw field sections */
+.raw-section { margin-bottom: 28px; }
 
-.section-header {
+.raw-section-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
-  padding-bottom: 8px;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
   border-bottom: 1px solid var(--border);
 }
-.section-label {
+.raw-field-name {
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-soft);
 }
-.section-count {
+.raw-field-type {
   font-family: var(--mono);
   font-size: 10px;
   color: var(--border);
 }
 
-.section-body p { color: var(--text-mid); line-height: 1.75; margin-bottom: 10px; }
-.section-body p:last-child { margin-bottom: 0; }
-.section-body strong { color: var(--text); }
-.section-body code {
+/* Pre block for string values */
+.raw-pre {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 12px 16px;
   font-family: var(--mono);
   font-size: 12px;
-  color: var(--accent);
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-mid);
+  line-height: 1.7;
+}
+
+/* Key-value row */
+.raw-kv-list { display: flex; flex-direction: column; gap: 1px; }
+.raw-kv {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 12px;
+  align-items: baseline;
+  padding: 7px 12px;
   background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 12px;
+}
+.raw-kv-key {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-soft);
+  flex-shrink: 0;
+}
+.raw-kv-val { color: var(--text-mid); }
+.raw-kv-val code {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 3px;
   padding: 1px 5px;
 }
-.section-body ul { padding-left: 20px; color: var(--text-mid); }
-.section-body li { margin-bottom: 4px; line-height: 1.6; }
 
-/* Decision cards */
-.decisions-list { display: flex; flex-direction: column; gap: 12px; }
-
-.decision-card {
+/* Decision cards (raw) */
+.raw-decision {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
   border-radius: 4px;
-  padding: 14px 16px;
-}
-.decision-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 6px;
-  line-height: 1.4;
-}
-.decision-rationale {
-  font-size: 13px;
-  color: var(--text-mid);
-  line-height: 1.65;
+  padding: 12px 14px;
   margin-bottom: 8px;
 }
-.decision-meta {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.decision-date {
+.raw-decision-idx {
   font-family: var(--mono);
   font-size: 10px;
   color: var(--text-soft);
-}
-.decision-alts {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--text-soft);
+  margin-bottom: 8px;
 }
 
-/* Limitations list */
-.limitations-list { display: flex; flex-direction: column; gap: 6px; }
-.limitation-item {
-  display: flex;
-  gap: 10px;
-  padding: 8px 12px;
+/* Annotation cards */
+.raw-annotation {
   background: var(--bg-card);
   border: 1px solid var(--border);
+  border-left: 3px solid var(--status-draft);
   border-radius: 4px;
-  font-size: 13px;
-  color: var(--text-mid);
-  line-height: 1.55;
+  padding: 12px 14px;
+  margin-bottom: 8px;
 }
-.limitation-bullet { color: var(--text-soft); flex-shrink: 0; margin-top: 1px; }
 
-/* Tags row */
-.tags-row { display: flex; flex-wrap: wrap; gap: 6px; }
-.tag {
+/* Tags */
+.raw-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.raw-tag {
   padding: 3px 9px;
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -526,7 +453,77 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
   color: var(--text-soft);
 }
 
-/* Lineage */
+/* List items */
+.raw-list { display: flex; flex-direction: column; gap: 4px; }
+.raw-list-item {
+  display: flex;
+  gap: 10px;
+  padding: 7px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-mid);
+}
+.raw-list-bullet { color: var(--text-soft); flex-shrink: 0; }
+
+/* Tables */
+.raw-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.raw-table th, .raw-table td {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  text-align: left;
+  color: var(--text-mid);
+}
+.raw-table th {
+  background: var(--bg-card);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  font-weight: 600;
+}
+.raw-table td code {
+  color: var(--accent);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 11px;
+}
+
+/* Snippet */
+.raw-snippet { margin-bottom: 12px; }
+.raw-snippet-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-soft);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  padding: 4px 12px;
+}
+.raw-snippet-code {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0 0 4px 4px;
+  padding: 12px 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-mid);
+  margin: 0;
+}
+
+/* Lineage links */
 .lineage-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .lineage-link {
   display: inline-flex;
@@ -546,9 +543,6 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
 .lineage-link:hover { border-color: var(--accent); color: var(--accent); }
 .lineage-arrow { color: var(--text-soft); font-size: 10px; }
 
-/* Empty states */
-.empty { color: var(--text-soft); font-size: 13px; font-style: italic; }
-
 /* No results */
 .no-results {
   padding: 24px 18px;
@@ -565,6 +559,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
     <span class="topbar-logo">◈ lac</span>
     <span class="topbar-sep">|</span>
     <span class="topbar-project">${esc(projectName)}${viewLabel ? ` <span style="opacity:.55;font-weight:400">· ${esc(viewLabel)} view</span>` : ''}</span>
+    <span class="topbar-badge">raw</span>
     <span class="topbar-count">${features.length} features · ${domains.length} domains</span>
   </div>
   <div class="body-row">
@@ -591,48 +586,6 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
-function md(text) {
-  if (!text) return '';
-  const lines = esc(text).split('\\n');
-  const out = [];
-  let inList = false;
-  for (const line of lines) {
-    const t = line.trim();
-    if (t.match(/^[-*] /)) {
-      if (!inList) { out.push('<ul>'); inList = true; }
-      out.push('<li>' + inline(t.slice(2)) + '</li>');
-    } else {
-      if (inList) { out.push('</ul>'); inList = false; }
-      out.push(line);
-    }
-  }
-  if (inList) out.push('</ul>');
-  return out.join('\\n').split(/\\n{2,}/).map(block => {
-    const b = block.trim();
-    if (!b) return '';
-    if (b.startsWith('<ul>') || b.startsWith('<li>')) return b;
-    return '<p>' + inline(b.replace(/\\n/g, '<br>')) + '</p>';
-  }).filter(Boolean).join('\\n');
-}
-
-function inline(s) {
-  return s
-    .replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>')
-    .replace(/\`([^\`\\n]+)\`/g, '<code>$1</code>');
-}
-
-function completeness(f) {
-  const checks = [
-    !!f.analysis, !!f.implementation,
-    !!(f.decisions && f.decisions.length),
-    !!f.successCriteria,
-    !!(f.knownLimitations && f.knownLimitations.length),
-    !!(f.tags && f.tags.length),
-    !!f.domain,
-  ];
-  return Math.round(checks.filter(Boolean).length / checks.length * 100);
-}
-
 function statusColor(s) {
   return { active: '#4aad72', draft: '#c4a255', frozen: '#5b82cc', deprecated: '#cc5b5b' }[s] || '#c4a255';
 }
@@ -651,7 +604,6 @@ function isRoot(f) {
   return !p || !byKey.has(p);
 }
 
-/** Flatten feature + its descendants with depth info */
 function flatten(f, depth) {
   const result = [{ feature: f, depth }];
   for (const child of getChildren(f.featureKey)) {
@@ -660,11 +612,9 @@ function flatten(f, depth) {
   return result;
 }
 
-// Group root features by domain
 function buildGroups(features) {
   const roots = features.filter(isRoot);
   const groups = new Map();
-
   for (const f of roots) {
     const domain = f.domain || '(no domain)';
     if (!groups.has(domain)) groups.set(domain, []);
@@ -697,11 +647,7 @@ function renderNav(filterText) {
   }
 
   const groups = q
-    ? (() => {
-        // Flat list when searching
-        const m = new Map([['results', features.map(f => ({ feature: f, depth: 0 }))]]);
-        return m;
-      })()
+    ? new Map([['results', features.map(f => ({ feature: f, depth: 0 }))]])
     : buildGroups(FEATURES);
 
   const sortedDomains = [...groups.keys()].sort((a, b) => {
@@ -766,43 +712,64 @@ function toggleDomain(el) {
   }
 }
 
+// ── Raw rendering helpers ────────────────────────────────────────────────────
+
+function rawSection(fieldName, typeHint, body) {
+  return \`<div class="raw-section">
+  <div class="raw-section-header">
+    <span class="raw-field-name">\${esc(fieldName)}</span>
+    \${typeHint ? '<span class="raw-field-type">' + esc(typeHint) + '</span>' : ''}
+  </div>
+  \${body}
+</div>\`;
+}
+
+function rawString(value) {
+  return \`<pre class="raw-pre">\${esc(value)}</pre>\`;
+}
+
+function rawKvList(pairs) {
+  return '<div class="raw-kv-list">' +
+    pairs.map(([k, v]) => \`<div class="raw-kv">
+    <span class="raw-kv-key">\${esc(k)}</span>
+    <span class="raw-kv-val">\${v}</span>
+  </div>\`).join('') +
+    '</div>';
+}
+
+function rawList(items) {
+  return '<div class="raw-list">' +
+    items.map(i => \`<div class="raw-list-item">
+    <span class="raw-list-bullet">—</span>
+    <span>\${esc(i)}</span>
+  </div>\`).join('') +
+    '</div>';
+}
+
+function rawCodeList(items) {
+  return '<div class="raw-list">' +
+    items.map(i => \`<div class="raw-list-item">
+    <span class="raw-list-bullet">—</span>
+    <code style="font-family:var(--mono);font-size:11px;color:var(--accent)">\${esc(i)}</code>
+  </div>\`).join('') +
+    '</div>';
+}
+
 // ── Content rendering ────────────────────────────────────────────────────────
 
 function renderHome() {
   const content = document.getElementById('content');
   const total = FEATURES.length;
-
-  if (VIEW === 'user') {
-    content.innerHTML = \`<div class="home-page">
-  <div class="home-eyebrow">User Guide</div>
-  <div class="home-title">\${esc(document.title.replace(' — LAC Wiki','').replace(/ · [^·]+ view$/,'').trim())}</div>
-  <div class="home-subtitle">\${total} feature\${total === 1 ? '' : 's'}</div>
-  <div class="home-section-title">Features</div>
-  <div style="display:flex;flex-direction:column;gap:2px;">
-    \${FEATURES.map(f => \`<div class="nav-item" data-key="\${esc(f.featureKey)}" data-status="\${esc(f.status)}" data-depth="0" onclick="navigate('\${esc(f.featureKey)}')" style="border-radius:4px;border:1px solid var(--border-soft);margin-bottom:2px;padding:10px 14px;">
-      <span class="nav-dot"></span>
-      <span class="nav-item-title" style="font-size:13px;">\${esc(f.title)}</span>
-    </div>\`).join('')}
-  </div>
-</div>\`;
-    return;
-  }
-
   const frozen = FEATURES.filter(f => f.status === 'frozen').length;
   const active = FEATURES.filter(f => f.status === 'active').length;
   const draft  = FEATURES.filter(f => f.status === 'draft').length;
   const depr   = FEATURES.filter(f => f.status === 'deprecated').length;
-
   const domains = [...new Set(FEATURES.map(f => f.domain).filter(Boolean))].sort();
 
-  const avgCompleteness = FEATURES.length
-    ? Math.round(FEATURES.reduce((s, f) => s + completeness(f), 0) / FEATURES.length)
-    : 0;
-
   content.innerHTML = \`<div class="home-page">
-  <div class="home-eyebrow">◈ life-as-code wiki</div>
-  <div class="home-title">\${esc(document.title.replace(' — LAC Wiki', ''))}</div>
-  <div class="home-subtitle">\${total} feature\${total === 1 ? '' : 's'} · avg \${avgCompleteness}% complete</div>
+  <div class="home-eyebrow">◈ life-as-code · raw view</div>
+  <div class="home-title">\${esc(document.title.replace(' — LAC Raw', '').replace(/ · [^·]+ view$/, '').trim())}</div>
+  <div class="home-subtitle">\${total} feature\${total === 1 ? '' : 's'} — all fields shown verbatim</div>
 
   <div class="stat-row">
     \${active ? \`<div class="stat-pill"><span class="stat-pill-dot" style="background:#4aad72"></span><span class="stat-pill-num">\${active}</span><span class="stat-pill-label">active</span></div>\` : ''}
@@ -820,9 +787,8 @@ function renderHome() {
   <div style="display:flex;flex-direction:column;gap:2px;">
     \${FEATURES.map(f => \`<div class="nav-item" data-key="\${esc(f.featureKey)}" data-status="\${esc(f.status)}" data-depth="0" onclick="navigate('\${esc(f.featureKey)}')" style="border-radius:4px;border:1px solid var(--border-soft);margin-bottom:2px;">
       <span class="nav-dot"></span>
-      \${VIEW !== 'user' ? '<span class="nav-item-key">' + esc(f.featureKey) + '</span>' : ''}
+      <span class="nav-item-key">\${esc(f.featureKey)}</span>
       <span class="nav-item-title">\${esc(f.title)}</span>
-      \${VIEW !== 'user' ? '<span style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--text-soft);">' + completeness(f) + '%</span>' : ''}
     </div>\`).join('')}
   </div>
 </div>\`;
@@ -832,120 +798,157 @@ function renderFeature(key) {
   const f = byKey.get(key);
   if (!f) { renderHome(); return; }
 
-  const pct = completeness(f);
-  const barFill = \`<span class="completeness-bar"><span class="completeness-fill" style="width:\${pct}%"></span></span>\`;
-
   const children = getChildren(f.featureKey);
   const parent = f.lineage && f.lineage.parent && byKey.get(f.lineage.parent);
 
   let html = \`<div class="feature-page">
-  \${VIEW !== 'user' ? \`<div class="feature-meta">
-    <span class="feature-key">\${esc(f.featureKey)}</span>
+  <div class="feature-meta">
+    <span class="feature-key-label">\${esc(f.featureKey)}</span>
     <span class="badge badge-\${esc(f.status)}"><span class="badge-dot" style="background:\${statusColor(f.status)}"></span>\${esc(f.status)}</span>
     \${f.domain ? \`<span class="badge badge-domain">\${esc(f.domain)}</span>\` : ''}
-  </div>\` : ''}
-  <div class="feature-title">\${esc(f.title)}</div>
-  \${VIEW !== 'user' ? \`<div class="feature-completeness">\${barFill}\${pct}% complete</div>\` : ''}\`;
+  </div>
+  <div class="feature-title">\${esc(f.title)}</div>\`;
 
-  // Problem
-  html += section(VIEW === 'user' ? 'About this feature' : 'Problem', f.problem ? \`<div class="section-body">\${md(f.problem)}</div>\` : '<span class="empty">Not documented.</span>');
+  // ── String fields ──────────────────────────────────────────────────────────
+  if (f.problem)         html += rawSection('problem',         'string', rawString(f.problem));
+  if (f.successCriteria) html += rawSection('successCriteria', 'string', rawString(f.successCriteria));
+  if (f.analysis)        html += rawSection('analysis',        'string', rawString(f.analysis));
+  if (f.implementation)  html += rawSection('implementation',  'string', rawString(f.implementation));
+  if (f.userGuide)       html += rawSection('userGuide',       'string', rawString(f.userGuide));
 
-  // Analysis
-  if (f.analysis)
-    html += section('Analysis', \`<div class="section-body">\${md(f.analysis)}</div>\`);
-
-  // Implementation
-  if (f.implementation)
-    html += section('Implementation', \`<div class="section-body">\${md(f.implementation)}</div>\`);
-
-  // User Guide / Success Criteria
-  if (VIEW === 'user') {
-    const guideContent = f.userGuide || f.successCriteria;
-    if (guideContent)
-      html += section('What you can do', \`<div class="section-body">\${md(guideContent)}</div>\`);
-  } else {
-    if (f.userGuide)
-      html += section('User Guide', \`<div class="section-body">\${md(f.userGuide)}</div>\`);
-    if (f.successCriteria)
-      html += section('Success Criteria', \`<div class="section-body">\${md(f.successCriteria)}</div>\`);
-  }
-
-  // Decisions
-  if (f.decisions && f.decisions.length) {
-    const cards = f.decisions.map(d => \`<div class="decision-card">
-      <div class="decision-title">\${esc(d.decision)}</div>
-      <div class="decision-rationale">\${md(d.rationale)}</div>
-      \${d.date || (d.alternativesConsidered && d.alternativesConsidered.length) ? \`<div class="decision-meta">
-        \${d.date ? \`<span class="decision-date">📅 \${esc(d.date)}</span>\` : ''}
-        \${d.alternativesConsidered && d.alternativesConsidered.length ? \`<span class="decision-alts">Considered: \${d.alternativesConsidered.map(esc).join(', ')}</span>\` : ''}
-      </div>\` : ''}
-    </div>\`).join('');
-    html += section('Decisions', \`<div class="decisions-list">\${cards}</div>\`, f.decisions.length);
-  }
-
-  // Known Limitations
-  if (f.knownLimitations && f.knownLimitations.length) {
-    const items = f.knownLimitations.map(l =>
-      \`<div class="limitation-item"><span class="limitation-bullet">—</span><span>\${md(l)}</span></div>\`
-    ).join('');
-    html += section('Known Limitations', \`<div class="limitations-list">\${items}</div>\`, f.knownLimitations.length);
-  }
-
-  // Tags
+  // ── Tags ──────────────────────────────────────────────────────────────────
   if (f.tags && f.tags.length) {
-    const chips = f.tags.map(t => \`<span class="tag">\${esc(t)}</span>\`).join('');
-    html += section(VIEW === 'user' ? 'Topics' : 'Tags', \`<div class="tags-row">\${chips}</div>\`);
+    html += rawSection('tags', \`string[\${f.tags.length}]\`,
+      '<div class="raw-tags">' + f.tags.map(t => \`<span class="raw-tag">\${esc(t)}</span>\`).join('') + '</div>'
+    );
   }
 
-  // Lineage
+  // ── Decisions ─────────────────────────────────────────────────────────────
+  if (f.decisions && f.decisions.length) {
+    const cards = f.decisions.map((d, i) => \`<div class="raw-decision">
+      <div class="raw-decision-idx">[\${i + 1} / \${f.decisions.length}]</div>
+      \${rawKvList([
+        ['decision',  esc(d.decision)],
+        ['rationale', esc(d.rationale)],
+        ...(d.date ? [['date', '<code>' + esc(d.date) + '</code>']] : []),
+        ...(d.alternativesConsidered && d.alternativesConsidered.length
+          ? [['alternativesConsidered', d.alternativesConsidered.map(a => '<code>' + esc(a) + '</code>').join(', ')]]
+          : []),
+      ])}
+    </div>\`).join('');
+    html += rawSection('decisions', \`object[\${f.decisions.length}]\`, cards);
+  }
+
+  // ── Known Limitations ─────────────────────────────────────────────────────
+  if (f.knownLimitations && f.knownLimitations.length) {
+    html += rawSection('knownLimitations', \`string[\${f.knownLimitations.length}]\`, rawList(f.knownLimitations));
+  }
+
+  // ── Lineage ───────────────────────────────────────────────────────────────
   if (parent || children.length) {
     let lineage = '<div class="lineage-row">';
-    if (VIEW === 'user') {
-      if (parent) {
-        lineage += \`<span class="lineage-arrow">Part of</span>
-          <a class="lineage-link" onclick="navigate('\${esc(parent.featureKey)}')">\${esc(parent.title)}</a>\`;
-      }
-      if (parent && children.length) lineage += '<span class="lineage-arrow" style="margin:0 6px;">·</span>';
-      if (children.length) {
-        lineage += '<span class="lineage-arrow">Related</span>';
-        for (const c of children) {
-          lineage += \`<a class="lineage-link" onclick="navigate('\${esc(c.featureKey)}')">\${esc(c.title)}</a>\`;
-        }
-      }
-    } else {
-      if (parent) {
-        lineage += \`<span class="lineage-arrow">parent ↑</span>
-          <a class="lineage-link" onclick="navigate('\${esc(parent.featureKey)}')">
-            \${esc(parent.featureKey)} — \${esc(parent.title)}
-          </a>\`;
-      }
-      if (parent && children.length) lineage += '<span class="lineage-arrow" style="margin:0 6px;">·</span>';
-      if (children.length) {
-        lineage += '<span class="lineage-arrow">children ↓</span>';
-        for (const c of children) {
-          lineage += \`<a class="lineage-link" onclick="navigate('\${esc(c.featureKey)}')">
-            \${esc(c.featureKey)} — \${esc(c.title)}
-          </a>\`;
-        }
+    if (parent) {
+      lineage += \`<span class="lineage-arrow">parent ↑</span>
+        <a class="lineage-link" onclick="navigate('\${esc(parent.featureKey)}')">
+          \${esc(parent.featureKey)} — \${esc(parent.title)}
+        </a>\`;
+    }
+    if (parent && children.length) lineage += '<span class="lineage-arrow" style="margin:0 6px;">·</span>';
+    if (children.length) {
+      lineage += '<span class="lineage-arrow">children ↓</span>';
+      for (const c of children) {
+        lineage += \`<a class="lineage-link" onclick="navigate('\${esc(c.featureKey)}')">
+          \${esc(c.featureKey)} — \${esc(c.title)}
+        </a>\`;
       }
     }
     lineage += '</div>';
-    html += section(VIEW === 'user' ? 'Related' : 'Lineage', lineage);
+
+    const linData = f.lineage || {};
+    const kvPairs = [];
+    if (linData.parent) kvPairs.push(['parent', '<code>' + esc(linData.parent) + '</code>']);
+    if (linData.children && linData.children.length) kvPairs.push(['children', linData.children.map(c => '<code>' + esc(c) + '</code>').join(', ')]);
+    if (linData.spawnReason) kvPairs.push(['spawnReason', esc(linData.spawnReason)]);
+
+    html += rawSection('lineage', 'object',
+      kvPairs.length ? rawKvList(kvPairs) + '<div style="margin-top:10px;">' + lineage + '</div>' : lineage
+    );
+  }
+
+  // ── Supersession ──────────────────────────────────────────────────────────
+  const superPairs = [];
+  if (f.superseded_by)   superPairs.push(['superseded_by',   '<code>' + esc(f.superseded_by) + '</code>']);
+  if (f.superseded_from) superPairs.push(['superseded_from', f.superseded_from.map(k => '<code>' + esc(k) + '</code>').join(', ')]);
+  if (f.merged_into)     superPairs.push(['merged_into',     '<code>' + esc(f.merged_into) + '</code>']);
+  if (f.merged_from)     superPairs.push(['merged_from',     f.merged_from.map(k => '<code>' + esc(k) + '</code>').join(', ')]);
+  if (superPairs.length) html += rawSection('supersession', 'object', rawKvList(superPairs));
+
+  // ── Reconstruction fields ─────────────────────────────────────────────────
+  if (f.componentFile) {
+    html += rawSection('componentFile', 'string',
+      '<div class="raw-list-item"><span class="raw-list-bullet">—</span><code style="font-family:var(--mono);font-size:11px;color:var(--accent)">' + esc(f.componentFile) + '</code></div>'
+    );
+  }
+  if (f.npmPackages && f.npmPackages.length) {
+    html += rawSection('npmPackages', \`string[\${f.npmPackages.length}]\`, rawCodeList(f.npmPackages));
+  }
+  if (f.externalDependencies && f.externalDependencies.length) {
+    html += rawSection('externalDependencies', \`string[\${f.externalDependencies.length}]\`, rawCodeList(f.externalDependencies));
+  }
+  if (f.lastVerifiedDate) {
+    html += rawSection('lastVerifiedDate', 'string',
+      '<div class="raw-list-item"><span class="raw-list-bullet">—</span><code style="font-family:var(--mono);font-size:11px;color:var(--accent)">' + esc(f.lastVerifiedDate) + '</code></div>'
+    );
+  }
+
+  // publicInterface
+  if (f.publicInterface && f.publicInterface.length) {
+    const rows = f.publicInterface.map(p =>
+      \`<tr><td><code>\${esc(p.name)}</code></td><td><code>\${esc(p.type)}</code></td><td>\${p.description ? esc(p.description) : '—'}</td></tr>\`
+    ).join('');
+    html += rawSection('publicInterface', \`object[\${f.publicInterface.length}]\`,
+      '<table class="raw-table"><thead><tr><th>name</th><th>type</th><th>description</th></tr></thead><tbody>' + rows + '</tbody></table>'
+    );
+  }
+
+  // codeSnippets
+  if (f.codeSnippets && f.codeSnippets.length) {
+    const snippets = f.codeSnippets.map(s =>
+      \`<div class="raw-snippet">
+        <div class="raw-snippet-label">\${esc(s.label)}</div>
+        <pre class="raw-snippet-code">\${esc(s.snippet)}</pre>
+      </div>\`
+    ).join('');
+    html += rawSection('codeSnippets', \`object[\${f.codeSnippets.length}]\`, snippets);
+  }
+
+  // statusHistory
+  if (f.statusHistory && f.statusHistory.length) {
+    const rows = f.statusHistory.map(h =>
+      \`<tr><td><code>\${esc(h.from)}</code></td><td><code>\${esc(h.to)}</code></td><td><code>\${esc(h.date)}</code></td><td>\${h.reason ? esc(h.reason) : '—'}</td></tr>\`
+    ).join('');
+    html += rawSection('statusHistory', \`object[\${f.statusHistory.length}]\`,
+      '<table class="raw-table"><thead><tr><th>from</th><th>to</th><th>date</th><th>reason</th></tr></thead><tbody>' + rows + '</tbody></table>'
+    );
+  }
+
+  // annotations
+  if (f.annotations && f.annotations.length) {
+    const cards = f.annotations.map((a, i) => \`<div class="raw-annotation">
+      <div class="raw-decision-idx">[\${i + 1} / \${f.annotations.length}]</div>
+      \${rawKvList([
+        ['type',   '<code>' + esc(a.type) + '</code>'],
+        ['body',   esc(a.body)],
+        ['author', '<code>' + esc(a.author) + '</code>'],
+        ['date',   '<code>' + esc(a.date) + '</code>'],
+      ])}
+    </div>\`).join('');
+    html += rawSection('annotations', \`object[\${f.annotations.length}]\`, cards);
   }
 
   html += '</div>';
   document.getElementById('content').innerHTML = html;
   document.getElementById('content').scrollTop = 0;
-}
-
-function section(label, body, count) {
-  const countHtml = count != null ? \`<span class="section-count">(\${count})</span>\` : '';
-  return \`<div class="section">
-  <div class="section-header">
-    <span class="section-label">\${label}</span>\${countHtml}
-  </div>
-  \${body}
-</div>\`;
 }
 
 // ── Navigation ───────────────────────────────────────────────────────────────
@@ -956,7 +959,6 @@ function navigate(key) {
   renderNav(document.getElementById('filter-input').value);
   if (key) {
     renderFeature(key);
-    // Scroll nav item into view
     const el = document.querySelector(\`.nav-item[data-key="\${key}"]\`);
     if (el) el.scrollIntoView({ block: 'nearest' });
   } else {
@@ -970,7 +972,6 @@ function filterByDomain(domain) {
   renderNav(domain);
 }
 
-// Filter input
 document.getElementById('filter-input').addEventListener('input', e => {
   renderNav(e.target.value);
 });

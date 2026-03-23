@@ -10,6 +10,7 @@ export type RequirableField =
   | 'implementation'
   | 'knownLimitations'
   | 'tags'
+  | 'userGuide'
 
 export interface LacConfig {
   version?: number

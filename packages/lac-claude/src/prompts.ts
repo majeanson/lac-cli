@@ -8,6 +8,7 @@ export type FillableField =
   | 'tags'
   | 'annotations'
   | 'successCriteria'
+  | 'userGuide'
   | 'domain'
   | 'componentFile'
   | 'npmPackages'
@@ -78,6 +79,10 @@ Return ONLY a valid JSON array — no other text:
   successCriteria: {
     system: `You are a software engineering analyst. Write a plain-language success criteria statement for this feature — "how do we know it's done and working?" Be specific and testable. 1-3 sentences. Return only the text, no JSON wrapper, no heading.`,
     userSuffix: 'Write the success criteria for this feature.',
+  },
+  userGuide: {
+    system: `You are a technical writer writing for end users — not developers. Given a feature.json, write a plain-language user guide for this feature. Explain what it does and how to use it in everyday language. Avoid technical terms, implementation details, and acceptance-criteria framing. Write from the user's perspective: what they will see, what they can do, and why it helps them. 2-5 sentences or a short bullet list. Return only the guide text, no JSON wrapper, no heading.`,
+    userSuffix: 'Write a plain-language user guide for this feature.',
   },
   domain: {
     system: `You are a software engineering analyst. Identify the primary technical domain for this feature from its code and problem statement. Return a single lowercase word or short hyphenated phrase (e.g. "auth", "payments", "notifications", "data-pipeline"). Return only the domain value — nothing else.`,
@@ -151,6 +156,7 @@ export const ALL_FILLABLE_FIELDS: FillableField[] = [
   'knownLimitations',
   'tags',
   'successCriteria',
+  'userGuide',
   'domain',
   'componentFile',
   'npmPackages',
@@ -165,7 +171,7 @@ export function getMissingFields(feature: Feature): FillableField[] {
     const val = (feature as Record<string, unknown>)[field]
     if (val === undefined || val === null) return true
     if (typeof val === 'string') return val.trim().length === 0
-    if (Array.isArray(val)) return val.length === 0
+    if (Array.isArray(val)) return false // [] means "verified empty" — not missing
     return false
   })
 }
