@@ -17,7 +17,7 @@ import { validateFeature } from '@life-as-code/feature-schema'
 import { Command } from 'commander'
 
 import { loadConfig } from '../lib/config.js'
-import { findNearestFeatureJson } from '../lib/walker.js'
+import { findLacConfig, findNearestFeatureJson } from '../lib/walker.js'
 
 function localDateIso(): string {
   const d = new Date()
@@ -213,6 +213,149 @@ guardlockCommand
     process.stdout.write(`  AI tools will refuse to generate any field without --force or override: true.\n`)
     process.stdout.write(`  Use "lac guardlock thaw" to remove the full lock.\n\n`)
   })
+
+// ── base (workspace-level guardlock config) ──────────────────────────────────
+
+const baseCommand = guardlockCommand
+  .command('base [dir]')
+  .description('Show and edit workspace-level guardlock settings in lac.config.json')
+
+baseCommand
+  .command('show [dir]')
+  .description('Show the workspace guardlock config (default when no subcommand given)')
+  .action((dir?: string) => showBase(dir))
+
+// Default action for "lac guardlock base" with no subcommand
+baseCommand.action((dir?: string) => showBase(dir))
+
+baseCommand
+  .command('mode <mode>')
+  .description('Set enforcement mode: block | warn | off')
+  .option('--dir <dir>', 'Workspace root (default: cwd)')
+  .action((mode: string, options: { dir?: string }) => {
+    if (!['block', 'warn', 'off'].includes(mode)) {
+      process.stderr.write(`Invalid mode "${mode}". Choose: block, warn, off\n`)
+      process.exit(1)
+    }
+    const { configPath, raw } = resolveConfig(options.dir)
+    raw.guardlock = { ...((raw.guardlock as object) ?? {}), mode }
+    writeConfig(configPath, raw)
+    process.stdout.write(`  ✓ guardlock.mode = ${mode} in ${configPath}\n`)
+    process.stdout.write(modeDescription(mode) + '\n\n')
+  })
+
+baseCommand
+  .command('lock <fields...>')
+  .description('Add fields to workspace restrictedFields — applies to all features')
+  .option('--dir <dir>', 'Workspace root (default: cwd)')
+  .action((fields: string[], options: { dir?: string }) => {
+    const { configPath, raw } = resolveConfig(options.dir)
+    const existing: string[] = (raw.guardlock as Record<string, unknown>)?.restrictedFields as string[] ?? []
+    const toAdd = fields.filter((f) => !existing.includes(f))
+    const alreadyThere = fields.filter((f) => existing.includes(f))
+    if (alreadyThere.length) process.stdout.write(`  Already restricted: ${alreadyThere.join(', ')}\n`)
+    if (toAdd.length === 0) { process.stdout.write('  Nothing to add.\n'); return }
+    raw.guardlock = { ...((raw.guardlock as object) ?? {}), restrictedFields: [...existing, ...toAdd] }
+    writeConfig(configPath, raw)
+    process.stdout.write(`  🔒 Added to workspace restrictedFields: ${toAdd.join(', ')}\n`)
+    process.stdout.write(`  AI tools will now skip these fields in all features (mode: ${(raw.guardlock as Record<string, unknown>).mode ?? 'warn'}).\n\n`)
+  })
+
+baseCommand
+  .command('unlock <fields...>')
+  .description('Remove fields from workspace restrictedFields')
+  .option('--dir <dir>', 'Workspace root (default: cwd)')
+  .action((fields: string[], options: { dir?: string }) => {
+    const { configPath, raw } = resolveConfig(options.dir)
+    const existing: string[] = (raw.guardlock as Record<string, unknown>)?.restrictedFields as string[] ?? []
+    const after = existing.filter((f) => !fields.includes(f))
+    const removed = fields.filter((f) => existing.includes(f))
+    const notFound = fields.filter((f) => !existing.includes(f))
+    if (notFound.length) process.stdout.write(`  Not in restrictedFields: ${notFound.join(', ')}\n`)
+    if (removed.length === 0) { process.stdout.write('  Nothing to remove.\n'); return }
+    raw.guardlock = { ...((raw.guardlock as object) ?? {}), restrictedFields: after }
+    writeConfig(configPath, raw)
+    process.stdout.write(`  🔓 Removed from workspace restrictedFields: ${removed.join(', ')}\n\n`)
+  })
+
+baseCommand
+  .command('require-alternatives <on|off>')
+  .description('Toggle requireAlternatives — when on, advance_feature(frozen) blocks if any decision lacks alternativesConsidered')
+  .option('--dir <dir>', 'Workspace root (default: cwd)')
+  .action((value: string, options: { dir?: string }) => {
+    const enabled = value === 'on' || value === 'true'
+    const { configPath, raw } = resolveConfig(options.dir)
+    raw.guardlock = { ...((raw.guardlock as object) ?? {}), requireAlternatives: enabled }
+    writeConfig(configPath, raw)
+    process.stdout.write(`  ✓ guardlock.requireAlternatives = ${enabled}\n`)
+    if (enabled) {
+      process.stdout.write('  advance_feature(frozen) will now block if any decision lacks alternativesConsidered.\n')
+      process.stdout.write('  This is the real guardlock — not just what was chosen, but what was rejected.\n\n')
+    } else {
+      process.stdout.write('  advance_feature(frozen) will no longer check for alternativesConsidered.\n\n')
+    }
+  })
+
+baseCommand
+  .command('require-revision <on|off>')
+  .description('Toggle freezeRequiresHumanRevision — when on, advance_feature(frozen) requires at least one revision entry')
+  .option('--dir <dir>', 'Workspace root (default: cwd)')
+  .action((value: string, options: { dir?: string }) => {
+    const enabled = value === 'on' || value === 'true'
+    const { configPath, raw } = resolveConfig(options.dir)
+    raw.guardlock = { ...((raw.guardlock as object) ?? {}), freezeRequiresHumanRevision: enabled }
+    writeConfig(configPath, raw)
+    process.stdout.write(`  ✓ guardlock.freezeRequiresHumanRevision = ${enabled}\n`)
+    if (enabled) {
+      process.stdout.write('  Freezing now requires a human revision entry on intent-critical fields.\n')
+      process.stdout.write('  AI-only fills cannot be frozen — a human must sign off first.\n\n')
+    } else {
+      process.stdout.write('  Human revision no longer required before freeze.\n\n')
+    }
+  })
+
+function showBase(dir?: string): void {
+  const startDir = dir ? path.resolve(dir) : process.cwd()
+  const configPath = findLacConfig(startDir)
+  const config = loadConfig(startDir)
+  const g = config.guardlock
+
+  process.stdout.write('\n  Workspace guardlock config')
+  process.stdout.write(configPath ? ` (${configPath})\n` : ' (no lac.config.json — showing defaults)\n')
+  process.stdout.write('\n')
+  process.stdout.write(`  mode                        ${g.mode ?? 'warn'}\n`)
+  process.stdout.write(`  restrictedFields            ${(g.restrictedFields ?? []).length > 0 ? (g.restrictedFields ?? []).join(', ') : '(none)'}\n`)
+  process.stdout.write(`  requireAlternatives         ${g.requireAlternatives ? 'true  ← freeze blocked without alternativesConsidered' : 'false'}\n`)
+  process.stdout.write(`  freezeRequiresHumanRevision ${g.freezeRequiresHumanRevision ? 'true  ← freeze requires revision entry' : 'false'}\n`)
+  process.stdout.write('\n')
+  process.stdout.write('  Edit commands:\n')
+  process.stdout.write('    lac guardlock base mode block\n')
+  process.stdout.write('    lac guardlock base lock <fields...>\n')
+  process.stdout.write('    lac guardlock base unlock <fields...>\n')
+  process.stdout.write('    lac guardlock base require-alternatives on\n')
+  process.stdout.write('    lac guardlock base require-revision on\n\n')
+}
+
+function resolveConfig(dir?: string): { configPath: string; raw: Record<string, unknown> } {
+  const startDir = dir ? path.resolve(dir) : process.cwd()
+  const existing = findLacConfig(startDir)
+  const configPath = existing ?? path.join(startDir, 'lac.config.json')
+  let raw: Record<string, unknown> = {}
+  if (existing) {
+    try { raw = JSON.parse(fs.readFileSync(existing, 'utf-8')) as Record<string, unknown> } catch { /* start fresh */ }
+  }
+  return { configPath, raw }
+}
+
+function writeConfig(configPath: string, raw: Record<string, unknown>): void {
+  fs.writeFileSync(configPath, JSON.stringify(raw, null, 2) + '\n', 'utf-8')
+}
+
+function modeDescription(mode: string): string {
+  if (mode === 'block') return '  AI writes to restricted fields will be rejected with an error.'
+  if (mode === 'warn') return '  AI writes to restricted fields will proceed with a warning.'
+  return '  Guardlock is disabled — all field writes are unrestricted.'
+}
 
 // ── thaw (remove featureLocked) ───────────────────────────────────────────────
 

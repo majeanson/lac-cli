@@ -141,7 +141,7 @@ Add `lac-mcp` to Claude Code once. Then just ask:
   Consider spawning a child instead of a new feature.
 ```
 
-**18 MCP tools.** Claude runs the entire feature lifecycle — create, fill, advance, audit, query — without leaving the chat. Works in Claude Code, Cursor, and any MCP host.
+**19 MCP tools.** Claude runs the entire feature lifecycle — create, fill, advance, audit, query, lock — without leaving the chat. Works in Claude Code, Cursor, and any MCP host.
 
 ---
 
@@ -236,6 +236,20 @@ lac diff feat-2026-004 feat-2026-009  # → field-by-field comparison
 lac spawn feat-2026-007           # → child feature, lineage pre-wired
 lac log feat-2026-007             # → revision + status history timeline
 lac serve                         # → live local dashboard on :7474
+```
+
+**Guardlock — protect human decisions from AI drift:**
+
+```bash
+lac config                                     # → see all resolved settings including guardlock
+lac guardlock base                             # → which fields are restricted workspace-wide
+lac guardlock base mode block                  # → AI writes to restricted fields = hard error
+lac guardlock base lock problem decisions      # → add to workspace restrictedFields
+lac guardlock status                           # → what's locked on this feature?
+lac guardlock lock decisions --reason "final"  # → lock specific fields on this feature
+lac guardlock freeze                           # → featureLocked: true — everything locked
+lac fill .                                     # → skips locked fields automatically
+lac fill . --force                             # → override locks, fill everything
 ```
 
 **Filter everything by tag:**
@@ -362,7 +376,7 @@ One install. No separate packages needed.
 | --------- | --------------------------------------------------------- |
 | `lac`     | Full CLI — all commands including `fill`, `gen`, `export` |
 | `lac-lsp` | LSP server + HTTP dashboard API                           |
-| `lac-mcp` | MCP server — 18 tools for Claude Code and any MCP client  |
+| `lac-mcp` | MCP server — 19 tools for Claude Code and any MCP client  |
 
 ```bash
 npm install -g @majeanson/lac
