@@ -380,6 +380,59 @@ Run `lac serve` locally — the dashboard reads from `http://localhost:7474` by 
 
 ---
 
+## 🧪 Reconstruction projects — apps built (and rebuilt) from feature.json files
+
+The strongest argument for `lac` is watching a real app get built — or *reconstructed* — starting only from `feature.json` files. Four projects in this repo demonstrate the full lifecycle: spec → code → freeze → rebuild.
+
+The core claim: a well-written `feature.json` contains enough semantic information to reconstruct working source code. The projects below test that claim.
+
+---
+
+### FirstProjectExample — lac-showcase · [lacexample.vercel.app](https://lacexample.vercel.app/)
+
+A self-documenting Vite/React portfolio app. **29 features**, all frozen, covering auth, feed, media, growth, and memories domains. Every component, service, and route traces back to a `feature.json`.
+
+This is the reference implementation — a deployed, queryable app whose full architecture fits in `lac export --json`. Built LAC-first: no code was written before the feature file was frozen.
+
+```bash
+lac export --json | jq 'length'   # 29
+lac stat                           # 29/29 features frozen, 100% complete
+```
+
+---
+
+### SecondProjectExample — extraction and meta-documentation
+
+Starts from an existing codebase with no feature files. Uses `lac fill` to extract context from the source, then rebuilds the documentation layer from scratch. Demonstrates LAC as an **onboarding tool** for codebases that pre-date it — you don't need to start from scratch.
+
+The key finding: `lac fill` on a brownfield repo produces feature.jsons good enough to pass `lac lint` and describe the actual behaviour within one revision cycle.
+
+---
+
+### ThirdProjectExample — test regeneration from spec (vercel/ms)
+
+Uses the open-source `vercel/ms` library as a controlled subject with a known, passing test suite. Feature.jsons were written to describe `ms` from its source, then `lac gen --type test` was used to regenerate test coverage — and verified against the original suite.
+
+**Result:** generated tests matched original coverage. Proof that `feature.json → code` is not just a demo pattern — it produces verifiable output.
+
+---
+
+### FourthProjectExample — Recall (32 features) · LAC-first iOS app
+
+A personal growth and memory feed app built entirely spec-first. Every screen, every SQLite table, every service function begins as a `feature.json`. No TypeScript is written before the feature is frozen.
+
+**Design rule enforced throughout:** feature.jsons are **tech-agnostic** (what and why, no framework assumptions) with stack-specific detail in `codeSnippets` and `Recommendations`. The 32-feature spec survives a stack change.
+
+Domains: GPS memory pairing, daily mood check-in with heatmap overlay, constellation map, chapter mode, shadow gallery, voice reflections, life density calendar, gratitude pulse — each with `analysis`, `decisions`, `implementation`, `successCriteria`, `codeSnippets`, `userGuide`, and `publicInterface` populated.
+
+```bash
+lac lint           # 32/32 pass
+lac audit          # 0 missing decisions
+lac roadmap        # 32 features — all frozen
+```
+
+---
+
 ## 📦 What's inside `@majeanson/lac`
 
 One install, no separate packages needed:
