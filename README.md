@@ -21,7 +21,7 @@ Six months after shipping, nobody remembers why that folder exists, who made tha
 
 Every problem has multiple valid solutions. You picked one. You had reasons. You considered the alternatives and rejected them.
 
-Six months later, you ask Claude to extend that feature. Claude doesn't know what you decided. It re-solves the problem from scratch — and picks a different solution. Not a wrong one. Just *different*. It silently undoes the tradeoff you made.
+Six months later, you ask Claude to extend that feature. Claude doesn't know what you decided. It re-solves the problem from scratch — and picks a different solution. Not a wrong one. Just _different_. It silently undoes the tradeoff you made.
 
 This is **AI drift**: the AI doesn't lie, it just forgets. Every new session starts with no memory of what was decided before.
 
@@ -34,16 +34,21 @@ Problem: "how should we store session state?"
 Six months later, Claude picks Solution B. Your Redis infra is now partially abandoned.
 ```
 
-A `feature.json` is the guardlock. The `decisions` field captures not just what you chose, but *why* — and critically, what you **didn't** choose and why you rejected it.
+A `feature.json` is the guardlock. The `decisions` field captures not just what you chose, but _why_ — and critically, what you **didn't** choose and why you rejected it.
 
 ```json
 {
-  "decisions": [{
-    "decision": "Redis for session state with 30-min TTL",
-    "rationale": "Checkout must survive a page refresh but not persist indefinitely. Redis TTL handles expiry automatically without a cron job.",
-    "alternativesConsidered": ["Postgres sessions (overkill, adds DB load)", "JWT (stateless but can't invalidate on logout)"],
-    "date": "2026-01-14"
-  }]
+  "decisions": [
+    {
+      "decision": "Redis for session state with 30-min TTL",
+      "rationale": "Checkout must survive a page refresh but not persist indefinitely. Redis TTL handles expiry automatically without a cron job.",
+      "alternativesConsidered": [
+        "Postgres sessions (overkill, adds DB load)",
+        "JWT (stateless but can't invalidate on logout)"
+      ],
+      "date": "2026-01-14"
+    }
+  ]
 }
 ```
 
@@ -80,30 +85,33 @@ The `decisions` field is where the real lock-in lives:
 
 ```json
 {
-  "decisions": [{
-    "decision": "Redis for session state, 30-min TTL",
-    "rationale": "Checkout must survive a page refresh but not persist indefinitely. TTL handles expiry without a cron job.",
-    "alternativesConsidered": [
-      "Postgres sessions — adds DB load, overkill for this TTL",
-      "JWT — stateless but can't invalidate on logout"
-    ]
-  }]
+  "decisions": [
+    {
+      "decision": "Redis for session state, 30-min TTL",
+      "rationale": "Checkout must survive a page refresh but not persist indefinitely. TTL handles expiry without a cron job.",
+      "alternativesConsidered": [
+        "Postgres sessions — adds DB load, overkill for this TTL",
+        "JWT — stateless but can't invalidate on logout"
+      ]
+    }
+  ]
 }
 ```
 
-`alternativesConsidered` is the real guardlock. It says: *we looked at the full solution space. here is why we didn't go the other way.* A future AI that reads this can't re-propose JWT without knowing it was already rejected.
+`alternativesConsidered` is the real guardlock. It says: _we looked at the full solution space. here is why we didn't go the other way._ A future AI that reads this can't re-propose JWT without knowing it was already rejected.
 
 **Step 3 — Guardlock.** Freeze. Every future AI session that touches this feature reads its decisions first. The MCP server injects them automatically. Claude doesn't get a blank slate — it gets your full context, including the roads you already decided not to take.
 
 **The loop is flexible:**
 
-| You want to… | Do this |
-|---|---|
-| Move fast | `lac fill` → quick review → freeze. Minutes per feature. |
-| Write it yourself | `lac init` → fill every field manually. AI not required. |
-| Iterate slowly | Draft in week 1. Freeze in week 4 after production taught you something. |
+| You want to…                 | Do this                                                                       |
+| ---------------------------- | ----------------------------------------------------------------------------- |
+| Move fast                    | `lac fill` → quick review → freeze. Minutes per feature.                      |
+| Write it yourself            | `lac init` → fill every field manually. AI not required.                      |
+| Iterate slowly               | Draft in week 1. Freeze in week 4 after production taught you something.      |
 | Onboard an existing codebase | `lac fill` on everything. Complete the gaps. No feature.jsons needed upfront. |
-| Respond to a change | Reopen a frozen feature with a reason. Loop again. Refreeze. |
+| Respond to a change          | Reopen a frozen feature with a reason. Loop again. Refreeze.                  |
+| Reconstruct a project        | `lac fill` on project A → `lac export --prompt` → clone into B → strip source → Claude rebuilds from spec. |
 
 The guardlock is only as strong as step 2. AI fill gives you a head start. Your review and completion make it a real contract.
 
@@ -111,7 +119,7 @@ The guardlock is only as strong as step 2. AI fill gives you a head start. Your 
 
 ## The killer feature: talk to Claude about your codebase
 
-Add `lac-mcp` to Claude Code once. Then just ask:
+Add `lac-mcp` to Claude Code once.
 
 ```json
 {
@@ -121,6 +129,8 @@ Add `lac-mcp` to Claude Code once. Then just ask:
 }
 ```
 
+ Then just ask:
+ 
 ```
 > What feature owns src/api/payments.ts?
 → feat-2026-007 — Checkout flow redesign (active, 80% complete)
