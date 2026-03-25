@@ -519,8 +519,8 @@ html,body{
     if(answer.type === 'text'){
       // Basic inline markdown-ish rendering
       var html = esc(answer.content)
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\`([^\`]+)\`/g, '<code>$1</code>');
+        .replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>')
+        .replace(new RegExp('\`([^\`]+)\`', 'g'), '<code>$1</code>');
       // Preserve line breaks + bullet lists
       var lines = html.split('\\n');
       var out = '';
