@@ -1,7 +1,7 @@
-# 🗂️ lac — life as code
+# lac — life as code
 
-> **Feature provenance, from the terminal.**
-> Every feature has a story. `lac` makes sure it doesn't get lost.
+> **Your codebase knows what it does. It just can't explain why.**
+> `lac` fixes that — one `feature.json` per feature, forever.
 
 ```bash
 npm install -g @majeanson/lac
@@ -9,180 +9,17 @@ npm install -g @majeanson/lac
 
 ---
 
-Your codebase grows. Context erodes. Six months later no one knows _why_ that folder exists, who made that call, or whether anyone still cares about that half-shipped thing in `src/payments/v2`.
+## The problem in one screenshot
 
-`lac` solves this by putting a small, structured `feature.json` inside each feature folder. It travels with your code, validates against a schema, and powers a full CLI + web dashboard.
+Six months after shipping, nobody remembers why that folder exists, who made that call, or whether anyone still needs the half-finished thing in `src/payments/v2`. Tickets rot in Jira. Commit messages lie. ADRs go stale.
 
----
-
-## ⚡ 10 things you can do right now
-
-### 1 · Start a new feature
-
-```bash
-cd src/payments/checkout
-lac init
-```
-
-```
-? What problem does this feature solve? › Cart abandonment spikes at the shipping step.
-? Status? › draft
-✓ Created feature.json — feat-2026-007
-```
+`lac` puts the answer *in the repo* — a small structured `feature.json` next to every feature. It travels with your code through every rename, refactor, and rewrite.
 
 ---
 
-### 2 · Ask who owns a file
+## The killer feature: `lac fill`
 
-```bash
-lac blame src/payments/checkout/handler.ts
-```
-
-```
-  Feature   : feat-2026-007
-  Title     : Checkout flow redesign
-  Status    : ⊙  active
-  Complete  : [████████░░] 80%
-  Problem:
-    Cart abandonment spikes at the shipping step.
-```
-
----
-
-### 3 · Search across everything
-
-```bash
-lac search "cart"
-```
-
-```
-Found 2 feature(s) matching "cart":
-
-  ⊙  feat-2026-007        Checkout flow redesign
-     Cart abandonment spikes at the shipping step.
-
-  ◌  feat-2026-012        Abandoned cart email
-     Users who leave without purchasing receive no follow-up.
-```
-
----
-
-### 4 · See the lineage tree
-
-```bash
-lac lineage feat-2026-001
-```
-
-```
-feat-2026-001 (active) — Auth system
-    ├── feat-2026-004 (active) — Password reset
-    │   └── feat-2026-009 (draft) — Magic link login
-    └── feat-2026-006 (deprecated) — SMS OTP
-```
-
----
-
-### 5 · Check completeness across your workspace
-
-```bash
-lac stat
-```
-
-```
-  feat-2026-001   active      [██████████] 100%   Auth system
-  feat-2026-004   active      [████████░░]  80%   Password reset
-  feat-2026-007   active      [██████░░░░]  60%   Checkout flow redesign
-  feat-2026-012   draft       [███░░░░░░░]  30%   Abandoned cart email
-```
-
----
-
-### 6 · Diff two features side by side
-
-```bash
-lac diff feat-2026-004 feat-2026-009
-```
-
-```
-diff feat-2026-004 → feat-2026-009
-────────────────────────────────────────────────────────────
-~ title:
-    OLD: Password reset
-    NEW: Magic link login
-~ status:
-    OLD: active
-    NEW: draft
-+ lineage: {"parent":"feat-2026-004"}
-```
-
----
-
-### 7 · Lint your whole workspace
-
-```bash
-lac lint
-```
-
-```
-✓ feat-2026-001   valid
-✓ feat-2026-004   valid
-✗ feat-2026-007   missing: analysis, decisions
-✗ feat-2026-012   missing: owner, analysis, decisions
-```
-
----
-
-### 8 · Export to JSON and pipe anywhere
-
-```bash
-lac export --json | jq '[.[] | {key: .featureKey, status}]'
-```
-
-```json
-[
-  { "key": "feat-2026-001", "status": "active" },
-  { "key": "feat-2026-007", "status": "active" },
-  { "key": "feat-2026-012", "status": "draft" }
-]
-```
-
----
-
-### 9 · Spawn a child feature (lineage pre-wired)
-
-```bash
-lac spawn feat-2026-007
-```
-
-```
-? What problem does this child feature solve? › Guest checkout — users don't want to create an account.
-✓ Created feature.json — feat-2026-013
-  lineage.parent → feat-2026-007
-```
-
----
-
-### 10 · Open the live dashboard
-
-```bash
-lac serve
-```
-
-```
-Starting lac-lsp HTTP server on port 7474...
-
-Ready — http://127.0.0.1:7474
-
-  GET /features     all indexed features
-  GET /lint         run lint against all features
-  GET /events       SSE stream of changes
-
-Press Ctrl+C to stop.
-```
-
----
-
-### 11 · Fill feature docs with AI
+Point it at a feature folder. Claude reads the source files and writes the docs.
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
@@ -190,280 +27,258 @@ lac fill src/payments/checkout
 ```
 
 ```
-Analyzing feat-2026-007 (Checkout flow redesign)...
+Analyzing feat-2026-007 — Checkout flow redesign
 Reading 6 source files...
 Generating with claude-sonnet-4-6...
-  → analysis... done
-  → decisions... done
-  → tags... done
-  → successCriteria... done
+  → analysis........... done
+  → decisions.......... done  (3 found)
+  → tags............... done
+  → successCriteria.... done
+  → userGuide.......... done
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  analysis  (empty → generated)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Stateless checkout flow using Stripe Payment Intents.
-  Cart state stored in Redis with 30-min TTL...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  analysis
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Stateless checkout using Stripe Payment Intents.
+  Cart state in Redis with 30-min TTL. Guest checkout
+  allowed — no account required...
 
-Apply? [Y]es / [n]o / [f]ield-by-field
+Apply? [Y]es / [n]o / [f]ield-by-field  _
 ```
 
-Use `--dry-run` to preview without writing. Use `--field analysis,decisions` to fill specific fields.
+`lac fill` works on brownfield codebases too — drop it into an existing project with zero feature files and it onboards the whole thing.
 
 ---
 
-### 12 · Generate code from a feature
+## Start a new feature in 30 seconds
 
 ```bash
-lac gen src/payments/checkout --type test
+cd src/payments/checkout
+lac init
 ```
 
-Reads the feature's `successCriteria` and `knownLimitations`, generates a Vitest test suite, writes it next to your code.
+```
+? What problem does this feature solve?
+  › Cart abandonment spikes at the shipping step.
+? Status? › draft
+✓ Created feature.json — feat-2026-007
+```
+
+Then fill it:
 
 ```bash
-lac gen src/payments/checkout --type component   # React component
-lac gen src/payments/checkout --type migration   # SQL migration
-lac gen src/payments/checkout --type docs        # User documentation
+lac fill .   # AI reads your source files and writes the rest
 ```
 
 ---
 
-### 13 · Use lac from any Claude session (MCP)
+## One command. 18 different views.
 
-Add to your `.mcp.json` (Claude Code) or any MCP-supporting Claude client:
+`lac export` turns your feature workspace into anything:
+
+```bash
+lac export --graph .        # force-directed lineage graph, zoomable
+lac export --kanban .       # Active / Frozen / Draft / Deprecated board
+lac export --health .       # project health scorecard with animated counters
+lac export --quiz .         # flashcard quiz — ship it to your whole team
+lac export --slide .        # full-screen slideshow, keyboard nav
+lac export --treemap .      # features as tiles, sized by decisions × completeness
+lac export --heatmap .      # completeness grid — spot the holes instantly
+lac export --decisions .    # consolidated ADR doc, searchable
+lac export --story .        # long-form narrative, one chapter per domain
+lac export --resume .       # portfolio from frozen features only
+lac export --html .         # sidebar wiki with search + domain groups
+lac export --site .         # full multi-page static site
+lac export --prompt .       # AI reconstruction spec (see below)
+```
+
+Every export is a single self-contained HTML file. No server. No build step. Just open it.
+
+---
+
+## The everyday CLI
+
+```bash
+lac blame src/api/payments.ts     # → which feature owns this file
+lac search "cart"                 # → full-text search across all features
+lac lineage feat-2026-001         # → parent/child tree
+lac stat                          # → completeness across the workspace
+lac lint                          # → catch missing required fields
+lac diff feat-2026-004 feat-2026-009  # → field-by-field comparison
+lac spawn feat-2026-007           # → child feature, lineage pre-wired
+lac log feat-2026-007             # → revision + status history timeline
+lac serve                         # → live local dashboard on :7474
+```
+
+**Filter everything by tag:**
+
+```bash
+lac stat --tags auth,payments     # scope to tagged features
+lac stat --by-tag                 # group output by tag
+lac search "db" --tags backend    # keyword search within tagged features
+lac lint --tags experimental      # lint only a subset
+```
+
+---
+
+## Use lac from Claude (MCP)
+
+Add to your `.mcp.json` — works in Claude Code, Cursor, or any MCP host:
 
 ```json
 {
   "mcpServers": {
-    "lac": {
-      "command": "lac-mcp",
-      "args": []
-    }
+    "lac": { "command": "lac-mcp" }
   }
 }
 ```
 
-After `npm install -g @majeanson/lac`, `lac-mcp` is on your PATH automatically. Then in Claude:
+Then just talk to Claude:
 
 ```
-> Fill the checkout feature for me
 > What feature owns src/api/payments.ts?
-> Generate tests for src/auth/ based on the feature file
+> Fill the checkout feature for me
 > Show me the lineage tree for feat-2026-001
+> What tech debt should we tackle next?
+> Is there anything too similar to what I'm about to build?
 ```
+
+**18 MCP tools** cover the full lifecycle — `create_feature`, `read_feature_context`, `write_feature_fields`, `advance_feature`, `audit_decisions`, `cross_feature_impact`, `time_travel`, and more. Claude runs the entire workflow without leaving the chat.
 
 ---
 
-## 🔌 VS Code extension — _life-as-code Lens_
-
-**Install from the marketplace:**
-Open VS Code → Extensions → search **`life-as-code Lens`** → Install.
-Or press `Ctrl+P` and run:
+## VS Code — _life-as-code Lens_
 
 ```
 ext install majeanson.lac-lens
 ```
 
-**What it does:**
-
-- 🔍 **Code lens** above every file in a feature folder — key, status icon, title, and completeness %
-- 💬 **Hover** to see the full feature summary without leaving the editor
-- 📌 **Status bar chip** — click to open the Feature Panel for the current file's feature
-- 🗂️ **Feature Panel** — rich webview with tabs (Overview, Analysis, Decisions, Implementation, Limitations, Annotations), **inline editing** of every field, and clickable parent/child lineage navigation
-- 🌲 **Feature Tree View** — sidebar listing all workspace features grouped by status
-- ⚠️ **Diagnostics** — completeness warnings on `feature.json` files (active features without analysis/decisions flagged automatically)
-
-**Commands** (all in `Ctrl+Shift+P → lac:`):
-
-| Command | Action |
-|---|---|
-| `lac: New Feature here…` | 4-step wizard — creates `feature.json` and opens the panel |
-| `lac: New Child Feature…` | Spawns a child with lineage pre-wired |
-| `lac: Change Feature Status…` | Flip status via QuickPick |
-| `lac: Search Features…` | Workspace-wide fuzzy search by key, title, tags |
-| `lac: Add Decision…` | Append a decision + rationale in two prompts |
-| `lac: Export Feature as Markdown` | Render full feature as `.md` |
-
-**Enable richer LSP mode** (hover + workspace symbols from the language server):
+- **CodeLens** above every file in a feature folder — key, status, completeness %
+- **Hover** to see the full feature without leaving the editor
+- **Status bar chip** — click to open the Feature Panel for the current file
+- **Feature Panel** — tabbed webview with inline field editing
+- **Sidebar tree** — all features, grouped by status
+- **Diagnostics** — red squiggles on incomplete active features
 
 ```jsonc
-// .vscode/settings.json
-{
-  "lacLens.lspMode": true  // lac-lsp is already on PATH after installing @majeanson/lac
-}
+// .vscode/settings.json — enable LSP mode for hover + workspace symbols
+{ "lacLens.lspMode": true }
 ```
 
-**Publish it yourself** (if you forked and want your own marketplace listing):
+---
+
+## Real projects built with lac
+
+### [lacexample.vercel.app](https://lacexample.vercel.app/) — the self-documenting app
+
+A React app that reads its own `feature.json` files and renders them as a feature tree. The build process and the content are the same thing — the self-documenting loop is closed.
+
+**29 features · all frozen · deployed**
 
 ```bash
-# 1. Create a publisher at marketplace.visualstudio.com/manage
-# 2. Get a Personal Access Token from dev.azure.com → User Settings → PAT
-#    Scope: Marketplace → Manage
-
-cd packages/vscode-extension
-
-# 3. Login
-npx vsce login <your-publisher-id>
-
-# 4. Package and publish
-npx vsce publish
+git clone https://github.com/majeanson/lac-showcase
+cd lac-showcase
+lac stat    # 29/29 frozen · 100% complete
+lac export --graph .   # open lac-graph.html — the full lineage tree
 ```
-
-> Update the `publisher` field in `packages/vscode-extension/package.json` before publishing.
 
 ---
 
-## 🤔 Why not just use…
+### SecondProjectExample — the reconstruction experiment
 
-|                                          | `lac` | Jira / Linear | ADRs | Commit messages |
-| ---------------------------------------- | ----- | ------------- | ---- | --------------- |
-| Lives with the code                      | ✅    | ❌            | ✅   | ✅              |
-| Structured + typed                       | ✅    | ✅            | ❌   | ❌              |
-| Queryable CLI                            | ✅    | ❌            | ❌   | ❌              |
-| Feature lifecycle (`draft → deprecated`) | ✅    | ✅            | ❌   | ❌              |
-| Lineage (parent → children)              | ✅    | ❌            | ❌   | ❌              |
-| Completeness scoring                     | ✅    | ❌            | ❌   | ❌              |
-| Survives a ticket tracker migration      | ✅    | ❌            | ✅   | ✅              |
-| Web dashboard                            | ✅    | ✅            | ❌   | ❌              |
-| Works fully offline                      | ✅    | ❌            | ✅   | ✅              |
-
----
-
-## 🖥️ The web UI
-
-> 📸 _Screenshots below — [lifeascode-ruddy.vercel.app](https://lifeascode-ruddy.vercel.app/)_
-
-![Feature list dashboard](docs/screenshots/ui-dashboard.png)
-![Feature detail with tabs](docs/screenshots/ui-feature-detail.png)
-
-**[lifeascode-ruddy.vercel.app](https://lifeascode-ruddy.vercel.app/)** is a companion Next.js app built for teams who want a shared dashboard on top of the same `feature.json` files.
-
-It includes:
-
-- 🔍 Debounced live search + status filter pills
-- 📊 Completeness histogram and RBAC views (Dev / PM / Support / User)
-- 🗂️ Feature detail with 6 tabs — overview, guide, lineage, decisions, annotations, history
-- ✏️ Inline editor that writes back to `feature.json` on disk
-- ⌨️ Keyboard shortcuts — `/` to search, `n` for new feature, `g d` for dashboard
-- 🔄 File watcher syncs filesystem changes to Postgres within 300ms
-
-The CLI and the UI are two separate repos designed to be **forked together**:
-
-```
-you fork @majeanson/lac          →  your CLI, adapted to your team's key conventions
-you fork lifeascode (the UI)     →  your dashboard, connected to your own DB
-```
-
-### Fork and deploy the UI on Vercel
-
-**1. Fork the repo**
-[github.com/majeanson/lifeascode](https://github.com/majeanson/lifeascode) → Fork
-
-**2. Create a Postgres database**
-The UI uses [Supabase](https://supabase.com) (free tier works). Grab your `DATABASE_URL` from Project Settings → Database → Connection string.
-
-**3. Import to Vercel**
-Go to [vercel.com/new](https://vercel.com/new), import your fork, and set these environment variables:
-
-```
-DATABASE_URL=postgresql://...          # Supabase direct URL (for migrations)
-DATABASE_URL_POOLED=postgresql://...   # Supabase pooled URL (for runtime)
-AUTH_SECRET=<random 32-char string>    # NextAuth secret — openssl rand -base64 32
-AUTH_DISCORD_ID=                       # Optional — Discord OAuth app ID
-AUTH_DISCORD_SECRET=                   # Optional — Discord OAuth secret
-```
-
-**4. Deploy**
-Vercel picks up the `vercel.json` at the repo root and builds the Next.js app automatically. First deploy runs the DB migration.
-
-**5. Point it at your local workspace**
-Run `lac serve` locally — the dashboard reads from `http://localhost:7474` by default. To use the hosted version against a remote server, set `LAC_API_URL` in your Vercel env.
-
----
-
-## 🧪 Reconstruction projects — apps built (and rebuilt) from feature.json files
-
-The strongest argument for `lac` is watching a real app get built — or *reconstructed* — starting only from `feature.json` files. Four projects in this repo demonstrate the full lifecycle: spec → code → freeze → rebuild.
-
-The core claim: a well-written `feature.json` contains enough semantic information to reconstruct working source code. The projects below test that claim.
-
----
-
-### FirstProjectExample — lac-showcase · [lacexample.vercel.app](https://lacexample.vercel.app/)
-
-A self-documenting Vite/React portfolio app. **29 features**, all frozen, covering auth, feed, media, growth, and memories domains. Every component, service, and route traces back to a `feature.json`.
-
-This is the reference implementation — a deployed, queryable app whose full architecture fits in `lac export --json`. Built LAC-first: no code was written before the feature file was frozen.
+**Goal:** take only the `feature.json` files. Delete all source code. Rebuild the app from scratch using `lac export --prompt` and Claude.
 
 ```bash
-lac export --json | jq 'length'   # 29
-lac stat                           # 29/29 features frozen, 100% complete
+# Step 1: extract feature context from an existing codebase
+lac extract-all src/
+
+# Step 2: export as an AI reconstruction spec
+lac export --prompt . > spec.md
+
+# Step 3: delete the source
+rm -rf src/
+
+# Step 4: give spec.md to Claude and ask it to rebuild
+# → Claude reconstructs working source from the spec alone
 ```
 
----
-
-### SecondProjectExample — extraction and meta-documentation
-
-Starts from an existing codebase with no feature files. Uses `lac fill` to extract context from the source, then rebuilds the documentation layer from scratch. Demonstrates LAC as an **onboarding tool** for codebases that pre-date it — you don't need to start from scratch.
-
-The key finding: `lac fill` on a brownfield repo produces feature.jsons good enough to pass `lac lint` and describe the actual behaviour within one revision cycle.
+The result: a working app rebuilt from documentation. The experiment surfaces exactly which fields matter most for reconstruction — that's why `codeSnippets`, `publicInterface`, and `componentFile` exist in the schema.
 
 ---
 
-### ThirdProjectExample — test regeneration from spec (vercel/ms)
+### FourthProjectExample — Recall (32 features · LAC-first iOS app)
 
-Uses the open-source `vercel/ms` library as a controlled subject with a known, passing test suite. Feature.jsons were written to describe `ms` from its source, then `lac gen --type test` was used to regenerate test coverage — and verified against the original suite.
+Every screen, every SQLite table, every service function starts as a `feature.json`. No TypeScript written before the feature is frozen.
 
-**Result:** generated tests matched original coverage. Proof that `feature.json → code` is not just a demo pattern — it produces verifiable output.
-
----
-
-### FourthProjectExample — Recall (32 features) · LAC-first iOS app
-
-A personal growth and memory feed app built entirely spec-first. Every screen, every SQLite table, every service function begins as a `feature.json`. No TypeScript is written before the feature is frozen.
-
-**Design rule enforced throughout:** feature.jsons are **tech-agnostic** (what and why, no framework assumptions) with stack-specific detail in `codeSnippets` and `Recommendations`. The 32-feature spec survives a stack change.
-
-Domains: GPS memory pairing, daily mood check-in with heatmap overlay, constellation map, chapter mode, shadow gallery, voice reflections, life density calendar, gratitude pulse — each with `analysis`, `decisions`, `implementation`, `successCriteria`, `codeSnippets`, `userGuide`, and `publicInterface` populated.
+**Design rule:** feature.jsons are tech-agnostic (what/why) — stack specifics live in `codeSnippets` and `Recommendations`. The 32-feature spec survives a stack change.
 
 ```bash
-lac lint           # 32/32 pass
-lac audit          # 0 missing decisions
-lac roadmap        # 32 features — all frozen
+lac lint      # 32/32 pass — zero schema gaps
+lac audit     # 0 missing decisions
+lac export --kanban .   # drag-and-drop board of all 32 features
 ```
 
 ---
 
-## 📦 What's inside `@majeanson/lac`
+## Why not just use…
 
-One install, no separate packages needed:
+|                                     | `lac`  | Jira/Linear | ADRs | Commit messages |
+|-------------------------------------|--------|-------------|------|-----------------|
+| Lives with the code                 | ✅     | ❌          | ✅   | ✅              |
+| Structured + typed                  | ✅     | ✅          | ❌   | ❌              |
+| AI can fill it from your source     | ✅     | ❌          | ❌   | ❌              |
+| Queryable CLI                       | ✅     | ❌          | ❌   | ❌              |
+| 18 export formats                   | ✅     | ❌          | ❌   | ❌              |
+| Feature lifecycle (draft→frozen)    | ✅     | ✅          | ❌   | ❌              |
+| Lineage (parent→children)           | ✅     | ❌          | ❌   | ❌              |
+| Survives a ticket tracker migration | ✅     | ❌          | ✅   | ✅              |
+| Works fully offline                 | ✅     | ❌          | ✅   | ✅              |
 
-|                  | What it gives you                                                          |
-| ---------------- | -------------------------------------------------------------------------- |
-| `lac` binary     | The full CLI — all 19 commands including `fill` and `gen`                  |
-| `lac-lsp` binary | LSP server + HTTP dashboard API (bundled in)                               |
-| `lac-mcp` binary | MCP server — use lac tools from Claude Code and any MCP-supporting client  |
-| Schema types     | Zod schema + TypeScript types (bundled in)                                 |
+---
+
+## The web dashboard
+
+**[lifeascode-ruddy.vercel.app](https://lifeascode-ruddy.vercel.app/)** — a shared team dashboard on top of the same `feature.json` files.
+
+- Live search + status filter pills
+- Completeness histogram, RBAC views (Dev / PM / Support / User)
+- Feature detail: 6 tabs — overview, guide, lineage, decisions, annotations, history
+- Inline editor that writes back to `feature.json` on disk
+- File watcher — filesystem changes sync to Postgres within 300ms
+
+**Deploy your own in 5 minutes:**
+
+Fork [github.com/majeanson/lifeascode](https://github.com/majeanson/lifeascode), set `DATABASE_URL` + `AUTH_SECRET` in Vercel env, and deploy. The first deploy runs the migration automatically.
+
+---
+
+## What's in the box
+
+One install. No separate packages needed.
+
+| Binary        | What it gives you                                             |
+|---------------|---------------------------------------------------------------|
+| `lac`         | Full CLI — all commands including `fill`, `gen`, `export`     |
+| `lac-lsp`     | LSP server + HTTP dashboard API                               |
+| `lac-mcp`     | MCP server — 18 tools for Claude Code and any MCP client      |
 
 ```bash
 npm install -g @majeanson/lac
-lac --version   # 1.0.1
-lac-lsp --help  # also available immediately
+lac --version   # 3.3.0
 ```
 
 ---
 
-## 🔑 Feature key format
+## Feature key format
 
-Keys follow `<domain>-YYYY-NNN`:
+```
+feat-2026-007   user-facing feature
+proc-2026-003   internal process or workflow
+goal-2026-007   team or product goal
+adr-2026-002    architecture decision record
+```
 
-| Key             | Meaning                         |
-| --------------- | ------------------------------- |
-| `feat-2026-001` | A user-facing feature           |
-| `proc-2026-003` | An internal process or workflow |
-| `goal-2026-007` | A team or product goal          |
-| `adr-2026-002`  | An architecture decision record |
-
-The domain prefix is yours to define. The year gives temporal context at a glance. Sequences are per-workspace and auto-incremented by `lac init`.
+Domain prefix is yours to define. Year gives temporal context at a glance. Keys auto-increment via `lac init`.
 
 ---
 
