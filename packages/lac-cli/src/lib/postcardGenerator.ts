@@ -73,7 +73,8 @@ function statusBg(status: string): string {
  * no JavaScript, no external dependencies.
  */
 export function generatePostcard(feature: Feature, projectName: string): string {
-  const today = new Date().toISOString().split('T')[0]!
+  const _dt = new Date()
+  const today = `${_dt.getFullYear()}-${String(_dt.getMonth() + 1).padStart(2, '0')}-${String(_dt.getDate()).padStart(2, '0')}`
 
   const statusLabel = feature.status.charAt(0).toUpperCase() + feature.status.slice(1)
   const sColor = statusColor(feature.status)

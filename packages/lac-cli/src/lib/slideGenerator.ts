@@ -19,7 +19,7 @@ export function generateSlides(
   const domains = [...new Set(sorted.map((f) => f.domain).filter(Boolean))].sort() as string[];
   const statusCounts: Record<string, number> = { draft: 0, active: 0, frozen: 0, deprecated: 0 };
   for (const f of sorted) {
-    if (f.status in statusCounts) statusCounts[f.status]++;
+    if (f.status in statusCounts) statusCounts[f.status] = (statusCounts[f.status] ?? 0) + 1
   }
 
   const today = new Date().toLocaleDateString("en-US", {

@@ -79,7 +79,8 @@ const baselineCommand = new Command('baseline')
     }
 
     const reason = options.reason ?? 'initial baseline — revisions tracking added retroactively'
-    const today = new Date().toISOString().split('T')[0]
+    const _dtr = new Date()
+    const today = `${_dtr.getFullYear()}-${String(_dtr.getMonth() + 1).padStart(2, '0')}-${String(_dtr.getDate()).padStart(2, '0')}`
 
     let updated = 0
     for (const { feature, filePath } of needsBaseline) {

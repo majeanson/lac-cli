@@ -397,6 +397,40 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: 'lock_feature_fields',
+      description:
+        'Lock or unlock specific fields in a feature.json, or toggle featureLocked for the whole feature. Use this when the user says "lock these fields while working on this feature" or "don\'t let AI touch X". Locked fields are skipped by write_feature_fields and read_feature_context will tell Claude not to generate them.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          path: {
+            type: 'string',
+            description: 'Absolute or relative path to the feature folder',
+          },
+          action: {
+            type: 'string',
+            enum: ['lock', 'unlock', 'freeze', 'thaw', 'status'],
+            description:
+              '"lock" — add fields to fieldLocks. "unlock" — remove from fieldLocks. "freeze" — set featureLocked: true (lock all fields). "thaw" — remove featureLocked. "status" — show current locks.',
+          },
+          fields: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Field names to lock or unlock (required for lock/unlock actions)',
+          },
+          reason: {
+            type: 'string',
+            description: 'Why these fields are being locked (shown in guardlock notices)',
+          },
+          author: {
+            type: 'string',
+            description: 'Who is setting the lock (defaults to "Claude" for MCP-initiated locks)',
+          },
+        },
+        required: ['path', 'action'],
+      },
+    },
+    {
       name: 'extract_all_features',
       description:
         'Scan a repository and return a manifest of all directories that should have feature.json files but do not yet. Useful for onboarding a legacy or external repo into LAC. After calling this tool, iterate over the returned candidates and call extract_feature_from_code on each one.',
@@ -1521,6 +1555,88 @@ Analyze the source files and determine whether this feature should be broken int
 
       case 'cross_feature_impact':
         return { ...handleCrossFeatureImpact(a, workspaceRoot) }
+
+      case 'lock_feature_fields': {
+        const featureDir = resolvePath(String(a.path))
+        const featurePath = path.join(featureDir, 'feature.json')
+        let rawStr: string
+        try {
+          rawStr = fs.readFileSync(featurePath, 'utf-8')
+        } catch {
+          return { content: [{ type: 'text', text: `No feature.json found at "${featurePath}"` }], isError: true }
+        }
+        const raw = JSON.parse(rawStr) as Record<string, unknown>
+        const action = String(a.action)
+        const author = a.author ? String(a.author) : 'Claude (MCP)'
+        const reason = a.reason ? String(a.reason) : undefined
+        const _dl = new Date()
+        const lockedAt = `${_dl.getFullYear()}-${String(_dl.getMonth() + 1).padStart(2, '0')}-${String(_dl.getDate()).padStart(2, '0')}`
+        type LockEntry = { field: string; lockedBy: string; lockedAt: string; reason?: string }
+        const existingLocks: LockEntry[] = (raw.fieldLocks as LockEntry[] | undefined) ?? []
+
+        if (action === 'status') {
+          const featureLocked = raw.featureLocked === true
+          const lines: string[] = [`🔒 Lock status for ${String(raw.featureKey)}`]
+          if (featureLocked) lines.push('  ⚡ featureLocked: true — ALL fields are AI-locked')
+          if (existingLocks.length > 0) {
+            lines.push('  Per-field locks:')
+            for (const l of existingLocks) {
+              lines.push(`    🔒 ${l.field.padEnd(24)} by ${l.lockedBy} on ${l.lockedAt}${l.reason ? ` — ${l.reason}` : ''}`)
+            }
+          } else if (!featureLocked) {
+            lines.push('  No per-field locks set.')
+          }
+          return { content: [{ type: 'text', text: lines.join('\n') }] }
+        }
+
+        if (action === 'freeze') {
+          if (raw.featureLocked === true) {
+            return { content: [{ type: 'text', text: `${String(raw.featureKey)} is already fully locked.` }] }
+          }
+          raw.featureLocked = true
+          fs.writeFileSync(featurePath, JSON.stringify(raw, null, 2) + '\n', 'utf-8')
+          return { content: [{ type: 'text', text: `⚡ ${String(raw.featureKey)} is now fully AI-locked (featureLocked: true).\nAI tools will refuse to write any field without override: true.` }] }
+        }
+
+        if (action === 'thaw') {
+          if (!raw.featureLocked) {
+            return { content: [{ type: 'text', text: `${String(raw.featureKey)} is not fully locked — nothing to thaw.` }] }
+          }
+          delete raw.featureLocked
+          fs.writeFileSync(featurePath, JSON.stringify(raw, null, 2) + '\n', 'utf-8')
+          return { content: [{ type: 'text', text: `🔓 ${String(raw.featureKey)}: featureLocked removed. Per-field locks (if any) remain.` }] }
+        }
+
+        const fields = (a.fields as string[] | undefined) ?? []
+        if (fields.length === 0) {
+          return { content: [{ type: 'text', text: `"fields" array is required for action "${action}"` }], isError: true }
+        }
+
+        if (action === 'lock') {
+          const existingSet = new Set(existingLocks.map((l) => l.field))
+          const newLocks = fields
+            .filter((f) => !existingSet.has(f))
+            .map((field) => ({ field, lockedBy: author, lockedAt, ...(reason ? { reason } : {}) }))
+          const alreadyLocked = fields.filter((f) => existingSet.has(f))
+          raw.fieldLocks = [...existingLocks, ...newLocks]
+          fs.writeFileSync(featurePath, JSON.stringify(raw, null, 2) + '\n', 'utf-8')
+          const lines = newLocks.map((l) => `  🔒 ${l.field}${l.reason ? ` — ${l.reason}` : ''}`)
+          if (alreadyLocked.length > 0) lines.push(`  Already locked: ${alreadyLocked.join(', ')}`)
+          return { content: [{ type: 'text', text: `Locked ${newLocks.length} field(s) in ${String(raw.featureKey)}:\n${lines.join('\n')}\n\nread_feature_context will now skip these fields. write_feature_fields will warn (or block) if these fields are in a write request.` }] }
+        }
+
+        if (action === 'unlock') {
+          const toRemove = new Set(fields)
+          const after = existingLocks.filter((l) => !toRemove.has(l.field))
+          const removed = existingLocks.filter((l) => toRemove.has(l.field)).map((l) => l.field)
+          raw.fieldLocks = after.length > 0 ? after : undefined
+          if (raw.fieldLocks === undefined) delete raw.fieldLocks
+          fs.writeFileSync(featurePath, JSON.stringify(raw, null, 2) + '\n', 'utf-8')
+          return { content: [{ type: 'text', text: `🔓 Unlocked ${removed.length} field(s): ${removed.join(', ')}` }] }
+        }
+
+        return { content: [{ type: 'text', text: `Unknown action: "${action}"` }], isError: true }
+      }
 
       case 'extract_all_features': {
         const toUnix = (p: string) => p.replace(/\\/g, '/')

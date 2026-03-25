@@ -51,7 +51,8 @@ export async function addDecisionCommand(): Promise<void> {
   })
   if (rationale === undefined) return
 
-  const today = new Date().toISOString().slice(0, 10)
+  const _dtv = new Date()
+  const today = `${_dtv.getFullYear()}-${String(_dtv.getMonth() + 1).padStart(2, '0')}-${String(_dtv.getDate()).padStart(2, '0')}`
   const updated = {
     ...feature,
     decisions: [

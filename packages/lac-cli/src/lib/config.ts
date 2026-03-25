@@ -115,13 +115,13 @@ export function loadConfig(fromDir?: string): Required<LacConfig> {
 }
 
 /** The 6 optional fields used to compute completeness score (0–100) */
-export const OPTIONAL_FIELDS: RequirableField[] = [
+export const OPTIONAL_FIELDS: (RequirableField | 'annotations')[] = [
   'analysis',
   'decisions',
   'implementation',
   'knownLimitations',
   'tags',
-  'annotations' as RequirableField,
+  'annotations',
 ]
 
 /**

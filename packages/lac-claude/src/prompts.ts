@@ -22,7 +22,8 @@ export interface FieldPrompt {
   userSuffix: string
 }
 
-const today = new Date().toISOString().split('T')[0]
+const _dtNow = new Date()
+const today = `${_dtNow.getFullYear()}-${String(_dtNow.getMonth() + 1).padStart(2, '0')}-${String(_dtNow.getDate()).padStart(2, '0')}`
 
 export const FILL_PROMPTS: Record<FillableField, FieldPrompt> = {
   analysis: {

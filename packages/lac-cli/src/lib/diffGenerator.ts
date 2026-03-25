@@ -154,7 +154,8 @@ export function generateDiff(
     if (!mapB.has(key)) removed.push(fa)
   }
 
-  const date = new Date().toISOString().split('T')[0]
+  const _dtd = new Date()
+  const date = `${_dtd.getFullYear()}-${String(_dtd.getMonth() + 1).padStart(2, '0')}-${String(_dtd.getDate()).padStart(2, '0')}`
   const totalChanges = added.length + removed.length + changed.length
 
   const addedHtml   = added.map(renderAdded).join('\n')

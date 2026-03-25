@@ -2,7 +2,9 @@ import { Command } from 'commander'
 import { archiveCommand } from './commands/archive.js'
 import { extractAllCommand } from './commands/extract-all.js'
 import { fillCommand } from './commands/fill.js'
+import { configCommand } from './commands/config.js'
 import { genCommand } from './commands/gen.js'
+import { guardlockCommand } from './commands/guardlock.js'
 import { logCommand } from './commands/log.js'
 import { mergeCommand } from './commands/merge.js'
 import { revisionsCommand } from './commands/revisions.js'
@@ -39,6 +41,10 @@ program.addCommand(lintCommand)
 program.addCommand(searchCommand)
 program.addCommand(statCommand)
 program.addCommand(exportCommand)
+
+// ── Config & guardlock ─────────────────────────────────────────────────────
+program.addCommand(configCommand)
+program.addCommand(guardlockCommand)
 
 // ── Authoring & enrichment ─────────────────────────────────────────────────
 program.addCommand(fillCommand)
