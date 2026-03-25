@@ -13,13 +13,49 @@ npm install -g @majeanson/lac
 
 Six months after shipping, nobody remembers why that folder exists, who made that call, or whether anyone still needs the half-finished thing in `src/payments/v2`. Tickets rot in Jira. Commit messages lie. ADRs go stale.
 
-`lac` puts the answer *in the repo* — a small structured `feature.json` next to every feature. It travels with your code through every rename, refactor, and rewrite.
+`lac` puts the answer _in the repo_ — a small structured `feature.json` next to every feature. It travels with your code through every rename, refactor, and rewrite.
 
 ---
 
-## The killer feature: `lac fill`
+## The killer feature: talk to Claude about your codebase
 
-Point it at a feature folder. Claude reads the source files and writes the docs.
+Add `lac-mcp` to Claude Code once. Then just ask:
+
+```json
+{
+  "mcpServers": {
+    "lac": { "command": "lac-mcp" }
+  }
+}
+```
+
+```
+> What feature owns src/api/payments.ts?
+→ feat-2026-007 — Checkout flow redesign (active, 80% complete)
+   Cart abandonment spikes at the shipping step.
+
+> Fill the checkout feature for me
+→ Reading 6 source files...
+  Writing analysis, decisions, successCriteria, userGuide...
+  Done — feat-2026-007 is ready to freeze.
+
+> What tech debt should we tackle next?
+→ 3 features with risky decisions flagged for revisit:
+  feat-2026-012 — "hardcoded timeout, revisit before scale"
+  ...
+
+> Is anything too similar to what I'm about to build?
+→ feat-2026-019 overlaps 74% — Guest checkout (draft, same domain)
+  Consider spawning a child instead of a new feature.
+```
+
+**18 MCP tools.** Claude runs the entire feature lifecycle — create, fill, advance, audit, query — without leaving the chat. Works in Claude Code, Cursor, and any MCP host.
+
+---
+
+## `lac fill` — AI docs from your source code
+
+No MCP? No problem. Point the CLI at any feature folder:
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
@@ -46,7 +82,7 @@ Generating with claude-sonnet-4-6...
 Apply? [Y]es / [n]o / [f]ield-by-field  _
 ```
 
-`lac fill` works on brownfield codebases too — drop it into an existing project with zero feature files and it onboards the whole thing.
+Works on brownfield codebases too — drop it into an existing project with zero feature files and it onboards everything in one pass.
 
 ---
 
@@ -118,32 +154,6 @@ lac stat --by-tag                 # group output by tag
 lac search "db" --tags backend    # keyword search within tagged features
 lac lint --tags experimental      # lint only a subset
 ```
-
----
-
-## Use lac from Claude (MCP)
-
-Add to your `.mcp.json` — works in Claude Code, Cursor, or any MCP host:
-
-```json
-{
-  "mcpServers": {
-    "lac": { "command": "lac-mcp" }
-  }
-}
-```
-
-Then just talk to Claude:
-
-```
-> What feature owns src/api/payments.ts?
-> Fill the checkout feature for me
-> Show me the lineage tree for feat-2026-001
-> What tech debt should we tackle next?
-> Is there anything too similar to what I'm about to build?
-```
-
-**18 MCP tools** cover the full lifecycle — `create_feature`, `read_feature_context`, `write_feature_fields`, `advance_feature`, `audit_decisions`, `cross_feature_impact`, `time_travel`, and more. Claude runs the entire workflow without leaving the chat.
 
 ---
 
@@ -222,17 +232,17 @@ lac export --kanban .   # drag-and-drop board of all 32 features
 
 ## Why not just use…
 
-|                                     | `lac`  | Jira/Linear | ADRs | Commit messages |
-|-------------------------------------|--------|-------------|------|-----------------|
-| Lives with the code                 | ✅     | ❌          | ✅   | ✅              |
-| Structured + typed                  | ✅     | ✅          | ❌   | ❌              |
-| AI can fill it from your source     | ✅     | ❌          | ❌   | ❌              |
-| Queryable CLI                       | ✅     | ❌          | ❌   | ❌              |
-| 18 export formats                   | ✅     | ❌          | ❌   | ❌              |
-| Feature lifecycle (draft→frozen)    | ✅     | ✅          | ❌   | ❌              |
-| Lineage (parent→children)           | ✅     | ❌          | ❌   | ❌              |
-| Survives a ticket tracker migration | ✅     | ❌          | ✅   | ✅              |
-| Works fully offline                 | ✅     | ❌          | ✅   | ✅              |
+|                                     | `lac` | Jira/Linear | ADRs | Commit messages |
+| ----------------------------------- | ----- | ----------- | ---- | --------------- |
+| Lives with the code                 | ✅    | ❌          | ✅   | ✅              |
+| Structured + typed                  | ✅    | ✅          | ❌   | ❌              |
+| AI can fill it from your source     | ✅    | ❌          | ❌   | ❌              |
+| Queryable CLI                       | ✅    | ❌          | ❌   | ❌              |
+| 18 export formats                   | ✅    | ❌          | ❌   | ❌              |
+| Feature lifecycle (draft→frozen)    | ✅    | ✅          | ❌   | ❌              |
+| Lineage (parent→children)           | ✅    | ❌          | ❌   | ❌              |
+| Survives a ticket tracker migration | ✅    | ❌          | ✅   | ✅              |
+| Works fully offline                 | ✅    | ❌          | ✅   | ✅              |
 
 ---
 
@@ -256,11 +266,11 @@ Fork [github.com/majeanson/lifeascode](https://github.com/majeanson/lifeascode),
 
 One install. No separate packages needed.
 
-| Binary        | What it gives you                                             |
-|---------------|---------------------------------------------------------------|
-| `lac`         | Full CLI — all commands including `fill`, `gen`, `export`     |
-| `lac-lsp`     | LSP server + HTTP dashboard API                               |
-| `lac-mcp`     | MCP server — 18 tools for Claude Code and any MCP client      |
+| Binary    | What it gives you                                         |
+| --------- | --------------------------------------------------------- |
+| `lac`     | Full CLI — all commands including `fill`, `gen`, `export` |
+| `lac-lsp` | LSP server + HTTP dashboard API                           |
+| `lac-mcp` | MCP server — 18 tools for Claude Code and any MCP client  |
 
 ```bash
 npm install -g @majeanson/lac
