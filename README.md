@@ -17,6 +17,42 @@ Six months after shipping, nobody remembers why that folder exists, who made tha
 
 ---
 
+## AI drift — and the guardlock
+
+Every problem has multiple valid solutions. You picked one. You had reasons. You considered the alternatives and rejected them.
+
+Six months later, you ask Claude to extend that feature. Claude doesn't know what you decided. It re-solves the problem from scratch — and picks a different solution. Not a wrong one. Just *different*. It silently undoes the tradeoff you made.
+
+This is **AI drift**: the AI doesn't lie, it just forgets. Every new session starts with no memory of what was decided before.
+
+```
+Problem: "how should we store session state?"
+  Solution A: Redis (fast, volatile) ← you chose this, for a reason
+  Solution B: Postgres (durable, slower)
+  Solution C: JWT (stateless, no infra)
+
+Six months later, Claude picks Solution B. Your Redis infra is now partially abandoned.
+```
+
+A `feature.json` is the guardlock. The `decisions` field captures not just what you chose, but *why* — and critically, what you **didn't** choose and why you rejected it.
+
+```json
+{
+  "decisions": [{
+    "decision": "Redis for session state with 30-min TTL",
+    "rationale": "Checkout must survive a page refresh but not persist indefinitely. Redis TTL handles expiry automatically without a cron job.",
+    "alternativesConsidered": ["Postgres sessions (overkill, adds DB load)", "JWT (stateless but can't invalidate on logout)"],
+    "date": "2026-01-14"
+  }]
+}
+```
+
+When Claude reads this before touching the code, it can't drift. It knows the solution space was already explored, a choice was made, and here's why the alternatives were rejected.
+
+**The MCP server injects these guardlocks automatically.** Every tool call reads the feature context first. Claude doesn't get a blank slate — it gets your decisions.
+
+---
+
 ## The killer feature: talk to Claude about your codebase
 
 Add `lac-mcp` to Claude Code once. Then just ask:
