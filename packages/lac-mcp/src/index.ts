@@ -22,6 +22,10 @@ import {
   FILL_PROMPTS,
   JSON_FIELDS,
   appendPromptLog,
+  loadGuardlockConfig,
+  checkGuardlock,
+  formatGuardlockMessage,
+  type FieldLock,
 } from '@life-as-code/lac-claude'
 
 // Workspace root: first CLI arg, LAC_WORKSPACE env, or cwd
@@ -149,7 +153,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     {
       name: 'write_feature_fields',
       description:
-        'Patch a feature.json with new field values. Use this after read_feature_context — write the fields you generated back to disk. If you are changing intent-critical fields (problem, analysis, implementation, decisions, successCriteria), pass a revision object with author and reason. After writing, call advance_feature to check if the feature is ready to transition.',
+        'Patch a feature.json with new field values. Use this after read_feature_context — write the fields you generated back to disk. If you are changing intent-critical fields (problem, analysis, implementation, decisions, successCriteria), pass a revision object with author and reason. Guardlock: if the feature has restricted fields (via lac.config.json guardlock.restrictedFields, feature.fieldLocks, or feature.featureLocked), those fields are blocked or warned by default — pass override: true to force-write them. After writing, call advance_feature to check if the feature is ready to transition.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -171,6 +175,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
               reason: { type: 'string', description: 'Why these fields are being changed.' },
             },
             required: ['author', 'reason'],
+          },
+          override: {
+            type: 'boolean',
+            description:
+              'Set to true to bypass guardlock and write restricted fields anyway. Only use when the user explicitly requests it — guardlocks exist to protect human decisions from AI drift.',
           },
         },
         required: ['path', 'fields'],
@@ -697,12 +706,55 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           }
         }
 
+        // ── Guardlock: resolve which fields are locked ────────────────────────
+        const guardConfig = loadGuardlockConfig(featureDir)
+        const featureFieldLocks = (feature as Record<string, unknown>).fieldLocks as FieldLock[] | undefined ?? []
+        const featureLocked = !!(feature as Record<string, unknown>).featureLocked
+        let lockedFieldNames = new Set<string>()
+        let guardlockNotice = ''
+        if (guardConfig.mode !== 'off') {
+          const { lockedFields, lockReasons } = (() => {
+            if (featureLocked) {
+              // All fields are locked — build a set from all attempted fields
+              const allFields = new Set(missingFields.map(String))
+              const reasons = new Map<string, string>()
+              for (const f of allFields) reasons.set(f, 'feature is AI-locked (featureLocked: true)')
+              return { lockedFields: allFields, lockReasons: reasons }
+            }
+            const locked = new Set<string>()
+            const reasons = new Map<string, string>()
+            for (const f of guardConfig.restrictedFields) {
+              locked.add(f)
+              reasons.set(f, 'workspace guardlock.restrictedFields')
+            }
+            for (const lock of featureFieldLocks) {
+              locked.add(lock.field)
+              if (!reasons.has(lock.field)) {
+                reasons.set(lock.field, lock.reason ? `per-feature lock: ${lock.reason}` : `locked by ${lock.lockedBy}`)
+              }
+            }
+            return { lockedFields: locked, lockReasons: reasons }
+          })()
+          lockedFieldNames = lockedFields
+          if (lockedFields.size > 0) {
+            const lockedLines = [...lockedFields]
+              .filter((f) => missingFields.includes(f as typeof missingFields[number]))
+              .map((f) => `  - ${f}: ${lockReasons.get(f)}`)
+            if (lockedLines.length > 0) {
+              guardlockNotice = `## 🔒 Guardlock — DO NOT generate these fields\nThese fields are human-locked. Do not write values for them. The human will fill them.\n${lockedLines.join('\n')}\n\n`
+            }
+          }
+        }
+
         // Build per-field instructions so Claude knows exactly what to generate
-        const fieldInstructions = missingFields.map((field) => {
-          const prompt = FILL_PROMPTS[field]
-          const isJson = JSON_FIELDS.has(field)
-          return `### ${field}\n${prompt.system}\n${prompt.userSuffix}\n${isJson ? '(Return valid JSON for this field)' : '(Return plain text for this field)'}`
-        }).join('\n\n')
+        const fieldInstructions = missingFields
+          .filter((f) => !lockedFieldNames.has(f))
+          .map((field) => {
+            const prompt = FILL_PROMPTS[field]
+            const isJson = JSON_FIELDS.has(field)
+            return `### ${field}\n${prompt.system}\n${prompt.userSuffix}\n${isJson ? '(Return valid JSON for this field)' : '(Return plain text for this field)'}`
+          }).join('\n\n')
+        const fillableFields = missingFields.filter((f) => !lockedFieldNames.has(f))
 
         // Check for stale-review annotation written by advance_feature on reopen
         const staleAnnotation = feature.annotations?.find((ann) => ann.type === 'stale-review')
@@ -711,9 +763,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           : ''
 
         const instructions =
-          missingFields.length === 0
+          fillableFields.length === 0 && missingFields.length === 0
             ? staleWarning || 'All fillable fields are already populated. No generation needed.'
-            : `${staleWarning}## Missing fields to fill (${missingFields.join(', ')})\n\nGenerate each field described below, then call write_feature_fields with all values at once. Fill ALL missing fields before calling advance_feature.\n\n${fieldInstructions}`
+            : fillableFields.length === 0 && missingFields.length > 0
+            ? `${guardlockNotice}${staleWarning}All missing fields are human-locked. No AI generation needed — the human will fill them.`
+            : `${guardlockNotice}${staleWarning}## Missing fields to fill (${fillableFields.join(', ')})\n\nGenerate each field described below, then call write_feature_fields with all values at once. Fill ALL missing fields before calling advance_feature.\n\n${fieldInstructions}`
 
         return {
           content: [{
@@ -738,20 +792,42 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           return { content: [{ type: 'text', text: 'fields must be a JSON object' }], isError: true }
         }
 
+        const override = a.override === true
+
+        // ── Guardlock check ──────────────────────────────────────────────────
+        if (!override) {
+          const guardConfig = loadGuardlockConfig(featureDir)
+          const featureFieldLocks = (existing.fieldLocks as FieldLock[] | undefined) ?? []
+          const featureLocked = existing.featureLocked === true
+          const violations = checkGuardlock(guardConfig, featureFieldLocks, Object.keys(fields), featureLocked)
+          if (violations.length > 0) {
+            const msg = formatGuardlockMessage(violations, guardConfig.mode === 'block' ? 'block' : 'warn', true)
+            if (guardConfig.mode === 'block') {
+              return { content: [{ type: 'text', text: msg }], isError: true }
+            }
+            // warn mode: proceed but prepend the warning to the response
+            // (handled below by injecting guardlockWarning into the response text)
+            ;(a as Record<string, unknown>).__guardlockWarning = msg
+          }
+        }
+        const guardlockWarning = (a as Record<string, unknown>).__guardlockWarning as string | undefined
+
         const INTENT_CRITICAL = new Set(['problem', 'analysis', 'implementation', 'decisions', 'successCriteria'])
         const changingCritical = Object.keys(fields).filter((k) => INTENT_CRITICAL.has(k))
 
         const updated = { ...existing, ...fields }
 
         // Always bump lastVerifiedDate on any write
-        updated.lastVerifiedDate = new Date().toISOString().split('T')[0]
+        const _d0 = new Date()
+        updated.lastVerifiedDate = `${_d0.getFullYear()}-${String(_d0.getMonth() + 1).padStart(2, '0')}-${String(_d0.getDate()).padStart(2, '0')}`
 
         // Handle revision
         const revisionInput = a.revision as { author: string; reason: string } | undefined
         let revisionWarning = ''
         if (changingCritical.length > 0) {
           if (revisionInput?.author && revisionInput?.reason) {
-            const today = new Date().toISOString().split('T')[0]
+            const _d1 = new Date()
+            const today = `${_d1.getFullYear()}-${String(_d1.getMonth() + 1).padStart(2, '0')}-${String(_d1.getDate()).padStart(2, '0')}`
             const existingRevisions = (existing.revisions as unknown[]) ?? []
             updated.revisions = [
               ...existingRevisions,
@@ -785,7 +861,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return {
           content: [{
             type: 'text',
-            text: `✓ Wrote ${writtenKeys.length} field(s) to ${featurePath}: ${writtenKeys.join(', ')}\n\n${nextHint}${revisionWarning}`,
+            text: `${guardlockWarning ? guardlockWarning + '\n\n' : ''}✓ Wrote ${writtenKeys.length} field(s) to ${featurePath}: ${writtenKeys.join(', ')}\n\n${nextHint}${revisionWarning}`,
           }],
         }
       }
@@ -828,6 +904,48 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           }
         }
 
+        // ── Guardlock checks on freeze ────────────────────────────────────────
+        if (to === 'frozen') {
+          const guardConfig = loadGuardlockConfig(featureDir)
+
+          // requireAlternatives: every decision must document what was rejected
+          if (guardConfig.requireAlternatives) {
+            const decisionsWithoutAlternatives = (feature.decisions ?? []).filter(
+              (d) => !d.alternativesConsidered || d.alternativesConsidered.length === 0,
+            )
+            if (decisionsWithoutAlternatives.length > 0) {
+              const names = decisionsWithoutAlternatives.map((d) => `"${d.decision.slice(0, 50)}"`)
+              return {
+                content: [{
+                  type: 'text',
+                  text: `🔒 Guardlock blocked freeze — ${decisionsWithoutAlternatives.length} decision(s) missing alternativesConsidered:\n${names.map((n) => `  - ${n}`).join('\n')}\n\nAdd alternativesConsidered to each decision explaining what was rejected and why, then try again.\nThis is what makes a feature.json a real guardlock — not just what you chose, but what you didn't.`,
+                }],
+              }
+            }
+          }
+
+          // freezeRequiresHumanRevision: at least one revision entry must exist on intent-critical fields
+          if (guardConfig.freezeRequiresHumanRevision) {
+            const INTENT_CRITICAL_FREEZE = ['problem', 'analysis', 'implementation', 'decisions', 'successCriteria'] as const
+            const hasRevisions = Array.isArray(parsed.revisions) && (parsed.revisions as unknown[]).length > 0
+            const filledCritical = INTENT_CRITICAL_FREEZE.filter((f) => {
+              const val = (feature as Record<string, unknown>)[f]
+              if (val === undefined || val === null) return false
+              if (typeof val === 'string') return val.trim().length > 0
+              if (Array.isArray(val)) return val.length > 0
+              return false
+            })
+            if (filledCritical.length > 0 && !hasRevisions) {
+              return {
+                content: [{
+                  type: 'text',
+                  text: `🔒 Guardlock blocked freeze — no revision entries recorded for intent-critical fields (${filledCritical.join(', ')}).\n\nA human must review and sign off before freezing. Call write_feature_fields with a revision object (author + reason) on any of these fields, then try advance_feature again.\nThis enforces that a human reviewed the decisions before they become a frozen contract.`,
+                }],
+              }
+            }
+          }
+        }
+
         // On deprecation: warn if no lifecycle pointer is set
         let deprecationHint = ''
         if (to === 'deprecated') {
@@ -838,7 +956,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           }
         }
 
-        const today = new Date().toISOString().split('T')[0]
+        const _da = new Date()
+        const today = `${_da.getFullYear()}-${String(_da.getMonth() + 1).padStart(2, '0')}-${String(_da.getDate()).padStart(2, '0')}`
         const updated: Record<string, unknown> = { ...parsed, status: to }
 
         // Freezing is a comprehensive review — stamp lastVerifiedDate

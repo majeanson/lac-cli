@@ -1,5 +1,5 @@
-export { FeatureSchema, FeatureStatusSchema, DecisionSchema, AnnotationSchema, LineageSchema, StatusTransitionSchema, RevisionSchema, PublicInterfaceEntrySchema, CodeSnippetSchema, FEATURE_KEY_PATTERN } from './schema'
-export type { Feature, FeatureStatus, Revision, PublicInterfaceEntry, CodeSnippet } from './types'
+export { FeatureSchema, FeatureStatusSchema, DecisionSchema, AnnotationSchema, LineageSchema, StatusTransitionSchema, RevisionSchema, PublicInterfaceEntrySchema, CodeSnippetSchema, FieldLockSchema, FEATURE_KEY_PATTERN } from './schema'
+export type { Feature, FeatureStatus, Revision, PublicInterfaceEntry, CodeSnippet, FieldLock } from './types'
 export { validateFeature } from './validate'
 export type { ValidateFeatureResult } from './validate'
 export { generateFeatureKey, registerFeatureKey, getCurrentYear, padCounter } from './keygen'

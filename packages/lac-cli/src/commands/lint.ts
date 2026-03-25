@@ -30,6 +30,7 @@ function checkFeature(
   requiredFields: string[],
   threshold: number,
   revisionWarnings = true,
+  requireAlternatives = false,
 ): LintResult {
   const raw = feature as unknown as Record<string, unknown>
   const completeness = computeCompleteness(raw)
@@ -57,6 +58,21 @@ function checkFeature(
     if (filledCritical.length > 0) {
       warnings.push(`no revisions recorded — consider adding a revision entry for: ${filledCritical.join(', ')}`)
     }
+  }
+
+  // Warn if any decisions lack alternativesConsidered (when requireAlternatives is enabled)
+  if (requireAlternatives && Array.isArray(raw.decisions)) {
+    const missingAlts = (raw.decisions as Array<{ decision: string; alternativesConsidered?: string[] }>)
+      .filter((d) => !d.alternativesConsidered || d.alternativesConsidered.length === 0)
+    if (missingAlts.length > 0) {
+      const names = missingAlts.map((d) => `"${d.decision.slice(0, 40)}"`)
+      warnings.push(`${missingAlts.length} decision(s) missing alternativesConsidered: ${names.join(', ')}`)
+    }
+  }
+
+  // Warn if featureLocked but no decisions exist
+  if (raw.featureLocked && (!feature.decisions || feature.decisions.length === 0)) {
+    warnings.push('feature is AI-locked (featureLocked: true) but has no decisions recorded — consider adding decisions before locking')
   }
 
   // Warn if superseded_by or merged_into is set but status is still active/draft
@@ -190,8 +206,9 @@ export const lintCommand = new Command('lint')
         )
       }
 
+      const requireAlternatives = config.guardlock.requireAlternatives ?? false
       const results = toCheck.map(({ feature, filePath }) =>
-        checkFeature(feature, filePath, requiredFields, threshold, revisionWarnings),
+        checkFeature(feature, filePath, requiredFields, threshold, revisionWarnings, requireAlternatives),
       )
 
       // Bidirectional pointer consistency checks (uses full scanned set, not just lintable statuses)
@@ -261,7 +278,7 @@ export const lintCommand = new Command('lint')
           (config.lintStatuses as string[]).includes(feature.status),
         )
         const reResults = reFiltered.map(({ feature, filePath }) =>
-          checkFeature(feature, filePath, requiredFields, threshold, revisionWarnings),
+          checkFeature(feature, filePath, requiredFields, threshold, revisionWarnings, requireAlternatives),
         )
         const stillFailing = reResults.filter((r) => !r.pass)
         if (stillFailing.length === 0) {

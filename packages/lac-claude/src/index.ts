@@ -8,6 +8,7 @@ import { validateFeature } from '@life-as-code/feature-schema'
 import { createClient, generateText } from './client.js'
 import { buildContext, contextToString } from './context-builder.js'
 import { printDiff, type FieldDiff } from './diff.js'
+import { checkGuardlock, loadGuardlockConfig, type FieldLock } from './guardlock.js'
 import {
   FILL_PROMPTS,
   GEN_PROMPTS,
@@ -24,6 +25,13 @@ export { extractFeature } from './extract.js'
 export type { ExtractedFeatureFields } from './extract.js'
 export { appendPromptLog, hashPrompt, PROMPT_LOG_FILENAME } from './prompt-log.js'
 export type { PromptLogEntry } from './prompt-log.js'
+export {
+  loadGuardlockConfig,
+  resolveLockedFields,
+  checkGuardlock,
+  formatGuardlockMessage,
+} from './guardlock.js'
+export type { GuardlockConfig, FieldLock } from './guardlock.js'
 
 export interface FillOptions {
   /** Absolute path to the feature folder (contains feature.json) */
@@ -38,6 +46,14 @@ export interface FillOptions {
   model?: string
   /** Pre-fill the revision author prompt (from lac.config.json defaultAuthor) */
   defaultAuthor?: string
+  /**
+   * Fields to skip even if missing — combines workspace guardlock.restrictedFields
+   * and per-feature fieldLocks. Passed by fill.ts after loading config.
+   * When set, lac fill will skip these fields and emit a notice.
+   */
+  guardlockRestrictedFields?: string[]
+  /** When true, skip guardlock checks and fill all requested fields anyway. */
+  force?: boolean
 }
 
 export interface FillResult {
@@ -56,7 +72,14 @@ export interface GenOptions {
 }
 
 export async function fillFeature(options: FillOptions): Promise<FillResult> {
-  const { featureDir, dryRun = false, skipConfirm = false, model = 'claude-sonnet-4-6', defaultAuthor = '' } = options
+  const {
+    featureDir,
+    dryRun = false,
+    skipConfirm = false,
+    model = 'claude-sonnet-4-6',
+    defaultAuthor = '',
+    force = false,
+  } = options
 
   const featurePath = path.join(featureDir, 'feature.json')
 
@@ -83,9 +106,34 @@ export async function fillFeature(options: FillOptions): Promise<FillResult> {
   const client = createClient()
 
   // Determine which fields to fill
-  const fieldsToFill: FillableField[] = options.fields
+  let fieldsToFill: FillableField[] = options.fields
     ? (options.fields as FillableField[])
     : getMissingFields(feature)
+
+  // Guardlock: skip restricted fields unless --force
+  if (!force) {
+    // Load workspace config + merge per-feature fieldLocks
+    const guardConfig = loadGuardlockConfig(featureDir)
+    const perFeatureLocks: FieldLock[] = (feature as Record<string, unknown>).fieldLocks as FieldLock[] ?? []
+    const featureLocked = !!(feature as Record<string, unknown>).featureLocked
+    const violations = checkGuardlock(
+      { ...guardConfig, restrictedFields: [...(options.guardlockRestrictedFields ?? guardConfig.restrictedFields)] },
+      perFeatureLocks,
+      fieldsToFill,
+      featureLocked,
+    )
+    if (violations.length > 0) {
+      const lockedFieldNames = new Set(violations.map((v) => v.field))
+      const skipped = fieldsToFill.filter((f) => lockedFieldNames.has(f))
+      fieldsToFill = fieldsToFill.filter((f) => !lockedFieldNames.has(f))
+      process.stdout.write(`  🔒 Skipping ${skipped.length} locked field(s) — use --force to override: ${skipped.join(', ')}\n`)
+      if (violations.some((v) => v.reason)) {
+        for (const v of violations) {
+          process.stdout.write(`     ${v.field}: ${v.reason}\n`)
+        }
+      }
+    }
+  }
 
   if (fieldsToFill.length === 0) {
     process.stdout.write(`  All fields already filled for ${feature.featureKey}.\n`)
@@ -211,7 +259,8 @@ export async function fillFeature(options: FillOptions): Promise<FillResult> {
     const author = authorInput || defaultAuthor
     const reason = await askUser('  Reason for change: ')
     if (author && reason) {
-      const today = new Date().toISOString().split('T')[0]
+      const d = new Date()
+      const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
       updatedRevisions = [
         ...updatedRevisions,
         { date: today, author, fields_changed: changedCritical, reason },

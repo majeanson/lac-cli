@@ -3,6 +3,42 @@ import process from 'node:process'
 
 import { findLacConfig } from './walker.js'
 
+/**
+ * Guardlock configuration — controls how AI tools (lac fill, write_feature_fields)
+ * interact with fields that a human has already decided and locked down.
+ */
+export interface GuardlockConfig {
+  /**
+   * Enforcement mode for restricted fields.
+   * - 'block' — AI writes to restricted fields are rejected with an error (safe default for frozen features)
+   * - 'warn'  — AI writes proceed but emit a warning (good for active development)
+   * - 'off'   — guardlock is disabled entirely
+   * Default: 'warn'
+   */
+  mode?: 'block' | 'warn' | 'off'
+  /**
+   * Field names that AI tools cannot overwrite without --force (CLI) or override: true (MCP).
+   * Applies to lac fill and write_feature_fields.
+   * Any valid feature.json field name is accepted.
+   * Example: ["problem", "decisions", "analysis"]
+   * Default: [] (no workspace-level restrictions)
+   */
+  restrictedFields?: string[]
+  /**
+   * When true, advance_feature(frozen) blocks if any decision is missing alternativesConsidered.
+   * This enforces that every decision documents the roads not taken — the real guardlock.
+   * Default: false
+   */
+  requireAlternatives?: boolean
+  /**
+   * When true, advance_feature(frozen) requires at least one revision entry on intent-critical fields
+   * (problem, analysis, implementation, decisions, successCriteria).
+   * Ensures a human has explicitly reviewed and signed off before the feature is frozen.
+   * Default: false
+   */
+  freezeRequiresHumanRevision?: boolean
+}
+
 export type RequirableField =
   | 'problem'
   | 'analysis'
@@ -31,6 +67,8 @@ export interface LacConfig {
    * Each team member sets this in their local lac.config.json.
    */
   defaultAuthor?: string
+  /** Guardlock settings — restrict AI writes on specific fields. */
+  guardlock?: GuardlockConfig
 }
 
 const DEFAULTS: Required<LacConfig> = {
@@ -40,6 +78,12 @@ const DEFAULTS: Required<LacConfig> = {
   lintStatuses: ['active', 'draft'],
   domain: 'feat',
   defaultAuthor: '',
+  guardlock: {
+    mode: 'warn',
+    restrictedFields: [],
+    requireAlternatives: false,
+    freezeRequiresHumanRevision: false,
+  },
 }
 
 export function loadConfig(fromDir?: string): Required<LacConfig> {
@@ -57,6 +101,12 @@ export function loadConfig(fromDir?: string): Required<LacConfig> {
       lintStatuses: parsed.lintStatuses ?? DEFAULTS.lintStatuses,
       domain: parsed.domain ?? DEFAULTS.domain,
       defaultAuthor: parsed.defaultAuthor ?? DEFAULTS.defaultAuthor,
+      guardlock: {
+        mode: parsed.guardlock?.mode ?? DEFAULTS.guardlock.mode,
+        restrictedFields: parsed.guardlock?.restrictedFields ?? DEFAULTS.guardlock.restrictedFields,
+        requireAlternatives: parsed.guardlock?.requireAlternatives ?? DEFAULTS.guardlock.requireAlternatives,
+        freezeRequiresHumanRevision: parsed.guardlock?.freezeRequiresHumanRevision ?? DEFAULTS.guardlock.freezeRequiresHumanRevision,
+      },
     }
   } catch {
     process.stderr.write(`Warning: could not parse lac.config.json at "${configPath}" — using defaults\n`)
@@ -79,7 +129,8 @@ export const OPTIONAL_FIELDS: RequirableField[] = [
  * Use this as the default `date` for new annotations when no date is provided.
  */
 export function todayIso(): string {
-  return new Date().toISOString().slice(0, 10)
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 export function computeCompleteness(feature: Record<string, unknown>): number {

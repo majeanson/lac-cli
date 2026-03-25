@@ -17,6 +17,7 @@ export const fillCommand = new Command('fill')
   .option('--all', 'Fill all features found under [dir] (or cwd) below the completeness threshold')
   .option('--threshold <n>', 'Completeness % ceiling for --all (default: 80 — skip features already above this)', parseInt)
   .option('--model <model>', 'Claude model to use (default: claude-sonnet-4-6)')
+  .option('--force', 'Override guardlock — fill restricted fields even if they are locked in lac.config.json or feature.fieldLocks')
   .action(
     async (
       dir: string | undefined,
@@ -26,6 +27,7 @@ export const fillCommand = new Command('fill')
         all?: boolean
         threshold?: number
         model?: string
+        force?: boolean
       },
     ) => {
       const fields = options.field
@@ -69,6 +71,8 @@ export const fillCommand = new Command('fill')
               skipConfirm: true,
               model: options.model,
               defaultAuthor: cfg.defaultAuthor || undefined,
+              guardlockRestrictedFields: cfg.guardlock.restrictedFields,
+              force: options.force ?? false,
             })
             if (result.applied) filled++
           } catch (err) {
@@ -107,6 +111,8 @@ export const fillCommand = new Command('fill')
           dryRun: options.dryRun ?? false,
           model: options.model,
           defaultAuthor: config.defaultAuthor || undefined,
+          guardlockRestrictedFields: config.guardlock.restrictedFields,
+          force: options.force ?? false,
         })
       } catch (err) {
         process.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}\n`)
