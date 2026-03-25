@@ -53,6 +53,62 @@ When Claude reads this before touching the code, it can't drift. It knows the so
 
 ---
 
+## The loop: fill → complete → guardlock
+
+`lac` is built around one repeatable workflow. Three steps. Flexible at every one.
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                                                                      │
+│   1. FILL            2. COMPLETE          3. GUARDLOCK               │
+│                                                                      │
+│   AI reads your  →   You add what     →   Freeze. Future AI         │
+│   code and drafts    only you know:       reads this before         │
+│   the fields         the why behind       writing code. It          │
+│   (fast, ~80%)       the why              can't drift.              │
+│                                                                      │
+└───────────────────────────────┬──────────────────────────────────────┘
+                                │ reopen → iterate → refreeze
+                                └────────────────────────────▶
+```
+
+**Step 1 — Fill.** AI reads your source files and extracts everything it can: analysis, key decisions, implementation notes, success criteria, tags. Fast. One command. Usually 70–90% accurate.
+
+**Step 2 — Complete.** You review and add what only you know. The vendor limitation you hit at 2am. The alternative you considered and rejected for a reason that was never written down. The political constraint that shaped the tradeoff. This is the most important step — and the one the AI can't do for you.
+
+The `decisions` field is where the real lock-in lives:
+
+```json
+{
+  "decisions": [{
+    "decision": "Redis for session state, 30-min TTL",
+    "rationale": "Checkout must survive a page refresh but not persist indefinitely. TTL handles expiry without a cron job.",
+    "alternativesConsidered": [
+      "Postgres sessions — adds DB load, overkill for this TTL",
+      "JWT — stateless but can't invalidate on logout"
+    ]
+  }]
+}
+```
+
+`alternativesConsidered` is the real guardlock. It says: *we looked at the full solution space. here is why we didn't go the other way.* A future AI that reads this can't re-propose JWT without knowing it was already rejected.
+
+**Step 3 — Guardlock.** Freeze. Every future AI session that touches this feature reads its decisions first. The MCP server injects them automatically. Claude doesn't get a blank slate — it gets your full context, including the roads you already decided not to take.
+
+**The loop is flexible:**
+
+| You want to… | Do this |
+|---|---|
+| Move fast | `lac fill` → quick review → freeze. Minutes per feature. |
+| Write it yourself | `lac init` → fill every field manually. AI not required. |
+| Iterate slowly | Draft in week 1. Freeze in week 4 after production taught you something. |
+| Onboard an existing codebase | `lac fill` on everything. Complete the gaps. No feature.jsons needed upfront. |
+| Respond to a change | Reopen a frozen feature with a reason. Loop again. Refreeze. |
+
+The guardlock is only as strong as step 2. AI fill gives you a head start. Your review and completion make it a real contract.
+
+---
+
 ## The killer feature: talk to Claude about your codebase
 
 Add `lac-mcp` to Claude Code once. Then just ask:
