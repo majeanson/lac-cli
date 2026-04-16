@@ -8,7 +8,7 @@ Bundled into the CLI. Activated when Claude Code opens a workspace containing a 
 
 ## What It Does
 
-Exposes 18 tools that drive a guided, validated feature lifecycle — from creation through freezing, spawning children, reopening, and deprecation. Claude uses these tools instead of editing `feature.json` files directly.
+Exposes 22 tools that drive a guided, validated feature lifecycle — from creation through freezing, spawning children, reopening, and deprecation. Claude uses these tools instead of editing `feature.json` files directly.
 
 ---
 
@@ -77,6 +77,14 @@ Exposes 18 tools that drive a guided, validated feature lifecycle — from creat
 |---|---|
 | `cross_feature_impact` | Given a file, returns all features that reference it — blast radius before refactoring |
 | `feature_summary_for_pr` | Generates a PR description from a feature.json |
+| `summarize_workspace` | Returns a high-level summary of the whole workspace: feature counts, status distribution, top domains |
+| `extract_all_features` | Batch-extracts feature context for all features in the workspace — useful for seeding a new project |
+
+### Guardlock
+
+| Tool | What it does |
+|---|---|
+| `lock_feature_fields` | Manage per-feature field locks. Actions: `lock`, `unlock`, `freeze` (featureLocked: true), `thaw`, `status`. AI tools skip locked fields unless `override: true` is passed. |
 
 ---
 
@@ -88,6 +96,8 @@ read_feature_context    → Claude fills missing fields
 write_feature_fields    → writes fields (+ revision for intent-critical changes)
 advance_feature(active) → validates: analysis, implementation, decisions (1+), successCriteria
 advance_feature(frozen) → validates: all above + tags, knownLimitations
+                          [blocked if requireAlternatives: decisions must have alternativesConsidered]
+                          [blocked if freezeRequiresHumanRevision: revisions[] must exist]
 
 [bug found]    spawn_child_feature  → child restarts at draft
 [req change]   advance_feature(active, reason)  → stale-review annotation written
@@ -97,6 +107,7 @@ advance_feature(frozen) → validates: all above + tags, knownLimitations
 [mid-session]  get_feature_status                → orientation, exact next action
 [superseded]   write_feature_fields(superseded_by) → advance_feature(deprecated)
 [merged]       write_feature_fields(merged_into)   → advance_feature(deprecated)
+[lock fields]  lock_feature_fields(action:"lock"/"freeze") → AI tools skip/warn on protected fields
 ```
 
 ---

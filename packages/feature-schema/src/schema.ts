@@ -51,6 +51,7 @@ export const CodeSnippetSchema = z.object({
   snippet: z.string().min(1), // the actual one-liner or short block
 })
 
+
 /**
  * Per-field lock entry — written into a feature.json to explicitly protect a specific field
  * from AI overwrite in this feature, even if not in the workspace-level restrictedFields config.
@@ -102,6 +103,7 @@ export const FeatureSchema = z.object({
   externalDependencies: z.array(z.string()).optional(),              // featureKeys or file paths this feature depends on at runtime (beyond lineage)
   lastVerifiedDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'lastVerifiedDate must be YYYY-MM-DD').optional(), // date the feature.json was last confirmed accurate
   codeSnippets: z.array(CodeSnippetSchema).optional(),               // critical one-liners worth preserving verbatim (glob paths, API calls, etc.)
+  implementationNotes: z.array(z.string()).optional(),                // free-form implementation context: architectural choices, non-obvious constraints, why-not notes
 
   // Guardlock
   fieldLocks: z.array(FieldLockSchema).optional(),                    // per-field locks; AI tools will not overwrite these fields without --force/override

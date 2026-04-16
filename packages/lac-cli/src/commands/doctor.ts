@@ -15,7 +15,7 @@ import { findLacConfig } from '../lib/walker.js'
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 /** Mirrors the findLacDir logic from keygen.ts */
-function findLacDir(fromDir: string): string | null {
+export function findLacDir(fromDir: string): string | null {
   let current = path.resolve(fromDir)
   while (true) {
     const candidate = path.join(current, '.lac')
@@ -29,7 +29,7 @@ function findLacDir(fromDir: string): string | null {
 }
 
 /** Walk a directory tree collecting all feature.json paths with validation info. */
-async function walkFeatureFiles(
+export async function walkFeatureFiles(
   currentDir: string,
 ): Promise<{ valid: number; invalid: Array<{ filePath: string; errors: string[] }> }> {
   let validCount = 0

@@ -33257,6 +33257,12 @@ var CodeSnippetSchema = external_exports.object({
   label: external_exports.string().min(1),
   snippet: external_exports.string().min(1)
 });
+var FieldLockSchema = external_exports.object({
+  field: external_exports.string().min(1),
+  lockedAt: external_exports.string().min(1),
+  lockedBy: external_exports.string().min(1),
+  reason: external_exports.string().optional()
+});
 var FeatureSchema = external_exports.object({
   featureKey: external_exports.string().regex(FEATURE_KEY_PATTERN, "featureKey must match pattern <domain>-YYYY-NNN (e.g. feat-2026-001, proc-2026-001)"),
   title: external_exports.string().min(1),
@@ -33286,7 +33292,10 @@ var FeatureSchema = external_exports.object({
   publicInterface: external_exports.array(PublicInterfaceEntrySchema).optional(),
   externalDependencies: external_exports.array(external_exports.string()).optional(),
   lastVerifiedDate: external_exports.string().regex(/^\d{4}-\d{2}-\d{2}$/, "lastVerifiedDate must be YYYY-MM-DD").optional(),
-  codeSnippets: external_exports.array(CodeSnippetSchema).optional()
+  codeSnippets: external_exports.array(CodeSnippetSchema).optional(),
+  implementationNotes: external_exports.array(external_exports.string()).optional(),
+  fieldLocks: external_exports.array(FieldLockSchema).optional(),
+  featureLocked: external_exports.boolean().optional()
 });
 
 // ../feature-schema/dist/keygen.mjs
@@ -33747,7 +33756,8 @@ async function addDecisionCommand() {
   });
   if (rationale === void 0)
     return;
-  const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+  const _dtv = /* @__PURE__ */ new Date();
+  const today = `${_dtv.getFullYear()}-${String(_dtv.getMonth() + 1).padStart(2, "0")}-${String(_dtv.getDate()).padStart(2, "0")}`;
   const updated = {
     ...feature,
     decisions: [

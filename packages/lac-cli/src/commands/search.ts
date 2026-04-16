@@ -1,8 +1,24 @@
 import process from 'node:process'
 
+import type { Feature } from '@life-as-code/feature-schema'
 import { Command } from 'commander'
 
 import { scanFeatures } from '../lib/scanner.js'
+
+export const DEFAULT_SEARCH_FIELDS = ['featureKey', 'title', 'problem', 'tags', 'analysis', 'implementation', 'userGuide'] as const
+
+/** Returns true if the feature matches the query string in any of the given fields. */
+export function matchFeature(feature: Feature, query: string, searchFields: readonly string[]): boolean {
+  const q = query.toLowerCase()
+  for (const field of searchFields) {
+    const val = (feature as Record<string, unknown>)[field]
+    if (val === undefined || val === null) continue
+    if (typeof val === 'string' && val.toLowerCase().includes(q)) return true
+    if (Array.isArray(val) && val.some((v) => typeof v === 'string' && v.toLowerCase().includes(q)))
+      return true
+  }
+  return false
+}
 
 export const searchCommand = new Command('search')
   .description('Search features by keyword across key, title, problem, tags, and analysis')
@@ -24,20 +40,9 @@ export const searchCommand = new Command('search')
 
     const searchFields = options.field
       ? options.field.split(',').map((f) => f.trim())
-      : ['featureKey', 'title', 'problem', 'tags', 'analysis', 'implementation', 'userGuide']
+      : DEFAULT_SEARCH_FIELDS
 
-    const q = query.toLowerCase()
-
-    const matches = features.filter(({ feature }) => {
-      for (const field of searchFields) {
-        const val = (feature as Record<string, unknown>)[field]
-        if (val === undefined || val === null) continue
-        if (typeof val === 'string' && val.toLowerCase().includes(q)) return true
-        if (Array.isArray(val) && val.some((v) => typeof v === 'string' && v.toLowerCase().includes(q)))
-          return true
-      }
-      return false
-    })
+    const matches = features.filter(({ feature }) => matchFeature(feature, query, searchFields))
 
     if (options.json) {
       process.stdout.write(JSON.stringify(matches.map((m) => m.feature), null, 2) + '\n')

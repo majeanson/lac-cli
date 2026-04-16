@@ -189,6 +189,18 @@ describe('HttpServer', () => {
     expect(res.status).toBe(404)
   })
 
+  // Item: PUT /features/:key with invalid JSON body returns 400
+  it('PUT /features/:key with invalid JSON body returns 400', async () => {
+    const res = await httpRequest(
+      `${baseUrl}/features/feat-2026-001`,
+      'PUT',
+      'this is not JSON at all!!!',
+    )
+    expect(res.status).toBe(400)
+    const body = JSON.parse(res.body)
+    expect(body.error).toMatch(/valid JSON/i)
+  })
+
   // Rate limiting test
   it('returns 429 after exceeding rate limit', async () => {
     // Create a fresh server on a new port for this test so we don't pollute the shared state

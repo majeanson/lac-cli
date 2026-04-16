@@ -16,6 +16,7 @@ export type FillableField =
   | 'externalDependencies'
   | 'lastVerifiedDate'
   | 'codeSnippets'
+  | 'implementationNotes'
 
 export interface FieldPrompt {
   system: string
@@ -136,6 +137,15 @@ Return ONLY a valid JSON array — no other text:
 ]`,
     userSuffix: 'Extract the critical code snippets for this feature.',
   },
+  implementationNotes: {
+    system: `You are a software engineering analyst. Given a feature.json and its source code, write 2-5 short implementation notes — free-form sentences capturing context that does not fit neatly into decisions[], analysis, or userGuide. Good candidates: architectural choices made for non-obvious reasons, constraints the code works around, "why not X" rationale, threading/ordering requirements, or performance trade-offs visible in the implementation.
+
+Return ONLY a valid JSON array of plain strings — no other text, no markdown fences:
+["Note about why X was done this way.", "Note about a constraint that affects Y."]
+
+If there are no notable implementation notes, return an empty array: []`,
+    userSuffix: 'Extract free-form implementation notes for this feature.',
+  },
 }
 
 // Fields whose AI response is JSON (needs parsing) vs plain text
@@ -165,6 +175,7 @@ export const ALL_FILLABLE_FIELDS: FillableField[] = [
   'externalDependencies',
   'lastVerifiedDate',
   'codeSnippets',
+  'implementationNotes',
 ]
 
 export function getMissingFields(feature: Feature): FillableField[] {

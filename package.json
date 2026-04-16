@@ -32,5 +32,8 @@
       "tsdown": "^0.19.0",
       "typescript": "^5.9.3"
     }
+  },
+  "dependencies": {
+    "rolldown": "^1.0.0-rc.12"
   }
 }

@@ -11,9 +11,9 @@ import { computeCompleteness, loadConfig } from '../lib/config.js'
 import { scanFeatures, type ScanOptions } from '../lib/scanner.js'
 
 /** Intent-critical fields that should have a revision entry when non-empty */
-const INTENT_CRITICAL_FIELDS = ['problem', 'analysis', 'implementation', 'decisions', 'successCriteria'] as const
+export const INTENT_CRITICAL_FIELDS = ['problem', 'analysis', 'implementation', 'decisions', 'successCriteria'] as const
 
-interface LintResult {
+export interface LintResult {
   featureKey: string
   filePath: string
   status: string
@@ -24,7 +24,7 @@ interface LintResult {
   warnings: string[]
 }
 
-function checkFeature(
+export function checkFeature(
   feature: Feature,
   filePath: string,
   requiredFields: string[],
@@ -96,7 +96,7 @@ function checkFeature(
 }
 
 /** Default placeholder values for auto-fix of missing required fields */
-const FIELD_DEFAULTS: Record<string, unknown> = {
+export const FIELD_DEFAULTS: Record<string, unknown> = {
   problem: 'TODO: describe the problem this feature solves.',
   analysis: '',
   decisions: [],
@@ -109,7 +109,7 @@ const FIELD_DEFAULTS: Record<string, unknown> = {
  * Auto-repair a feature file by inserting default values for missing required fields.
  * Returns the number of fields fixed, or 0 if nothing was changed.
  */
-async function fixFeature(filePath: string, missingFields: string[]): Promise<number> {
+export async function fixFeature(filePath: string, missingFields: string[]): Promise<number> {
   if (missingFields.length === 0) return 0
 
   let raw: string

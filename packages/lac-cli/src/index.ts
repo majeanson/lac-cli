@@ -13,6 +13,7 @@ import { blameCommand } from './commands/blame.js'
 import { diffCommand } from './commands/diff.js'
 import { doctorCommand } from './commands/doctor.js'
 import { exportCommand } from './commands/export.js'
+import { exportAllCommand } from './commands/export-all.js'
 import { hooksCommand } from './commands/hooks.js'
 import { initCommand } from './commands/init.js'
 import { lineageCommand } from './commands/lineage.js'
@@ -26,6 +27,7 @@ import { statCommand } from './commands/stat.js'
 import { stripCommand } from './commands/strip.js'
 import { tagCommand } from './commands/tag.js'
 import { workspaceCommand } from './commands/workspace.js'
+import { experimentCommand } from './commands/experiment.js'
 
 const program = new Command()
 program
@@ -41,6 +43,7 @@ program.addCommand(lintCommand)
 program.addCommand(searchCommand)
 program.addCommand(statCommand)
 program.addCommand(exportCommand)
+program.addCommand(exportAllCommand)
 
 // ── Config & guardlock ─────────────────────────────────────────────────────
 program.addCommand(configCommand)
@@ -72,6 +75,9 @@ program.addCommand(serveCommand)
 program.addCommand(hooksCommand)
 program.addCommand(doctorCommand)
 
+// ── Experiments ────────────────────────────────────────────────────────────
+program.addCommand(experimentCommand)
+
 // Custom help formatter — groups commands with section dividers
 const GROUPS: Array<{ label: string; names: string[] }> = [
   { label: 'Core workflow', names: ['init', 'spawn', 'workspace', 'lint', 'search', 'stat', 'export'] },
@@ -79,6 +85,7 @@ const GROUPS: Array<{ label: string; names: string[] }> = [
   { label: 'History & analysis', names: ['log', 'lineage', 'diff', 'blame', 'revisions'] },
   { label: 'Lifecycle management', names: ['archive', 'supersede', 'merge', 'strip'] },
   { label: 'Tooling & infra', names: ['serve', 'hooks', 'doctor'] },
+  { label: 'Experiments', names: ['experiment'] },
 ]
 
 program.configureHelp({

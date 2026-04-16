@@ -165,6 +165,30 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
 .sidebar-search input:focus { border-color: var(--accent); }
 .sidebar-search input::placeholder { color: var(--text-soft); }
 
+.sidebar-sort {
+  display: flex;
+  gap: 4px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sort-btn {
+  flex: 1;
+  padding: 4px 6px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.sort-btn:hover { color: var(--text-mid); border-color: var(--text-soft); }
+.sort-btn.active { background: var(--bg-card); color: var(--accent); border-color: var(--accent); }
+
 .nav-tree {
   flex: 1;
   overflow-y: auto;
@@ -572,6 +596,10 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
       <div class="sidebar-search">
         <input type="text" id="filter-input" placeholder="Filter features…" autocomplete="off" spellcheck="false">
       </div>
+      <div class="sidebar-sort">
+        <button class="sort-btn active" id="sort-domain" onclick="setSortMode('domain')">Domain</button>
+        <button class="sort-btn" id="sort-build" onclick="setSortMode('build-order')">Build Order</button>
+      </div>
       <nav class="nav-tree" id="nav-tree"></nav>
     </aside>
     <main class="content" id="content"></main>
@@ -676,34 +704,63 @@ function buildGroups(features) {
 // ── Nav rendering ────────────────────────────────────────────────────────────
 
 let activeKey = null;
+let sortMode = 'domain';
 const collapsedDomains = new Set();
+
+function setSortMode(mode) {
+  sortMode = mode;
+  document.getElementById('sort-domain').classList.toggle('active', mode === 'domain');
+  document.getElementById('sort-build').classList.toggle('active', mode === 'build-order');
+  renderNav(document.getElementById('filter-input').value);
+}
+
+function renderNavItem(f, depth) {
+  const isChild = depth > 0;
+  const hasChildren = getChildren(f.featureKey).length > 0;
+  return \`<div class="nav-item\${f.featureKey === activeKey ? ' active' : ''}"
+    data-key="\${esc(f.featureKey)}"
+    data-status="\${esc(f.status)}"
+    data-depth="\${depth}"
+    onclick="navigate('\${esc(f.featureKey)}')">
+    \${isChild ? '<span class="nav-child-arrow">↳</span>' : '<span class="nav-dot"></span>'}
+    \${VIEW !== 'user' ? '<span class="nav-item-key">' + esc(f.featureKey) + '</span>' : ''}
+    <span class="nav-item-title">\${esc(f.title)}</span>
+    \${hasChildren ? '<span class="nav-child-arrow" style="margin-left:auto;opacity:0.4">⊕</span>' : ''}
+  </div>\`;
+}
 
 function renderNav(filterText) {
   const nav = document.getElementById('nav-tree');
   const q = (filterText || '').toLowerCase().trim();
 
-  const features = q
-    ? FEATURES.filter(f =>
-        f.featureKey.toLowerCase().includes(q) ||
-        f.title.toLowerCase().includes(q) ||
-        (f.domain && f.domain.toLowerCase().includes(q)) ||
-        (f.tags && f.tags.some(t => t.toLowerCase().includes(q)))
-      )
-    : FEATURES;
+  const matchFn = f =>
+    f.featureKey.toLowerCase().includes(q) ||
+    f.title.toLowerCase().includes(q) ||
+    (f.domain && f.domain.toLowerCase().includes(q)) ||
+    (f.tags && f.tags.some(t => t.toLowerCase().includes(q)));
+
+  const features = q ? FEATURES.filter(matchFn) : FEATURES;
 
   if (features.length === 0) {
     nav.innerHTML = '<div class="no-results">No features match</div>';
     return;
   }
 
-  const groups = q
-    ? (() => {
-        // Flat list when searching
-        const m = new Map([['results', features.map(f => ({ feature: f, depth: 0 }))]]);
-        return m;
-      })()
-    : buildGroups(FEATURES);
+  // ── Build Order: flat list sorted by featureKey ───────────────────────────
+  if (sortMode === 'build-order' && !q) {
+    const sorted = [...FEATURES].sort((a, b) => a.featureKey.localeCompare(b.featureKey));
+    nav.innerHTML = sorted.map(f => renderNavItem(f, 0)).join('');
+    return;
+  }
 
+  // ── Search results: flat list ─────────────────────────────────────────────
+  if (q) {
+    nav.innerHTML = features.map(f => renderNavItem(f, 0)).join('');
+    return;
+  }
+
+  // ── Domain grouping (default) ─────────────────────────────────────────────
+  const groups = buildGroups(FEATURES);
   const sortedDomains = [...groups.keys()].sort((a, b) => {
     if (a === '(no domain)') return 1;
     if (b === '(no domain)') return -1;
@@ -713,37 +770,20 @@ function renderNav(filterText) {
   let html = '';
   for (const domain of sortedDomains) {
     const items = groups.get(domain);
-    const visible = q ? items.filter(({ feature: f }) =>
-      f.featureKey.toLowerCase().includes(q) ||
-      f.title.toLowerCase().includes(q) ||
-      (f.tags && f.tags.some(t => t.toLowerCase().includes(q)))
-    ) : items;
-    if (visible.length === 0) continue;
+    if (!items || items.length === 0) continue;
 
-    const isCollapsed = !q && collapsedDomains.has(domain);
-    const label = domain === 'results' ? 'results' : domain;
+    const isCollapsed = collapsedDomains.has(domain);
 
     html += \`<div class="nav-group\${isCollapsed ? ' collapsed' : ''}" data-domain="\${esc(domain)}">
   <div class="nav-domain\${isCollapsed ? ' collapsed' : ''}" onclick="toggleDomain(this)">
     <span class="nav-domain-arrow">▾</span>
-    <span>\${esc(label)}</span>
-    <span class="nav-domain-count">\${visible.length}</span>
+    <span>\${esc(domain)}</span>
+    <span class="nav-domain-count">\${items.length}</span>
   </div>
   <div class="nav-group-items">\`;
 
-    for (const { feature: f, depth } of visible) {
-      const isChild = depth > 0;
-      const hasChildren = getChildren(f.featureKey).length > 0;
-      html += \`<div class="nav-item\${f.featureKey === activeKey ? ' active' : ''}"
-        data-key="\${esc(f.featureKey)}"
-        data-status="\${esc(f.status)}"
-        data-depth="\${depth}"
-        onclick="navigate('\${esc(f.featureKey)}')">
-        \${isChild ? '<span class="nav-child-arrow">↳</span>' : '<span class="nav-dot"></span>'}
-        \${VIEW !== 'user' ? '<span class="nav-item-key">' + esc(f.featureKey) + '</span>' : ''}
-        <span class="nav-item-title">\${esc(f.title)}</span>
-        \${hasChildren ? '<span class="nav-child-arrow" style="margin-left:auto;opacity:0.4">⊕</span>' : ''}
-      </div>\`;
+    for (const { feature: f, depth } of items) {
+      html += renderNavItem(f, depth);
     }
 
     html += '</div></div>';
@@ -994,6 +1034,7 @@ if (hashKey && byKey.has(hashKey)) {
 window.navigate = navigate;
 window.toggleDomain = toggleDomain;
 window.filterByDomain = filterByDomain;
+window.setSortMode = setSortMode;
 </script>
 </body>
 </html>`

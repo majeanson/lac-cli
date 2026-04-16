@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { basename, dirname, join, resolve } from 'node:path'
 import process from 'node:process'
 
@@ -24,6 +24,8 @@ import { generateKanban } from '../lib/kanbanGenerator.js'
 import { generateHealth } from '../lib/healthGenerator.js'
 import { generateEmbed } from '../lib/embedGenerator.js'
 import { generateDecisionLog } from '../lib/decisionLogGenerator.js'
+import { generateUserGuide } from '../lib/userGuideGenerator.js'
+import { generateHub, ALL_HUB_ENTRIES, type HubStats } from '../lib/hubGenerator.js'
 import { VIEWS, VIEW_NAMES, applyView, applyViewForHtml, type ViewName } from '../lib/views.js'
 
 /**
@@ -331,11 +333,15 @@ export const exportCommand = new Command('export')
   .option('--health [dir]',   'Project health scorecard — completeness, coverage, tech debt, and health score')
   .option('--embed [dir]',    'Compact embeddable stats widget (iframe-ready)')
   .option('--decisions [dir]','Consolidated ADR — all decisions from all features, searchable by domain')
+  .option('--guide [dir]',    'User guide — one page per feature that has a non-empty userGuide field')
+  .option('--hub [dir]',     'Hub landing page linking to all generated views → lac-hub.html')
+  .option('--all [dir]',     'Generate all HTML views + hub index.html → --out dir (default: ./lac-output)')
   .option('--diff <dir-b>',   'Compare cwd workspace against <dir-b> and show added/removed/changed')
   .option('--site <dir>',     'Generate a multi-page static site → --out dir (default: ./lac-site)')
   .option('--prompt [dir]',   'AI reconstruction prompt for all features (stdout or --out file)')
   .option('--markdown',       'Single feature as Markdown (nearest feature.json)')
   .option('--tags <tags>',    'Comma-separated tags to filter by (OR logic) — applies to all multi-feature modes')
+  .option('--sort <mode>',    'Sort order for multi-feature modes: key (default) | build-order (parents before children)')
   .option('--view <name>',    `Audience view — filters and shapes exported fields. One of: ${VIEW_NAMES.join(', ')}`)
   .addHelpText('after', `
 Examples:
@@ -352,6 +358,9 @@ Examples:
   lac export --health                        Health scorecard → lac-health.html
   lac export --embed                         Stats widget → lac-embed.html
   lac export --decisions                     Decision log (ADR) → lac-decisions.html
+  lac export --guide                         User guide → lac-guide.html
+  lac export --hub                           Hub index page → lac-hub.html
+  lac export --all --out ./public/lac        All views + hub → ./public/lac/
   lac export --graph                         Lineage graph → lac-graph.html
   lac export --heatmap                       Completeness heatmap → lac-heatmap.html
   lac export --diff ./other-workspace        Diff vs another directory → lac-diff.html
@@ -385,6 +394,9 @@ Views (--view):
     health?: string | boolean
     embed?: string | boolean
     decisions?: string | boolean
+    guide?: string | boolean
+    hub?: string | boolean
+    all?: string | boolean
     graph?: string | boolean
     heatmap?: string | boolean
     diff?: string
@@ -392,6 +404,7 @@ Views (--view):
     prompt?: string | boolean
     markdown?: boolean
     tags?: string
+    sort?: string
     view?: string
   }) => {
     // ── View validation ──────────────────────────────────────────────────────
@@ -405,6 +418,16 @@ Views (--view):
       )
       process.exit(1)
     }
+
+    if (options.sort && options.sort !== 'key' && options.sort !== 'build-order') {
+      process.stderr.write(
+        `Error: unknown sort mode "${options.sort}". Valid modes: key, build-order\n`,
+      )
+      process.exit(1)
+    }
+
+    const applySort = <T extends Awaited<ReturnType<typeof scanFeatures>>>(feats: T): T =>
+      options.sort === 'build-order' ? topoSort(feats) as T : feats
 
     // ── Reconstruction prompt mode ──────────────────────────────────────────
     if (options.prompt !== undefined) {
@@ -470,6 +493,8 @@ Views (--view):
         )
       }
 
+      features = applySort(features)
+
       if (features.length === 0) {
         process.stdout.write(`No valid feature.json files found in "${htmlDir}".\n`)
         process.exit(0)
@@ -514,6 +539,8 @@ Views (--view):
           tagsToMatch.some((tag) => feature.tags?.includes(tag)),
         )
       }
+
+      features = applySort(features)
 
       if (features.length === 0) {
         process.stdout.write(`No valid feature.json files found in "${rawDir}".\n`)
@@ -565,7 +592,7 @@ Views (--view):
       return
     }
 
-    // ── Helper: scan + filter features for multi-feature modes ───────────────
+    // ── Helper: scan + filter + sort features for multi-feature modes ────────
     async function scanAndFilter(dir: string): Promise<Awaited<ReturnType<typeof scanFeatures>>> {
       let features: Awaited<ReturnType<typeof scanFeatures>>
       try { features = await scanFeatures(dir) }
@@ -574,7 +601,7 @@ Views (--view):
         const tagsToMatch = options.tags!.split(',').map(t => t.trim()).filter(Boolean)
         features = features.filter(({ feature }) => tagsToMatch.some(tag => feature.tags?.includes(tag)))
       }
-      return features
+      return applySort(features)
     }
 
     // ── Print mode ───────────────────────────────────────────────────────────
@@ -728,6 +755,95 @@ Views (--view):
       return
     }
 
+    // ── User guide mode ──────────────────────────────────────────────────────
+    if (options.guide !== undefined) {
+      const dir = typeof options.guide === 'string' ? resolve(options.guide) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const html = generateUserGuide(fs, basename(dir))
+      const guideFeatureCount = fs.filter(f => typeof f.userGuide === 'string' && f.userGuide.trim().length > 0).length
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-guide.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ User guide (${guideFeatureCount} of ${features.length} features have userGuide) → ${options.out ?? 'lac-guide.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── Hub mode ─────────────────────────────────────────────────────────────
+    if (options.hub !== undefined) {
+      const dir = typeof options.hub === 'string' ? resolve(options.hub) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const stats: HubStats = {
+        total: fs.length,
+        frozen: fs.filter(f => f.status === 'frozen').length,
+        active: fs.filter(f => f.status === 'active').length,
+        draft: fs.filter(f => f.status === 'draft').length,
+        deprecated: fs.filter(f => f.status === 'deprecated').length,
+        domains: [...new Set(fs.map(f => f.domain).filter((d): d is string => Boolean(d)))],
+      }
+      const html = generateHub(basename(dir), stats, ALL_HUB_ENTRIES)
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-hub.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Hub (${fs.length} features) → ${options.out ?? 'lac-hub.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── All mode ──────────────────────────────────────────────────────────────
+    if (options.all !== undefined) {
+      const dir = typeof options.all === 'string' ? resolve(options.all) : resolve(process.cwd())
+      const outDir = resolve(options.out ?? './lac-output')
+
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+
+      try { await mkdir(outDir, { recursive: true }) }
+      catch (err) { process.stderr.write(`Error creating output dir "${outDir}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+
+      const write = async (filename: string, html: string): Promise<void> => {
+        const outFile = join(outDir, filename)
+        try {
+          await writeFile(outFile, html, 'utf-8')
+          process.stdout.write(`  ✓ ${filename}\n`)
+        } catch (err) {
+          process.stderr.write(`  ✗ ${filename}: ${err instanceof Error ? err.message : String(err)}\n`)
+        }
+      }
+
+      const projectName = basename(dir)
+      process.stdout.write(`Generating all LAC views for "${projectName}" → ${outDir}\n`)
+
+      await write('lac-guide.html',     generateUserGuide(fs, projectName))
+      await write('lac-story.html',     generateStory(fs, projectName))
+      await write('lac-wiki.html',      generateHtmlWiki(fs, projectName))
+      await write('lac-kanban.html',    generateKanban(fs, projectName))
+      await write('lac-health.html',    generateHealth(fs, projectName))
+      await write('lac-decisions.html', generateDecisionLog(fs, projectName))
+      await write('lac-heatmap.html',   generateHeatmap(fs, projectName))
+      await write('lac-graph.html',     generateGraph(fs, projectName))
+      await write('lac-print.html',     generatePrint(fs, projectName))
+      await write('lac-raw.html',       generateRawHtml(fs, projectName))
+
+      const stats: HubStats = {
+        total: fs.length,
+        frozen: fs.filter(f => f.status === 'frozen').length,
+        active: fs.filter(f => f.status === 'active').length,
+        draft: fs.filter(f => f.status === 'draft').length,
+        deprecated: fs.filter(f => f.status === 'deprecated').length,
+        domains: [...new Set(fs.map(f => f.domain).filter((d): d is string => Boolean(d)))],
+      }
+      await write('index.html', generateHub(projectName, stats, ALL_HUB_ENTRIES))
+
+      process.stdout.write(`Done — ${features.length} features, 11 files written to ${outDir}\n`)
+      return
+    }
+
     // ── Graph mode ───────────────────────────────────────────────────────────
     if (options.graph !== undefined) {
       const dir = typeof options.graph === 'string' ? resolve(options.graph) : resolve(process.cwd())
@@ -794,6 +910,8 @@ Views (--view):
           tagsToMatch.some((tag) => feature.tags?.includes(tag)),
         )
       }
+
+      features = applySort(features)
 
       if (features.length === 0) {
         process.stdout.write(`No valid feature.json files found in "${scanDir}".\n`)

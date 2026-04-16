@@ -1,9 +1,57 @@
 import process from 'node:process'
 
+import type { Feature } from '@life-as-code/feature-schema'
 import { Command } from 'commander'
 
 import { computeCompleteness } from '../lib/config.js'
 import { scanFeatures } from '../lib/scanner.js'
+
+export interface StatResult {
+  total: number
+  statusBreakdown: Record<string, number>
+  avgCompleteness: number
+  zeroDecisions: number
+  zeroTags: number
+  topTags: Array<[string, number]>
+}
+
+export function computeStats(features: Array<{ feature: Feature }>): StatResult {
+  const total = features.length
+
+  const statusBreakdown: Record<string, number> = { active: 0, draft: 0, frozen: 0, deprecated: 0 }
+  for (const { feature } of features) {
+    const s = feature.status
+    statusBreakdown[s] = (statusBreakdown[s] ?? 0) + 1
+  }
+
+  const completenessValues = features.map(({ feature }) =>
+    computeCompleteness(feature as unknown as Record<string, unknown>),
+  )
+  const avgCompleteness =
+    completenessValues.length > 0
+      ? Math.round(completenessValues.reduce((a, b) => a + b, 0) / completenessValues.length)
+      : 0
+
+  const zeroDecisions = features.filter(
+    ({ feature }) => !feature.decisions || feature.decisions.length === 0,
+  ).length
+
+  const zeroTags = features.filter(
+    ({ feature }) => !feature.tags || feature.tags.length === 0,
+  ).length
+
+  const tagCounts = new Map<string, number>()
+  for (const { feature } of features) {
+    for (const tag of feature.tags ?? []) {
+      tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1)
+    }
+  }
+  const topTags = Array.from(tagCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+
+  return { total, statusBreakdown, avgCompleteness, zeroDecisions, zeroTags, topTags }
+}
 
 export const statCommand = new Command('stat')
   .description('Show workspace statistics: feature counts, status breakdown, completeness, top tags')
@@ -29,7 +77,7 @@ export const statCommand = new Command('stat')
       )
     }
 
-    const total = features.length
+    const { total, statusBreakdown, avgCompleteness, zeroDecisions, zeroTags, topTags } = computeStats(features)
 
     if (total === 0) {
       process.stdout.write(`No features found in "${scanDir}".\n`)
@@ -37,47 +85,13 @@ export const statCommand = new Command('stat')
       return
     }
 
-    // Status breakdown
-    const statusBreakdown: Record<string, number> = {
-      active: 0,
-      draft: 0,
-      frozen: 0,
-      deprecated: 0,
-    }
-    for (const { feature } of features) {
-      const s = feature.status
-      statusBreakdown[s] = (statusBreakdown[s] ?? 0) + 1
-    }
-
-    // Completeness
-    const completenessValues = features.map(({ feature }) =>
-      computeCompleteness(feature as unknown as Record<string, unknown>),
-    )
-    const avgCompleteness =
-      completenessValues.length > 0
-        ? Math.round(completenessValues.reduce((a, b) => a + b, 0) / completenessValues.length)
-        : 0
-
-    // Features with 0 decisions
-    const zeroDecisions = features.filter(
-      ({ feature }) => !feature.decisions || feature.decisions.length === 0,
-    ).length
-
-    // Features with 0 tags
-    const zeroTags = features.filter(
-      ({ feature }) => !feature.tags || feature.tags.length === 0,
-    ).length
-
-    // Top 5 tags
+    // Re-compute tagCounts for --by-tag (not part of computeStats return but needed below)
     const tagCounts = new Map<string, number>()
     for (const { feature } of features) {
       for (const tag of feature.tags ?? []) {
         tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1)
       }
     }
-    const topTags = Array.from(tagCounts.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
 
     const lines: string[] = []
     lines.push('lac stat — workspace statistics')

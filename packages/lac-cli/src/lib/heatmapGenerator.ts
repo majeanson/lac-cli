@@ -54,7 +54,7 @@ function isFilled(f: Feature, field: FieldDef): boolean {
   const v = f[field.key]
   if (v === undefined || v === null) return false
   if (field.kind === 'string') return typeof v === 'string' && v.length > 0
-  if (field.kind === 'array') return Array.isArray(v) && v.length > 0
+  if (field.kind === 'array') return Array.isArray(v) // [] means "verified empty" — not missing
   // scalar: domain, owner, priority, componentFile
   return true
 }
@@ -67,7 +67,8 @@ function getValuePreview(f: Feature, field: FieldDef): string {
     return s.length > 60 ? s.slice(0, 57) + '…' : s
   }
   if (field.kind === 'array') {
-    if (!Array.isArray(v) || v.length === 0) return '— not set'
+    if (!Array.isArray(v)) return '— not set'
+    if (v.length === 0) return '— verified empty'
     const first = v[0]
     let preview: string
     if (typeof first === 'string') {

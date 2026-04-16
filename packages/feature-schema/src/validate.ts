@@ -14,6 +14,9 @@ export function validateFeature(data: unknown): ValidateFeatureResult {
 
   const errors = result.error.issues.map((issue) => {
     const path = issue.path.length > 0 ? `${issue.path.join('.')}: ` : ''
+    if (issue.code === 'invalid_type') {
+      return `${path}expected ${issue.expected}, got ${issue.received}`
+    }
     return `${path}${issue.message}`
   })
 

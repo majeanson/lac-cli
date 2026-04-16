@@ -151,7 +151,7 @@ Add `lac-mcp` to Claude Code once.
   Consider spawning a child instead of a new feature.
 ```
 
-**19 MCP tools.** Claude runs the entire feature lifecycle — create, fill, advance, audit, query, lock — without leaving the chat. Works in Claude Code, Cursor, and any MCP host.
+**22 MCP tools.** Claude runs the entire feature lifecycle — create, fill, advance, audit, query, lock — without leaving the chat. Works in Claude Code, Cursor, and any MCP host.
 
 ---
 
@@ -210,7 +210,7 @@ lac fill .   # AI reads your source files and writes the rest
 
 ---
 
-## One command. 18 different views.
+## One command. 18 different views. Or all at once.
 
 `lac export` turns your feature workspace into anything:
 
@@ -228,6 +228,14 @@ lac export --resume .       # portfolio from frozen features only
 lac export --html .         # sidebar wiki with search + domain groups
 lac export --site .         # full multi-page static site
 lac export --prompt .       # AI reconstruction spec (see below)
+```
+
+Or run them all in one shot:
+
+```bash
+lac export-all .                        # all 16 formats → ./lac-exports/
+lac export-all . --out ./reports        # custom output dir
+lac export-all . --skip quiz,site       # skip specific formats
 ```
 
 Every export is a single self-contained HTML file. No server. No build step. Just open it.
@@ -332,6 +340,29 @@ The result: a working app rebuilt from documentation. The experiment surfaces ex
 
 ---
 
+### vercel/ms — open-source library reconstruction
+
+**Goal:** take the `ms` npm library (vercel/ms, 167 tests), strip all source code, and rebuild it from three `feature.json` files alone.
+
+```
+3 features · parse · format · entry-point
+167/167 tests pass · 100% coverage after reconstruction
+```
+
+The only differences vs the original: stripped JSDoc comments and a shortened istanbul directive (`/* istanbul ignore next */` instead of the full inline explanation). No logic, types, constants, or API surface changed.
+
+This experiment produced three schema/tooling improvements:
+
+| Finding | Improvement |
+|---------|-------------|
+| `/* istanbul ignore next */` placement not in any field | New `toolingAnnotations` field — captures coverage/lint/type suppression directives with exact location |
+| `extract_feature_from_code` returned one feature for a 3-subsystem library | MCP tool now outputs a granularity hint: "N distinct exported subsystems detected" |
+| Pre-strip review caught 5 gaps that would have degraded quality | Step 2.5 (Review) added as mandatory workflow step before stripping |
+
+Diff: `VercelMsRecreation/lac-exports/lac-diff.html` — GitHub-style side-by-side, collapsed unchanged sections.
+
+---
+
 ### FourthProjectExample — Recall (32 features · LAC-first iOS app)
 
 Every screen, every SQLite table, every service function starts as a `feature.json`. No TypeScript written before the feature is frozen.
@@ -354,7 +385,7 @@ lac export --kanban .   # drag-and-drop board of all 32 features
 | Structured + typed                  | ✅    | ✅          | ❌   | ❌              |
 | AI can fill it from your source     | ✅    | ❌          | ❌   | ❌              |
 | Queryable CLI                       | ✅    | ❌          | ❌   | ❌              |
-| 18 export formats                   | ✅    | ❌          | ❌   | ❌              |
+| 18 export formats + export-all      | ✅    | ❌          | ❌   | ❌              |
 | Feature lifecycle (draft→frozen)    | ✅    | ✅          | ❌   | ❌              |
 | Lineage (parent→children)           | ✅    | ❌          | ❌   | ❌              |
 | Survives a ticket tracker migration | ✅    | ❌          | ✅   | ✅              |
@@ -386,7 +417,7 @@ One install. No separate packages needed.
 | --------- | --------------------------------------------------------- |
 | `lac`     | Full CLI — all commands including `fill`, `gen`, `export` |
 | `lac-lsp` | LSP server + HTTP dashboard API                           |
-| `lac-mcp` | MCP server — 19 tools for Claude Code and any MCP client  |
+| `lac-mcp` | MCP server — 22 tools for Claude Code and any MCP client  |
 
 ```bash
 npm install -g @majeanson/lac

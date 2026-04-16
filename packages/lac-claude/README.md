@@ -19,22 +19,24 @@ Used by `lac fill` (CLI) and `write_feature_fields` / `read_feature_context` (MC
 
 ## Fillable fields
 
-| Field | Type | AI response format |
-|---|---|---|
-| `analysis` | string | Plain prose (150–300 words) |
-| `decisions` | Decision[] | JSON array |
-| `implementation` | string | Plain prose (100–200 words) |
-| `knownLimitations` | string[] | JSON array of strings |
-| `tags` | string[] | JSON array of strings |
-| `annotations` | Annotation[] | JSON array |
-| `successCriteria` | string | Plain prose (1–3 sentences) |
-| `domain` | string | Single word or hyphenated phrase |
-| `componentFile` | string | Relative file path |
-| `npmPackages` | string[] | JSON array of strings |
-| `publicInterface` | PublicInterfaceEntry[] | JSON array |
-| `externalDependencies` | string[] | JSON array of featureKeys / file paths |
-| `lastVerifiedDate` | string | YYYY-MM-DD string |
-| `codeSnippets` | CodeSnippet[] | JSON array |
+| Field | Type | AI response format | In ALL_FILLABLE_FIELDS? |
+|---|---|---|---|
+| `analysis` | string | Plain prose (150–300 words) | yes |
+| `decisions` | Decision[] | JSON array | yes |
+| `implementation` | string | Plain prose (100–200 words) | yes |
+| `knownLimitations` | string[] | JSON array of strings | yes |
+| `tags` | string[] | JSON array of strings | yes |
+| `annotations` | Annotation[] | JSON array | **no** — has a FILL_PROMPT but not auto-filled by `lac fill`; invoke explicitly if needed |
+| `successCriteria` | string | Plain prose (1–3 sentences) | yes |
+| `userGuide` | string | Plain prose (2–5 sentences or bullets) | yes |
+| `domain` | string | Single word or hyphenated phrase | yes |
+| `componentFile` | string | Relative file path | yes |
+| `npmPackages` | string[] | JSON array of strings | yes |
+| `publicInterface` | PublicInterfaceEntry[] | JSON array | yes |
+| `externalDependencies` | string[] | JSON array of featureKeys / file paths | yes |
+| `lastVerifiedDate` | string | YYYY-MM-DD string | yes |
+| `codeSnippets` | CodeSnippet[] | JSON array | yes |
+| `toolingAnnotations` | ToolingAnnotation[] | JSON array | yes |
 
 ---
 
@@ -44,7 +46,8 @@ Fields in this set have their AI response passed through `JSON.parse()` before b
 
 ```ts
 JSON_FIELDS = { decisions, knownLimitations, tags, annotations,
-                npmPackages, publicInterface, externalDependencies, codeSnippets }
+                npmPackages, publicInterface, externalDependencies, codeSnippets,
+                toolingAnnotations }
 ```
 
 ---

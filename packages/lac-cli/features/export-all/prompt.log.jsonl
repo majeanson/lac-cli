@@ -1,0 +1,13 @@
+{"date":"2026-03-25T02:15:57.870Z","field":"domain","source":"mcp","value_preview":"cli-export"}
+{"date":"2026-03-25T02:15:57.870Z","field":"tags","source":"mcp","value_preview":"[\"cli\",\"export\",\"batch\",\"reporting\",\"artifacts\"]"}
+{"date":"2026-03-25T02:15:57.870Z","field":"analysis","source":"mcp","value_preview":"The export-all command is a batch runner over the existing generator library. It scans features once from a given direct"}
+{"date":"2026-03-25T02:15:57.870Z","field":"decisions","source":"mcp","value_preview":"[{\"decision\":\"Registry array drives the loop rather than hardcoded if-chains\",\"rationale\":\"Adding a new export format in"}
+{"date":"2026-03-25T02:15:57.870Z","field":"implementation","source":"mcp","value_preview":"HTML_FORMATS registry: array of {name, file, generate} where generate wraps each generator with the correct argument sha"}
+{"date":"2026-03-25T02:15:57.870Z","field":"knownLimitations","source":"mcp","value_preview":"[\"No --view or --tags support — export-all targets full snapshots, not filtered views\",\"Site output is always written to"}
+{"date":"2026-03-25T02:15:57.870Z","field":"successCriteria","source":"mcp","value_preview":"`lac export-all` with 3 features produces 16 files (14 html + lac-prompt.md + site/) in ./lac-exports/. `--skip site,qui"}
+{"date":"2026-03-25T02:15:57.870Z","field":"userGuide","source":"mcp","value_preview":"Run `lac export-all` in any LAC workspace to generate all export formats at once. Outputs go to `./lac-exports/` by defa"}
+{"date":"2026-03-25T02:15:57.870Z","field":"componentFile","source":"mcp","value_preview":"src/commands/export-all.ts"}
+{"date":"2026-03-25T02:15:57.870Z","field":"publicInterface","source":"mcp","value_preview":"[{\"name\":\"exportAllCommand\",\"type\":\"Command\",\"description\":\"Commander.js command exported and registered in src/index.ts"}
+{"date":"2026-03-25T02:15:57.870Z","field":"npmPackages","source":"mcp","value_preview":"[]"}
+{"date":"2026-03-25T02:15:57.870Z","field":"externalDependencies","source":"mcp","value_preview":"[\"feat-2026-002\"]"}
+{"date":"2026-03-25T02:15:57.870Z","field":"codeSnippets","source":"mcp","value_preview":"[{\"label\":\"format registry entry shape\",\"snippet\":\"{ name: 'html', file: 'lac-wiki.html', generate: (f, p) => generateHt"}

@@ -1,81 +1,174 @@
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { tmpdir } from 'node:os'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-// We test the stat command by mocking scanFeatures and capturing stdout
-describe('stat command', () => {
-  let tmpDir: string
+import type { Feature } from '@life-as-code/feature-schema'
+import { computeStats } from '../stat.js'
 
-  beforeEach(() => {
-    tmpDir = join(tmpdir(), `lac-stat-test-${Date.now()}`)
-    mkdirSync(tmpDir, { recursive: true })
-  })
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
-  afterEach(() => {
-    rmSync(tmpDir, { recursive: true, force: true })
-  })
-
-  function makeFeature(key: string, status: string, extras: Record<string, unknown> = {}): object {
-    return {
-      featureKey: key,
-      title: `Feature ${key}`,
-      status,
-      problem: `Problem for ${key}`,
-      ...extras,
-    }
+function makeFeature(overrides: Partial<Record<string, unknown>> = {}): { feature: Feature } {
+  return {
+    feature: {
+      featureKey: 'feat-2026-001',
+      title: 'Test Feature',
+      status: 'active',
+      problem: 'A test problem',
+      ...overrides,
+    } as unknown as Feature,
   }
+}
 
-  it('counts features by status', () => {
-    const activeDir = join(tmpDir, 'feat-active')
-    const draftDir = join(tmpDir, 'feat-draft')
-    mkdirSync(activeDir, { recursive: true })
-    mkdirSync(draftDir, { recursive: true })
+// ---------------------------------------------------------------------------
+// computeStats — totals
+// ---------------------------------------------------------------------------
 
-    writeFileSync(
-      join(activeDir, 'feature.json'),
-      JSON.stringify(makeFeature('feat-2026-001', 'active', { tags: ['api', 'auth'] })),
-    )
-    writeFileSync(
-      join(draftDir, 'feature.json'),
-      JSON.stringify(makeFeature('feat-2026-002', 'draft')),
-    )
-
-    // Verify fixture files are valid JSON
-    const f1 = JSON.parse(readFileSync(join(activeDir, 'feature.json'), 'utf-8')) as Record<string, unknown>
-    const f2 = JSON.parse(readFileSync(join(draftDir, 'feature.json'), 'utf-8')) as Record<string, unknown>
-
-    expect(f1['status']).toBe('active')
-    expect(f2['status']).toBe('draft')
-    expect(f1['tags']).toEqual(['api', 'auth'])
+describe('computeStats — totals', () => {
+  it('returns 0 total for empty features array', () => {
+    const result = computeStats([])
+    expect(result.total).toBe(0)
+    expect(result.avgCompleteness).toBe(0)
   })
 
-  it('outputs total feature count', async () => {
-    const dir1 = join(tmpDir, 'feat1')
-    const dir2 = join(tmpDir, 'feat2')
-    const dir3 = join(tmpDir, 'feat3')
-    mkdirSync(dir1, { recursive: true })
-    mkdirSync(dir2, { recursive: true })
-    mkdirSync(dir3, { recursive: true })
+  it('counts total correctly', () => {
+    const features = [
+      makeFeature({ featureKey: 'feat-2026-001' }),
+      makeFeature({ featureKey: 'feat-2026-002' }),
+      makeFeature({ featureKey: 'feat-2026-003' }),
+    ]
+    const result = computeStats(features)
+    expect(result.total).toBe(3)
+  })
+})
 
-    writeFileSync(join(dir1, 'feature.json'), JSON.stringify(makeFeature('feat-2026-001', 'active')))
-    writeFileSync(join(dir2, 'feature.json'), JSON.stringify(makeFeature('feat-2026-002', 'draft')))
-    writeFileSync(join(dir3, 'feature.json'), JSON.stringify(makeFeature('feat-2026-003', 'frozen')))
+// ---------------------------------------------------------------------------
+// computeStats — status breakdown
+// ---------------------------------------------------------------------------
 
-    // Test that the scanner finds all 3 features
-    const { scanFeatures } = await import('../../lib/scanner.js')
-    const found = await scanFeatures(tmpDir)
-    expect(found).toHaveLength(3)
-
-    const statuses = found.map(f => f.feature.status)
-    expect(statuses).toContain('active')
-    expect(statuses).toContain('draft')
-    expect(statuses).toContain('frozen')
+describe('computeStats — status breakdown', () => {
+  it('counts each status correctly', () => {
+    const features = [
+      makeFeature({ featureKey: 'feat-2026-001', status: 'active' }),
+      makeFeature({ featureKey: 'feat-2026-002', status: 'active' }),
+      makeFeature({ featureKey: 'feat-2026-003', status: 'draft' }),
+      makeFeature({ featureKey: 'feat-2026-004', status: 'frozen' }),
+      makeFeature({ featureKey: 'feat-2026-005', status: 'deprecated' }),
+    ]
+    const result = computeStats(features)
+    expect(result.statusBreakdown['active']).toBe(2)
+    expect(result.statusBreakdown['draft']).toBe(1)
+    expect(result.statusBreakdown['frozen']).toBe(1)
+    expect(result.statusBreakdown['deprecated']).toBe(1)
   })
 
-  it('handles empty directory gracefully', async () => {
-    const { scanFeatures } = await import('../../lib/scanner.js')
-    const found = await scanFeatures(tmpDir)
-    expect(found).toHaveLength(0)
+  it('shows 0 for statuses with no features', () => {
+    const result = computeStats([makeFeature({ status: 'active' })])
+    expect(result.statusBreakdown['draft']).toBe(0)
+    expect(result.statusBreakdown['frozen']).toBe(0)
+    expect(result.statusBreakdown['deprecated']).toBe(0)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// computeStats — avgCompleteness
+// ---------------------------------------------------------------------------
+
+describe('computeStats — avgCompleteness', () => {
+  it('computes average completeness across features', () => {
+    // 1 feature with 100% completeness (all 6 optional fields), 1 with 0%
+    const features = [
+      makeFeature({
+        featureKey: 'feat-2026-001',
+        analysis: 'a',
+        decisions: [{ decision: 'x', rationale: 'y' }],
+        implementation: 'i',
+        knownLimitations: ['l'],
+        tags: ['t'],
+        annotations: [{ id: '1', author: 'a', date: '2026-01-01', type: 'note', body: 'b' }],
+      }),
+      makeFeature({ featureKey: 'feat-2026-002' }), // 0%
+    ]
+    const result = computeStats(features)
+    // (100 + 0) / 2 = 50
+    expect(result.avgCompleteness).toBe(50)
+  })
+
+  it('returns 0 when no features have any optional fields', () => {
+    const result = computeStats([
+      makeFeature({ featureKey: 'feat-2026-001' }),
+      makeFeature({ featureKey: 'feat-2026-002' }),
+    ])
+    expect(result.avgCompleteness).toBe(0)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// computeStats — zeroDecisions / zeroTags
+// ---------------------------------------------------------------------------
+
+describe('computeStats — zeroDecisions and zeroTags', () => {
+  it('counts features with no decisions', () => {
+    const features = [
+      makeFeature({ featureKey: 'feat-2026-001', decisions: [] }),
+      makeFeature({ featureKey: 'feat-2026-002', decisions: [{ decision: 'Use X', rationale: 'Y' }] }),
+    ]
+    const result = computeStats(features)
+    expect(result.zeroDecisions).toBe(1)
+  })
+
+  it('counts features with no tags', () => {
+    const features = [
+      makeFeature({ featureKey: 'feat-2026-001', tags: [] }),
+      makeFeature({ featureKey: 'feat-2026-002', tags: ['api'] }),
+      makeFeature({ featureKey: 'feat-2026-003' }), // no tags field
+    ]
+    const result = computeStats(features)
+    expect(result.zeroTags).toBe(2)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// computeStats — topTags ordering
+// ---------------------------------------------------------------------------
+
+describe('computeStats — topTags ordering', () => {
+  it('returns top 5 tags ordered by count descending', () => {
+    const features = [
+      makeFeature({ featureKey: 'feat-2026-001', tags: ['api', 'auth', 'security'] }),
+      makeFeature({ featureKey: 'feat-2026-002', tags: ['api', 'auth'] }),
+      makeFeature({ featureKey: 'feat-2026-003', tags: ['api', 'billing'] }),
+      makeFeature({ featureKey: 'feat-2026-004', tags: ['security'] }),
+    ]
+    const result = computeStats(features)
+    // api: 3, auth: 2, security: 2, billing: 1
+    expect(result.topTags[0]![0]).toBe('api')
+    expect(result.topTags[0]![1]).toBe(3)
+    // auth and security both have 2 — order between them is stable but either is valid
+    const secondAndThird = [result.topTags[1]![0], result.topTags[2]![0]]
+    expect(secondAndThird).toContain('auth')
+    expect(secondAndThird).toContain('security')
+  })
+
+  it('returns at most 5 tags', () => {
+    const features = Array.from({ length: 7 }, (_, i) =>
+      makeFeature({ featureKey: `feat-2026-00${i + 1}`, tags: [`tag${i}`] }),
+    )
+    const result = computeStats(features)
+    expect(result.topTags.length).toBeLessThanOrEqual(5)
+  })
+
+  it('returns empty topTags when no features have tags', () => {
+    const result = computeStats([makeFeature()])
+    expect(result.topTags).toHaveLength(0)
+  })
+
+  it('counts tags across multiple features correctly', () => {
+    const features = [
+      makeFeature({ featureKey: 'feat-2026-001', tags: ['api'] }),
+      makeFeature({ featureKey: 'feat-2026-002', tags: ['api'] }),
+      makeFeature({ featureKey: 'feat-2026-003', tags: ['api'] }),
+    ]
+    const result = computeStats(features)
+    expect(result.topTags[0]).toEqual(['api', 3])
   })
 })

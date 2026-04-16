@@ -264,6 +264,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
             type: 'number',
             description: 'Maximum characters to read per file before truncating (default: 8000). Increase for large files.',
           },
+          extractionDepth: {
+            type: 'number',
+            enum: [1, 2, 3],
+            description: 'How much implementation detail to capture. 1=Why (intent only: analysis, decisions, successCriteria, knownLimitations, userGuide — no code or signatures). 2=What (intent + API surface: adds implementation notes, publicInterface with TypeScript types, componentFile, npmPackages — no literal code). 3=How (full spec: adds codeSnippets and toolingAnnotations). Default: 2.',
+          },
         },
         required: ['path'],
       },
@@ -851,6 +856,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         const updated = { ...existing, ...fields }
 
+        // ── Pre-write shape validation ────────────────────────────────────────
+        // Validate field shapes BEFORE writing to disk so errors surface immediately
+        // rather than silently writing bad data that only fails at advance_feature.
+        const preWriteResult = validateFeature(updated)
+        if (!preWriteResult.success) {
+          return {
+            content: [{
+              type: 'text',
+              text: `Shape validation failed — fields not written:\n${preWriteResult.errors.map(e => `  • ${e}`).join('\n')}\n\nFix the field values and try again.`,
+            }],
+            isError: true,
+          }
+        }
+
         // Always bump lastVerifiedDate on any write
         const _d0 = new Date()
         updated.lastVerifiedDate = `${_d0.getFullYear()}-${String(_d0.getMonth() + 1).padStart(2, '0')}-${String(_d0.getDate()).padStart(2, '0')}`
@@ -1129,6 +1148,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (feature.status === 'active') validTransitions.push('frozen')
         if (feature.status === 'frozen') validTransitions.push('active (requires reason)')
 
+        // Preflight: which fields are blocking the next transition?
+        const nextTransitionTo = feature.status === 'draft' ? 'active' : feature.status === 'active' ? 'frozen' : null
+        const missingForNext = nextTransitionTo ? getMissingForTransition(feature, nextTransitionTo) : []
+        const readyToAdvance = nextTransitionTo !== null && missingForNext.length === 0
+
         const nextAction =
           missingFields.length > 0
             ? `call read_feature_context to fill: ${missingFields.join(', ')}`
@@ -1147,16 +1171,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           : undefined
         const sinceDate = currentStatusEntry?.date ?? null
         const lines = [
-          `Key        : ${feature.featureKey}`,
-          `Title      : ${feature.title}`,
-          `Status     : ${statusIcon(feature.status)} ${feature.status}${sinceDate ? ` (since ${sinceDate})` : ''}`,
-          `Missing    : ${missingFields.length === 0 ? 'none' : missingFields.join(', ')}`,
-          `Stale      : ${staleAnnotation ? staleAnnotation.body : 'none'}`,
-          `Transitions: ${validTransitions.join(', ')}`,
-          `Parent     : ${feature.lineage?.parent ?? 'none'}`,
-          `Children   : ${feature.lineage?.children?.length ?? 0}`,
+          `Key          : ${feature.featureKey}`,
+          `Title        : ${feature.title}`,
+          `Status       : ${statusIcon(feature.status)} ${feature.status}${sinceDate ? ` (since ${sinceDate})` : ''}`,
+          `Missing      : ${missingFields.length === 0 ? 'none' : missingFields.join(', ')}`,
+          `Stale        : ${staleAnnotation ? staleAnnotation.body : 'none'}`,
+          `ReadyToAdv   : ${readyToAdvance ? 'yes' : nextTransitionTo ? `no — missing for ${nextTransitionTo}: ${missingForNext.join(', ')}` : 'n/a (frozen or deprecated)'}`,
+          `Transitions  : ${validTransitions.join(', ')}`,
+          `Parent       : ${feature.lineage?.parent ?? 'none'}`,
+          `Children     : ${feature.lineage?.children?.length ?? 0}`,
           ``,
-          `Next action: ${nextAction}`,
+          `Next action : ${nextAction}`,
         ]
         return { content: [{ type: 'text', text: lines.join('\n') }] }
       }
@@ -1202,16 +1227,108 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           parts.push(file.content)
         }
         const rawContext = parts.join('\n')
-        const instructions = `## Extract feature.json from existing code
 
-No feature.json exists at "${dir}". Analyze the ${ctx.sourceFiles.length} source file(s) below and generate a complete feature.json proposal.
+        // ── Granularity analysis ─────────────────────────────────────────────
+        // Heuristic: scan exports and group by verb prefix to suggest how many
+        // feature.json files this directory warrants.
+        const VERB_PREFIXES = [
+          'parse', 'format', 'generate', 'create', 'validate', 'handle',
+          'build', 'fetch', 'render', 'transform', 'convert', 'check',
+          'find', 'load', 'save', 'update', 'delete', 'send', 'read',
+          'write', 'init', 'reset', 'apply', 'run', 'execute', 'process',
+          'compile', 'resolve', 'scan', 'extract', 'import', 'export',
+        ]
+        const verbGroups = new Map<string, string[]>()
+        const unclassified: string[] = []
+        const sourceOnly = ctx.sourceFiles.filter(f => !f.relativePath.includes('.test.') && !f.relativePath.includes('.spec.'))
 
-When done, execute in order:
-1. Call create_feature with: dir="${dir}", plus your generated title and problem
-2. Call write_feature_fields with: path="${dir}", fields containing analysis, decisions, implementation, knownLimitations, tags, successCriteria, domain
-3. Call advance_feature to transition when ready
+        for (const file of sourceOnly) {
+          const exportMatches = file.content.matchAll(
+            /^export\s+(?:async\s+)?(?:function|class|const|let)\s+(\w+)/gm,
+          )
+          for (const m of exportMatches) {
+            const name = m[1] ?? ''
+            const lower = name.toLowerCase()
+            const verb = VERB_PREFIXES.find(v => lower.startsWith(v))
+            if (verb) {
+              const group = verbGroups.get(verb) ?? []
+              group.push(name)
+              verbGroups.set(verb, group)
+            } else {
+              unclassified.push(name)
+            }
+          }
+        }
 
-### Fields to generate
+        const meaningfulGroups = [...verbGroups.entries()]
+          .filter(([, fns]) => fns.length > 0)
+          .sort((a, b) => b[1].length - a[1].length)
+        const totalExports = [...verbGroups.values()].flat().length + unclassified.length
+        const suggestedCount = Math.max(
+          meaningfulGroups.length >= 2 ? meaningfulGroups.length : 1,
+          sourceOnly.length > 1 ? sourceOnly.length : 1,
+        )
+        const cappedSuggestion = Math.min(suggestedCount, 8)
+
+        const granularityLines: string[] = ['### Granularity analysis']
+        granularityLines.push(`Scanned ${sourceOnly.length} non-test source file(s), found ${totalExports} exported symbol(s).`)
+        if (meaningfulGroups.length > 0) {
+          granularityLines.push('Detected subsystem groups by verb prefix:')
+          for (const [verb, fns] of meaningfulGroups.slice(0, 6)) {
+            granularityLines.push(`  • \`${verb}*\` — ${fns.slice(0, 4).join(', ')}${fns.length > 4 ? ` (+${fns.length - 4} more)` : ''}`)
+          }
+        }
+        if (unclassified.length > 0) {
+          granularityLines.push(`  • (unclassified) — ${unclassified.slice(0, 4).join(', ')}${unclassified.length > 4 ? ` (+${unclassified.length - 4})` : ''}`)
+        }
+        if (cappedSuggestion === 1) {
+          granularityLines.push(`**Suggestion: 1 feature** — exports appear to form a single cohesive concern.`)
+        } else {
+          granularityLines.push(`**Suggestion: ~${cappedSuggestion} feature(s)** — distinct subsystems detected. Consider creating a separate feature.json for each group rather than one monolithic feature.`)
+        }
+        const granularityHint = granularityLines.join('\n')
+        // ─────────────────────────────────────────────────────────────────────
+
+        const depth: 1 | 2 | 3 = (a.extractionDepth === 1 || a.extractionDepth === 2 || a.extractionDepth === 3)
+          ? a.extractionDepth as 1 | 2 | 3
+          : 2
+
+        const depthLabel = depth === 1 ? 'Why (intent only)' : depth === 2 ? 'What (intent + API surface)' : 'How (full spec)'
+
+        const depthNote = depth === 1
+          ? `\n⚠ Extraction depth: 1 — WHY only. Do NOT extract implementation details, code snippets, TypeScript signatures, file paths, or package names. Focus entirely on the problem, intent, decisions, and success criteria. A developer with no access to the source code should be able to understand what this feature does and why it exists — but NOT how to reimplement it.`
+          : depth === 2
+          ? `\n⚠ Extraction depth: 2 — WHAT. Extract intent + API surface. Include publicInterface with full TypeScript signatures, componentFile, npmPackages, and implementation notes. Do NOT include literal code snippets (codeSnippets field) or tooling suppression directives (toolingAnnotations field).`
+          : `\n⚠ Extraction depth: 3 — HOW (full spec). Extract everything including literal code snippets and tooling annotations. This is the maximum fidelity mode.`
+
+        const fieldsSection = depth === 1
+          ? `### Fields to generate (depth 1 — intent only)
+**title** — Short descriptive name (5-10 words)
+**problem** — What problem does this code solve? 1-2 sentences.
+**domain** — Single lowercase word or hyphenated phrase (e.g. "auth", "data-pipeline")
+**tags** — 3-6 lowercase tags as JSON array: ["tag1", "tag2"]
+**analysis** — Architectural overview, key patterns, why they were chosen. 150-300 words.
+**decisions** — 2-4 key technical decisions as JSON array: [{"decision":"...","rationale":"...","alternativesConsidered":["..."]}]
+**knownLimitations** — 2-4 limitations/trade-offs as JSON array: ["..."]
+**successCriteria** — How do we know this works? 1-3 testable sentences.
+**userGuide** — Plain-language description for an end user (not a developer). What does this do and why does it help? 2-4 sentences.`
+          : depth === 2
+          ? `### Fields to generate (depth 2 — intent + API surface)
+**title** — Short descriptive name (5-10 words)
+**problem** — What problem does this code solve? 1-2 sentences.
+**domain** — Single lowercase word or hyphenated phrase (e.g. "auth", "data-pipeline")
+**tags** — 3-6 lowercase tags as JSON array: ["tag1", "tag2"]
+**analysis** — Architectural overview, key patterns, why they were chosen. 150-300 words.
+**decisions** — 2-4 key technical decisions as JSON array: [{"decision":"...","rationale":"...","alternativesConsidered":["..."]}]
+**implementation** — Main components, data flow, non-obvious patterns. 100-200 words.
+**knownLimitations** — 2-4 limitations/trade-offs as JSON array: ["..."]
+**successCriteria** — How do we know this works? 1-3 testable sentences.
+**userGuide** — Plain-language description for an end user. 2-4 sentences.
+**componentFile** — Relative path to the primary source file (e.g. "src/index.ts")
+**npmPackages** — Runtime npm packages this feature depends on as JSON array: ["pkg"]. Use [] if none.
+**publicInterface** — Exported functions/types/props as JSON array with FULL TypeScript signatures: [{"name":"...","type":"(arg: Type) => ReturnType","description":"..."}]
+**externalDependencies** — Cross-feature runtime deps not in lineage as JSON array: ["feat-key-or-path"]. Use [] if none.`
+          : `### Fields to generate (depth 3 — full spec)
 **title** — Short descriptive name (5-10 words)
 **problem** — What problem does this code solve? 1-2 sentences.
 **domain** — Single lowercase word or hyphenated phrase (e.g. "auth", "data-pipeline")
@@ -1220,7 +1337,29 @@ When done, execute in order:
 **decisions** — 2-4 key technical decisions as JSON array: [{"decision":"...","rationale":"...","alternativesConsidered":["..."]}]
 **implementation** — Main components, data flow, non-obvious patterns. 100-200 words.
 **knownLimitations** — 2-4 limitations/TODOs as JSON array: ["..."]
-**successCriteria** — How do we know this works? 1-3 testable sentences.`
+**successCriteria** — How do we know this works? 1-3 testable sentences.
+**userGuide** — Plain-language description for an end user. 2-4 sentences.
+**componentFile** — Relative path to the primary source file (e.g. "src/index.ts")
+**npmPackages** — Runtime npm packages as JSON array. Use [] if none.
+**publicInterface** — Exported functions/types/props with FULL TypeScript signatures: [{"name":"...","type":"(arg: Type) => ReturnType","description":"..."}]
+**externalDependencies** — Cross-feature runtime deps as JSON array. Use [] if none.
+**codeSnippets** — Critical one-liners worth preserving verbatim as JSON array: [{"label":"...","snippet":"..."}]
+**toolingAnnotations** — Coverage/lint/type suppression directives needed for CI as JSON array: [{"tool":"...","directive":"...","location":"...","reason":"..."}]. Use [] if none.`
+
+        const instructions = `## Extract feature.json from existing code
+
+No feature.json exists at "${dir}". Analyze the ${ctx.sourceFiles.length} source file(s) below and generate a complete feature.json proposal.
+
+Extraction mode: **${depthLabel}**${depthNote}
+
+${granularityHint}
+
+When done, execute in order:
+1. Call create_feature with: dir="${dir}", plus your generated title and problem
+2. Call write_feature_fields with: path="${dir}", and the fields listed below
+3. Call advance_feature to transition when ready
+
+${fieldsSection}`
         return {
           content: [{ type: 'text', text: `${instructions}\n\n## Source files\n\n${rawContext}` }],
         }
@@ -1913,7 +2052,9 @@ function statusIcon(status: string): string {
 
 // ─── Lifecycle helpers ────────────────────────────────────────────────────────
 
-const REQUIRED_FOR_ACTIVE: (keyof Feature)[] = ['analysis', 'implementation', 'successCriteria']
+// draft→active: lightweight "worth building" gate — just confirm you understand the problem
+const REQUIRED_FOR_ACTIVE: (keyof Feature)[] = ['analysis']
+// active→frozen: full documentation contract — everything needed to reconstruct
 const REQUIRED_FOR_FROZEN: (keyof Feature)[] = [
   'analysis', 'implementation', 'successCriteria', 'knownLimitations', 'tags',
   'userGuide', 'componentFile',
@@ -1928,7 +2069,8 @@ function getMissingForTransition(feature: Feature, to: Feature['status']): strin
     if (typeof val === 'string' && val.trim().length === 0) { missing.push(field); continue }
     if (Array.isArray(val) && val.length === 0) { missing.push(field); continue }
   }
-  if ((to === 'active' || to === 'frozen') && (!feature.decisions || feature.decisions.length === 0)) {
+  // decisions required at freeze only (not at activation)
+  if (to === 'frozen' && (!feature.decisions || feature.decisions.length === 0)) {
     missing.push('decisions')
   }
   return [...new Set(missing)]
