@@ -188,8 +188,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  var p = location.pathname;
-  var base = location.origin + (p.endsWith('/') ? p : p + '/');
+  var base = location.href.substring(0, location.href.lastIndexOf('/') + 1);
   document.querySelectorAll('a[href^="./"]').forEach(function(a) {
     a.href = base + a.getAttribute('href').slice(2);
   });
