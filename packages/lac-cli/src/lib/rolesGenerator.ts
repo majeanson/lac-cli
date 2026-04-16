@@ -1,3 +1,5 @@
+import type { RoleOverrideConfig } from './config.js'
+
 /**
  * rolesGenerator — generates lac-roles.html
  *
@@ -97,8 +99,37 @@ function hasValue(v: unknown): boolean {
   return true
 }
 
-export function generateRoles(features: Rec[], projectName: string): string {
-  const rolesJson = JSON.stringify(ROLES)
+/**
+ * Merge project-level role overrides (from lac.config.json `roles` key) into
+ * the built-in ROLES defaults. Only the keys provided are overridden.
+ */
+function applyRoleOverrides(
+  defaults: RoleDef[],
+  overrides: Record<string, RoleOverrideConfig>,
+): RoleDef[] {
+  return defaults.map(role => {
+    const override = overrides[role.id]
+    if (!override) return role
+    return {
+      ...role,
+      label:    override.label    ?? role.label,
+      desc:     override.desc     ?? role.desc,
+      fields:   override.fields   ?? role.fields,
+      required: override.required ?? role.required,
+    }
+  })
+}
+
+export function generateRoles(
+  features: Rec[],
+  projectName: string,
+  options: { roleOverrides?: Record<string, RoleOverrideConfig> } = {},
+): string {
+  const resolvedRoles = options.roleOverrides && Object.keys(options.roleOverrides).length > 0
+    ? applyRoleOverrides(ROLES, options.roleOverrides)
+    : ROLES
+
+  const rolesJson = JSON.stringify(resolvedRoles)
   const featuresJson = JSON.stringify(features)
 
   const statusColors: Record<string, string> = {

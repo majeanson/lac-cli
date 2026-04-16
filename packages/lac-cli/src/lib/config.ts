@@ -132,6 +132,48 @@ export type RequirableField =
   | 'knownLimitations'
   | 'tags'
   | 'userGuide'
+  | 'successCriteria'
+  | 'acceptanceCriteria'
+  | 'testStrategy'
+  | 'pmSummary'
+  | 'componentFile'
+  | 'testCases'
+  | 'edgeCases'
+  | 'riskLevel'
+  | 'rollbackPlan'
+  | 'supportNotes'
+  | 'knownWorkarounds'
+
+/**
+ * Per-role override for `lac export --roles` (lac-roles.html).
+ * Each key is a role id: 'user' | 'product' | 'dev' | 'qa' | 'support' | 'architect'
+ *
+ * Example — make testCases required for QA, add rollbackPlan to architect:
+ * ```json
+ * "roles": {
+ *   "qa":       { "required": ["testStrategy", "acceptanceCriteria", "testCases"] },
+ *   "architect": { "fields": ["decisions", "analysis", "implementationNotes", "externalDependencies", "publicInterface", "riskLevel", "rollbackPlan", "componentFile"] }
+ * }
+ * ```
+ */
+export interface RoleOverrideConfig {
+  /**
+   * Fields to show in this role's cards.
+   * Replaces the built-in field list entirely — so include everything you want.
+   * If omitted, the built-in field list for this role is used.
+   */
+  fields?: string[]
+  /**
+   * Fields that trigger a gap warning when missing.
+   * Replaces the built-in required list for this role.
+   * If omitted, the built-in required list is used.
+   */
+  required?: string[]
+  /** Override the role label shown in the sidebar and topbar. */
+  label?: string
+  /** Override the role description shown under the label. */
+  desc?: string
+}
 
 export interface LacConfig {
   version?: number
@@ -170,6 +212,13 @@ export interface LacConfig {
    */
   views?: Record<string, ViewProfileConfig>
   /**
+   * Per-role overrides for `lac export --roles` (lac-roles.html).
+   * Keys must be built-in role ids: 'user' | 'product' | 'dev' | 'qa' | 'support' | 'architect'.
+   * Override fields[], required[], label, or desc for any role.
+   * Unspecified roles use their built-in defaults.
+   */
+  roles?: Record<string, RoleOverrideConfig>
+  /**
    * Named generator plugins used with `lac gen --generator <name>`.
    * Supports template (Handlebars), script (stdin/stdout), and ai (custom Claude prompt) types.
    *
@@ -200,6 +249,7 @@ const DEFAULTS: Required<LacConfig> = {
     freezeRequiresHumanRevision: false,
   },
   views: {},
+  roles: {},
   generators: {},
 }
 
@@ -225,6 +275,7 @@ export function loadConfig(fromDir?: string): Required<LacConfig> {
         freezeRequiresHumanRevision: parsed.guardlock?.freezeRequiresHumanRevision ?? DEFAULTS.guardlock.freezeRequiresHumanRevision,
       },
       views: parsed.views ?? DEFAULTS.views,
+      roles: parsed.roles ?? DEFAULTS.roles,
       generators: parsed.generators ?? DEFAULTS.generators,
     }
   } catch {

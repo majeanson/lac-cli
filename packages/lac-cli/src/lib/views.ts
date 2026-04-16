@@ -46,14 +46,17 @@ export const VIEWS: Record<ViewName, ViewConfig> = {
   support: {
     name: 'support',
     label: 'Support',
-    description: 'Known limitations, annotations, and escalation context for support teams',
+    description: 'Known limitations, workarounds, support notes, and escalation context for support teams',
     fields: new Set([
       ...IDENTITY,
       'owner',
       'problem',
       'knownLimitations',
+      'knownWorkarounds',
+      'supportNotes',
       'annotations',
       'tags',
+      'userGuide',
     ]),
   },
 
@@ -64,7 +67,7 @@ export const VIEWS: Record<ViewName, ViewConfig> = {
   product: {
     name: 'product',
     label: 'Product',
-    description: 'Business problem, success criteria, and strategic decisions — no implementation details',
+    description: 'Business problem, success criteria, risk, and strategic decisions — no implementation details',
     fields: new Set([
       ...IDENTITY,
       'owner',
@@ -77,6 +80,8 @@ export const VIEWS: Record<ViewName, ViewConfig> = {
       'acceptanceCriteria',
       'decisions',
       'knownLimitations',
+      'riskLevel',
+      'rollbackPlan',
       'tags',
       'releaseVersion',
     ]),
@@ -88,7 +93,7 @@ export const VIEWS: Record<ViewName, ViewConfig> = {
   dev: {
     name: 'dev',
     label: 'Developer',
-    description: 'Full implementation context — code, decisions, snippets, and lineage',
+    description: 'Full implementation context — code, decisions, snippets, test strategy, and lineage',
     fields: new Set([
       ...IDENTITY,
       'owner',
@@ -101,8 +106,11 @@ export const VIEWS: Record<ViewName, ViewConfig> = {
       'successCriteria',
       'acceptanceCriteria',
       'testStrategy',
+      'testCases',
+      'edgeCases',
       'decisions',
       'knownLimitations',
+      'rollbackPlan',
       'tags',
       'annotations',
       'lineage',
@@ -120,7 +128,7 @@ export const VIEWS: Record<ViewName, ViewConfig> = {
   tech: {
     name: 'tech',
     label: 'Technical',
-    description: 'Complete technical record — all fields including history, revisions, and lineage',
+    description: 'Complete technical record — all fields including history, revisions, QA, ops, and lineage',
     fields: new Set([
       ...IDENTITY,
       'schemaVersion',
@@ -135,6 +143,12 @@ export const VIEWS: Record<ViewName, ViewConfig> = {
       'successCriteria',
       'acceptanceCriteria',
       'testStrategy',
+      'testCases',
+      'edgeCases',
+      'riskLevel',
+      'rollbackPlan',
+      'supportNotes',
+      'knownWorkarounds',
       'decisions',
       'knownLimitations',
       'tags',

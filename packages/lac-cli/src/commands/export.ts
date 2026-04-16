@@ -1025,7 +1025,7 @@ Views (--view):
       const features = await scanAndFilter(dir)
       if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
       const fs = features.map(f => f.feature)
-      const html = generateRoles(fs as Record<string, unknown>[], basename(dir))
+      const html = generateRoles(fs as Record<string, unknown>[], basename(dir), { roleOverrides: config.roles })
       const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-roles.html')
       try {
         await writeFile(outFile, html, 'utf-8')
@@ -1108,7 +1108,7 @@ Views (--view):
       await write('lac-successboard.html',   generateSuccessboard(fs, projectName))
       await write('lac-pitch.html',          generatePitch(fs, projectName))
       await write('lac-timeline.html',       generateTimeline(fs, projectName))
-      await write('lac-roles.html',          generateRoles(fs as Record<string, unknown>[], projectName))
+      await write('lac-roles.html',          generateRoles(fs as Record<string, unknown>[], projectName, { roleOverrides: config.roles }))
       await write('lac-data.json',           generateDataExport(fs, projectName, { customViews: config.views }))
       await write('lac-help.js',             generateHelpWidget(fs, projectName))
 
