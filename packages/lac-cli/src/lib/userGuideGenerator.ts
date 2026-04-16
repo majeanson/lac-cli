@@ -147,10 +147,10 @@ export function generateUserGuide(features: Feature[], projectName: string): str
   // ── Sidebar nav HTML ──────────────────────────────────────────────────────
 
   function navItem(p: PageData): string {
-    return `<div class="nav-item" data-id="${esc(p.id)}" onclick="showPage('${esc(p.id)}')">
+    return `<a class="nav-item" data-id="${esc(p.id)}" href="#${esc(p.id)}">
       <div class="nav-item-dot ${esc(p.feature.status)}"></div>
       <span class="nav-item-name">${esc(p.feature.title)}</span>
-    </div>`;
+    </a>`;
   }
 
   const navGroupsHtml = domainOrder.map(domain => {
@@ -172,13 +172,13 @@ export function generateUserGuide(features: Feature[], projectName: string): str
   // ── TOC cards (home page) ─────────────────────────────────────────────────
 
   const tocCardsHtml = pages.map(p =>
-    `<div class="toc-card" onclick="showPage('${esc(p.id)}')">
+    `<a class="toc-card" href="#${esc(p.id)}">
       <div class="toc-pip" style="background:${p.color}"></div>
       <div>
         <div class="toc-card-title">${esc(p.feature.title)}</div>
         <div class="toc-card-sub">${esc(p.domain.replace(/-/g, " "))} · <span style="color:var(--status-${esc(p.feature.status)})">${esc(p.feature.status)}</span></div>
       </div>
-    </div>`,
+    </a>`,
   ).join("\n        ");
 
   // ── Stat cards (home page) ────────────────────────────────────────────────
@@ -364,6 +364,7 @@ body {
 .nav-item {
   display: flex; align-items: center; gap: 8px; padding: 5px 14px 5px 24px;
   cursor: pointer; border-left: 2px solid transparent; transition: background 0.1s;
+  text-decoration: none;
 }
 .nav-item:hover { background: var(--bg-hover); }
 .nav-item.active { background: var(--bg-active); border-left-color: var(--accent); }
@@ -394,7 +395,7 @@ body {
 .stat-lbl     { font-size: 11px; color: var(--text-soft); margin-top: 4px; }
 .section-title { font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-soft); margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
 .toc-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-.toc-card  { padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: border-color 0.15s, background 0.15s; display: flex; align-items: flex-start; gap: 10px; }
+.toc-card  { padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: border-color 0.15s, background 0.15s; display: flex; align-items: flex-start; gap: 10px; text-decoration: none; }
 .toc-card:hover { background: var(--bg-hover); border-color: var(--text-soft); }
 .toc-pip   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
 .toc-card-title { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3; }
