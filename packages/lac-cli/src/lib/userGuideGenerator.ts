@@ -398,7 +398,7 @@ body {
 
 /* Feature pages */
 .feature-page { max-width: 760px; margin: 0 auto; padding: 48px 40px 80px; }
-.feature-page.hidden { display: none; }
+.feature-page.hidden, .home-page.hidden { display: none; }
 .feature-domain-eyebrow { font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 10px; }
 .feature-title { font-size: 28px; font-weight: 800; color: var(--text); letter-spacing: -0.015em; line-height: 1.2; margin-bottom: 12px; }
 .feature-meta  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 28px; }
