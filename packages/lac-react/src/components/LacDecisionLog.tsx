@@ -1,5 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useLacContext } from '../context.js'
+import { T } from '../tokens.js'
+import { highlight } from '../utils.js'
 
 export interface LacDecisionLogProps {
   /** Filter to a specific domain */
@@ -8,99 +10,133 @@ export interface LacDecisionLogProps {
   className?: string
 }
 
+type Entry = {
+  featureKey: string
+  featureTitle: string
+  featureDomain: string
+  date: string
+  decision: string
+  rationale?: string
+}
+
 /**
  * LacDecisionLog — all architectural decisions from all features, grouped by domain.
- * Must be inside a LacDataProvider.
+ * Live search with amber mark highlighting. Must be inside a LacDataProvider.
  */
 export function LacDecisionLog({ domain, style, className }: LacDecisionLogProps) {
   const { features, loading, error } = useLacContext()
   const [search, setSearch] = useState('')
 
-  if (loading) return <div style={{ color: '#52525b', fontSize: '0.8rem', padding: '1rem' }}>Loading…</div>
-  if (error) return <div style={{ color: '#ef4444', fontSize: '0.8rem', padding: '1rem' }}>Error: {error}</div>
+  const q = search.trim().toLowerCase()
 
-  // Collect all decisions with feature context
-  type Entry = {
-    featureKey: string
-    title: string
-    featureDomain: string
-    date: string
-    decision: string
-    rationale?: string
-  }
-
-  const entries: Entry[] = []
-  for (const f of features) {
-    if (domain && f.domain !== domain) continue
-    const decisions = f.views.dev?.decisions ?? []
-    for (const d of decisions) {
-      const text = d.decision ?? d.choice ?? ''
-      const q = search.toLowerCase()
-      if (q && !text.toLowerCase().includes(q) && !f.title.toLowerCase().includes(q) && !f.domain.toLowerCase().includes(q)) continue
-      entries.push({
-        featureKey: f.featureKey,
-        title: f.title,
-        featureDomain: f.domain,
-        date: d.date,
-        decision: text,
-        rationale: d.rationale,
-      })
+  const entries = useMemo((): Entry[] => {
+    const result: Entry[] = []
+    for (const f of features) {
+      if (domain && f.domain !== domain) continue
+      const decisions = f.views.dev?.decisions ?? []
+      for (const d of decisions) {
+        const text = d.decision ?? d.choice ?? ''
+        if (q && !text.toLowerCase().includes(q) && !f.title.toLowerCase().includes(q) && !(d.rationale ?? '').toLowerCase().includes(q)) continue
+        result.push({
+          featureKey:    f.featureKey,
+          featureTitle:  f.title,
+          featureDomain: f.domain,
+          date:          d.date,
+          decision:      text,
+          rationale:     d.rationale,
+        })
+      }
     }
-  }
+    return result
+  }, [features, domain, q])
 
-  // Group by domain
-  const byDomain: Record<string, Entry[]> = {}
-  for (const e of entries) {
-    if (!byDomain[e.featureDomain]) byDomain[e.featureDomain] = []
-    byDomain[e.featureDomain].push(e)
-  }
+  const byDomain = useMemo(() => {
+    const map = new Map<string, Entry[]>()
+    for (const e of entries) {
+      if (!map.has(e.featureDomain)) map.set(e.featureDomain, [])
+      map.get(e.featureDomain)!.push(e)
+    }
+    return map
+  }, [entries])
 
-  const domains = Object.keys(byDomain).sort()
+  const domains = useMemo(() => [...byDomain.keys()].sort(), [byDomain])
+
+  if (loading) return <div style={{ fontFamily: T.mono, fontSize: 12, color: T.textSoft }}>Loading…</div>
+  if (error)   return <div style={{ fontFamily: T.mono, fontSize: 12, color: T.statusDeprecated }}>Error: {error}</div>
 
   return (
     <div className={className} style={style}>
+      {/* Search input */}
       <input
         type="text"
-        placeholder="Search decisions…"
+        placeholder="Search decisions, rationale…"
         value={search}
         onChange={e => setSearch(e.target.value)}
         style={{
-          width: '100%',
-          background: '#27272a',
-          border: '1px solid #3f3f46',
-          borderRadius: 6,
-          color: '#f4f4f5',
-          fontSize: '0.8rem',
-          padding: '6px 10px',
-          marginBottom: 16,
-          boxSizing: 'border-box',
-          outline: 'none',
+          width: '100%', boxSizing: 'border-box',
+          background: T.bgCard, border: `1px solid ${T.border}`,
+          borderRadius: 4, padding: '7px 12px',
+          fontFamily: T.mono, fontSize: 12, color: T.text,
+          outline: 'none', marginBottom: 20,
         }}
+        onFocus={e => { (e.target as HTMLInputElement).style.borderColor = T.accent }}
+        onBlur={e => { (e.target as HTMLInputElement).style.borderColor = T.border }}
       />
 
       {entries.length === 0 && (
-        <p style={{ color: '#52525b', fontSize: '0.8rem' }}>No decisions match.</p>
+        <div style={{ fontFamily: T.mono, fontSize: 12, color: T.textSoft, textAlign: 'center', padding: '24px 0' }}>
+          {q ? `No decisions match "${search}"` : 'No decisions found.'}
+        </div>
       )}
 
       {domains.map(d => (
-        <div key={d} style={{ marginBottom: 20 }}>
-          <h3 style={{ margin: '0 0 8px', fontSize: '0.7rem', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {d}
-          </h3>
-          {byDomain[d].map((entry, i) => (
-            <div key={i} style={{ background: '#18181b', border: '1px solid #3f3f46', borderRadius: 6, padding: '0.75rem', marginBottom: 6 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontSize: '0.65rem', color: '#52525b', fontFamily: 'monospace' }}>{entry.featureKey}</span>
-                <span style={{ fontSize: '0.65rem', color: '#52525b' }}>{entry.date}</span>
+        <div key={d} style={{ marginBottom: 28 }}>
+          {/* Domain header */}
+          <div style={{
+            fontFamily: T.mono, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase',
+            color: T.accent, marginBottom: 10, paddingBottom: 6, borderBottom: `1px solid ${T.border}`,
+            display: 'flex', justifyContent: 'space-between',
+          }}>
+            <span>{d}</span>
+            <span style={{ color: T.textSoft }}>{byDomain.get(d)!.length}</span>
+          </div>
+
+          {/* Decision cards */}
+          {byDomain.get(d)!.map((entry, i) => (
+            <div key={i} style={{
+              background: T.bgCard, border: `1px solid ${T.border}`,
+              borderLeft: `3px solid ${T.accent}`,
+              borderRadius: 4, padding: '12px 14px', marginBottom: 8,
+            }}>
+              {/* Feature ref row */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontFamily: T.mono, fontSize: 10, color: T.textSoft }}>{entry.featureKey}</span>
+                <span style={{ fontFamily: T.mono, fontSize: 10, color: T.textSoft }}>{entry.date}</span>
               </div>
-              <p style={{ margin: '0 0 4px', fontSize: '0.8rem', color: '#e4e4e7', fontWeight: 500 }}>{entry.decision}</p>
+
+              {/* Decision text */}
+              <div
+                style={{ fontSize: 13, color: T.text, lineHeight: 1.55, marginBottom: entry.rationale ? 6 : 0, fontWeight: 500 }}
+                dangerouslySetInnerHTML={{ __html: highlight(entry.decision, search) }}
+              />
+
+              {/* Rationale */}
               {entry.rationale && (
-                <p style={{ margin: 0, fontSize: '0.75rem', color: '#71717a', lineHeight: 1.4 }}>{entry.rationale}</p>
+                <div
+                  style={{ fontSize: 12, color: T.textMid, lineHeight: 1.5 }}
+                  dangerouslySetInnerHTML={{ __html: highlight(entry.rationale, search) }}
+                />
               )}
             </div>
           ))}
         </div>
       ))}
+
+      {entries.length > 0 && (
+        <div style={{ fontFamily: T.mono, fontSize: 10, color: T.textSoft, textAlign: 'center', paddingTop: 8 }}>
+          {entries.length} decision{entries.length !== 1 ? 's' : ''}
+        </div>
+      )}
     </div>
   )
 }

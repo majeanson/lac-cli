@@ -1,98 +1,87 @@
 import React from 'react'
 import type { LacFeatureEntry, LacView } from '../types.js'
-
-function mdToHtml(md: string): string {
-  return md
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/^### (.+)$/gm, '<h3 style="font-size:0.8rem;font-weight:600;color:#e4e4e7;margin:0.75rem 0 0.25rem">$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2 style="font-size:0.875rem;font-weight:600;color:#f4f4f5;margin:0.75rem 0 0.25rem">$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1 style="font-size:1rem;font-weight:600;color:#fff;margin:0.75rem 0 0.25rem">$1</h1>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/`(.+?)`/g, '<code style="background:#27272a;padding:0 3px;border-radius:3px;font-size:0.8em">$1</code>')
-    .replace(/^- (.+)$/gm, '<li style="margin:0.2rem 0">$1</li>')
-    .replace(/(<li[^>]*>.*<\/li>\n?)+/g, m => `<ul style="padding-left:1rem;margin:0.5rem 0">${m}</ul>`)
-    .replace(/\n\n/g, '</p><p style="margin:0.4rem 0">')
-    .replace(/\n/g, ' ')
-    .trim()
-}
-
-const STATUS_COLORS: Record<string, string> = {
-  frozen: '#22c55e',
-  active: '#f59e0b',
-  draft: '#60a5fa',
-  deprecated: '#71717a',
-}
+import { T, statusColor, statusBg, statusBorder } from '../tokens.js'
+import { mdToHtml } from '../utils.js'
 
 export interface LacFeatureCardProps {
   feature: LacFeatureEntry
   view?: LacView
   guideUrl?: string
-  /** Custom CSS class applied to the card wrapper */
   className?: string
   style?: React.CSSProperties
 }
 
 /**
- * LacFeatureCard — renders a single feature in a given audience view.
+ * LacFeatureCard — compact feature renderer in a given audience view.
+ * For a full detail view with all fields use LacFeatureDetail instead.
  *
  * ```tsx
  * <LacFeatureCard feature={feature} view="user" guideUrl="/lac/lac-guide.html" />
  * ```
  */
 export function LacFeatureCard({ feature, view = 'user', guideUrl, className, style }: LacFeatureCardProps) {
-  const statusColor = STATUS_COLORS[feature.status] ?? '#71717a'
-  const featureGuideUrl = guideUrl ? `${guideUrl}#${feature.featureKey}` : undefined
+  const sc   = statusColor(feature.status)
+  const sbg  = statusBg(feature.status)
+  const sbdr = statusBorder(feature.status)
+  const guideHref = guideUrl ? `${guideUrl}#${feature.featureKey}` : undefined
 
   return (
     <div
       className={className}
       style={{
-        background: '#18181b',
-        border: '1px solid #3f3f46',
-        borderRadius: 8,
-        padding: '1rem',
+        background: T.bgCard, border: `1px solid ${T.border}`,
+        borderRadius: 6, padding: '14px 16px',
         ...style,
       }}
     >
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: statusColor, flexShrink: 0, display: 'inline-block' }} />
-            <span style={{ fontSize: '0.75rem', color: '#a1a1aa' }}>{feature.domain}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              fontFamily: T.mono, fontSize: 10,
+              color: sc, background: sbg, border: `1px solid ${sbdr}`,
+              padding: '2px 6px', borderRadius: 3,
+            }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: sc, display: 'inline-block' }} />
+              {feature.status}
+            </span>
+            <span style={{ fontFamily: T.mono, fontSize: 10, color: T.textSoft }}>{feature.domain}</span>
             {feature.priority && (
-              <span style={{ fontSize: '0.7rem', color: '#71717a' }}>P{feature.priority}</span>
+              <span style={{ fontFamily: T.mono, fontSize: 10, color: T.textSoft }}>P{feature.priority}</span>
             )}
           </div>
-          <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: '#f4f4f5', lineHeight: 1.3 }}>
+          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: T.text, lineHeight: 1.3 }}>
             {feature.title}
           </h3>
         </div>
-        {featureGuideUrl && (
+        {guideHref && (
           <a
-            href={featureGuideUrl}
-            target="_blank"
-            rel="noreferrer"
-            style={{ fontSize: '0.7rem', color: '#f59e0b', whiteSpace: 'nowrap', flexShrink: 0, textDecoration: 'none' }}
+            href={guideHref} target="_blank" rel="noreferrer"
+            style={{ fontFamily: T.mono, fontSize: 10, color: T.accent, whiteSpace: 'nowrap', flexShrink: 0, textDecoration: 'none' }}
           >
-            Full guide →
+            guide →
           </a>
         )}
       </div>
 
       {/* User view */}
       {view === 'user' && feature.views.user && (
-        <div style={{ fontSize: '0.8rem', color: '#d4d4d8', lineHeight: 1.6 }}>
+        <div style={{ fontSize: 12, color: T.textMid, lineHeight: 1.6 }}>
           {feature.views.user.userGuide && (
             <div dangerouslySetInnerHTML={{ __html: mdToHtml(feature.views.user.userGuide) }} />
           )}
           {feature.views.user.knownLimitations && feature.views.user.knownLimitations.length > 0 && (
-            <div style={{ marginTop: 10, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 6, padding: '8px 10px' }}>
-              <p style={{ margin: '0 0 4px', fontSize: '0.7rem', fontWeight: 600, color: '#f59e0b' }}>Gotchas</p>
-              <ul style={{ margin: 0, padding: '0 0 0 1rem' }}>
+            <div style={{
+              marginTop: 10,
+              background: 'rgba(196,162,85,0.08)', border: `1px solid ${T.statusDraftBdr}`,
+              borderRadius: 6, padding: '8px 12px',
+            }}>
+              <p style={{ margin: '0 0 4px', fontFamily: T.mono, fontSize: 10, letterSpacing: '0.08em', color: T.accent }}>GOTCHAS</p>
+              <ul style={{ margin: 0, padding: '0 0 0 16px' }}>
                 {feature.views.user.knownLimitations.map((lim, i) => (
-                  <li key={i} style={{ margin: '2px 0', fontSize: '0.75rem', color: '#d4d4d8' }}>{lim}</li>
+                  <li key={i} style={{ margin: '2px 0', fontSize: 12, color: T.textMid }}>{lim}</li>
                 ))}
               </ul>
             </div>
@@ -102,40 +91,34 @@ export function LacFeatureCard({ feature, view = 'user', guideUrl, className, st
 
       {/* Dev view */}
       {view === 'dev' && feature.views.dev && (
-        <div style={{ fontSize: '0.8rem', color: '#d4d4d8' }}>
+        <div style={{ fontSize: 12, color: T.textMid }}>
           {feature.views.dev.componentFile && (
             <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ color: '#71717a' }}>Component</span>
-              <code style={{ background: '#27272a', color: '#fbbf24', padding: '1px 6px', borderRadius: 4, fontSize: '0.75rem', fontFamily: 'monospace' }}>
+              <span style={{ fontFamily: T.mono, fontSize: 10, color: T.textSoft }}>component</span>
+              <code style={{ fontFamily: T.mono, fontSize: 11, color: T.accent, background: T.bg, border: `1px solid ${T.border}`, padding: '1px 5px', borderRadius: 3 }}>
                 {feature.views.dev.componentFile}
               </code>
             </div>
           )}
           {feature.views.dev.decisions && feature.views.dev.decisions.length > 0 && (
             <div style={{ marginBottom: 8 }}>
-              <p style={{ margin: '0 0 4px', fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa' }}>Key Decisions</p>
+              <p style={{ margin: '0 0 4px', fontFamily: T.mono, fontSize: 10, color: T.textSoft, letterSpacing: '0.08em' }}>KEY DECISIONS</p>
               {feature.views.dev.decisions.slice(0, 3).map((d, i) => (
-                <div key={i} style={{ marginBottom: 4, fontSize: '0.75rem', color: '#d4d4d8' }}>
-                  <span style={{ color: '#71717a', marginRight: 4 }}>{d.date}</span>
-                  {d.decision ?? d.choice}
+                <div key={i} style={{ marginBottom: 4, paddingLeft: 10, borderLeft: `2px solid ${T.accent}` }}>
+                  <div style={{ fontFamily: T.mono, fontSize: 10, color: T.textSoft, marginBottom: 1 }}>{d.date}</div>
+                  <div style={{ fontSize: 12, color: T.text }}>{d.decision ?? d.choice}</div>
                 </div>
               ))}
             </div>
           )}
           {feature.externalDependencies?.length > 0 && (
             <div>
-              <p style={{ margin: '0 0 4px', fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa' }}>Depends on</p>
+              <p style={{ margin: '0 0 4px', fontFamily: T.mono, fontSize: 10, color: T.textSoft, letterSpacing: '0.08em' }}>DEPENDS ON</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                 {feature.externalDependencies.map(dep => (
-                  <a
-                    key={dep}
-                    href={featureGuideUrl ? `${guideUrl}#${dep}` : undefined}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ background: '#27272a', color: '#a1a1aa', padding: '1px 6px', borderRadius: 4, fontSize: '0.7rem', fontFamily: 'monospace', textDecoration: 'none' }}
-                  >
+                  <span key={dep} style={{ fontFamily: T.mono, fontSize: 10, color: T.textMid, background: T.bgCard, border: `1px solid ${T.border}`, padding: '1px 6px', borderRadius: 3 }}>
                     {dep}
-                  </a>
+                  </span>
                 ))}
               </div>
             </div>
@@ -145,14 +128,17 @@ export function LacFeatureCard({ feature, view = 'user', guideUrl, className, st
 
       {/* Product view */}
       {view === 'product' && feature.views.product && (
-        <div style={{ fontSize: '0.8rem', color: '#d4d4d8' }}>
+        <div style={{ fontSize: 12, color: T.textMid, lineHeight: 1.55 }}>
           {feature.views.product.problem && (
-            <p style={{ margin: '0 0 8px', lineHeight: 1.5 }}>{feature.views.product.problem}</p>
+            <p style={{ margin: '0 0 8px' }}>{feature.views.product.problem}</p>
           )}
           {feature.views.product.successCriteria && (
-            <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 6, padding: '6px 10px' }}>
-              <p style={{ margin: '0 0 2px', fontSize: '0.7rem', fontWeight: 600, color: '#4ade80' }}>Success Criteria</p>
-              <p style={{ margin: 0, fontSize: '0.75rem' }}>{feature.views.product.successCriteria}</p>
+            <div style={{
+              background: 'rgba(74,173,114,0.08)', border: '1px solid rgba(74,173,114,0.25)',
+              borderRadius: 5, padding: '8px 10px',
+            }}>
+              <p style={{ margin: '0 0 2px', fontFamily: T.mono, fontSize: 10, color: T.statusActive, letterSpacing: '0.08em' }}>DONE WHEN</p>
+              <p style={{ margin: 0, fontSize: 12 }}>{feature.views.product.successCriteria}</p>
             </div>
           )}
         </div>
@@ -162,7 +148,11 @@ export function LacFeatureCard({ feature, view = 'user', guideUrl, className, st
       {feature.tags?.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 10 }}>
           {feature.tags.map(tag => (
-            <span key={tag} style={{ background: '#27272a', color: '#71717a', padding: '1px 6px', borderRadius: 3, fontSize: '0.65rem' }}>
+            <span key={tag} style={{
+              fontFamily: T.mono, fontSize: 10,
+              padding: '2px 7px', background: T.bg, border: `1px solid ${T.border}`,
+              borderRadius: 100, color: T.textSoft,
+            }}>
               {tag}
             </span>
           ))}

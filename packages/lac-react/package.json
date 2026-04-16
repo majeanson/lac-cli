@@ -1,6 +1,6 @@
 {
   "name": "@majeanson/lac-react",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "React components for surfacing LAC feature documentation inside your app — hub, sprint, help panel, search",
   "license": "MIT",
   "repository": {

@@ -14,6 +14,10 @@ export type {
   LacPublicEntry,
 } from './types.js'
 
+// Design tokens + utilities (for consumers who want to match the LAC aesthetic)
+export { T, statusColor, statusBg, statusBorder } from './tokens.js'
+export { mdToHtml, highlight, escHtml } from './utils.js'
+
 // Context + Provider
 export { LacDataProvider } from './context.js'
 export type { LacDataProviderProps } from './context.js'
@@ -25,6 +29,9 @@ export { useLacFeature, useLacFeatures, useLacSearch, useLacDomains } from './ho
 // Components
 export { LacHub } from './components/LacHub.js'
 export type { LacHubProps } from './components/LacHub.js'
+
+export { LacFeatureDetail } from './components/LacFeatureDetail.js'
+export type { LacFeatureDetailProps } from './components/LacFeatureDetail.js'
 
 export { LacFeatureCard } from './components/LacFeatureCard.js'
 export type { LacFeatureCardProps } from './components/LacFeatureCard.js'
