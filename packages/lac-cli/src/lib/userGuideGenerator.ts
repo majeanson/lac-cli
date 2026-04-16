@@ -537,7 +537,7 @@ document.querySelectorAll('.feature-page').forEach(p => p.classList.add('hidden'
   var hash = window.location.hash.slice(1);
   if (hash) { showPage(hash); }
 })();
-// Click delegation — catch clicks on any element with data-id (nav items, TOC cards)
+// Click delegation — catch clicks on any element with data-id (nav items, TOC cards, search results)
 document.addEventListener('click', function(e) {
   var el = e.target.closest('[data-id]');
   if (!el) return;
@@ -546,6 +546,8 @@ document.addEventListener('click', function(e) {
   e.preventDefault();
   showPage(id);
   history.pushState(null, '', '#' + id);
+  gsearch.value = '';
+  sresults.classList.remove('visible');
 });
 // Browser back/forward navigation
 window.addEventListener('popstate', function() {
@@ -578,8 +580,7 @@ gsearch.addEventListener('input', () => {
   } else {
     sresults.innerHTML = matches.map(f => {
       const snip = strip(f.guide).slice(0, 90) + (f.guide.length > 90 ? '\u2026' : '');
-      const id   = JSON.stringify(f.id);
-      return '<div class="sr-item" onclick="showPage(' + id + ');gsearch.value=\'\';sresults.classList.remove(\'visible\')">'
+      return '<div class="sr-item" data-id="' + f.id + '">'
         + '<div class="sr-title">'   + hlText(f.title, q) + '</div>'
         + '<div class="sr-domain">'  + hlText(f.domain.replace(/-/g,' '), q) + ' \u00b7 ' + f.status + '</div>'
         + '<div class="sr-snippet">' + hlText(snip, q) + '</div>'
