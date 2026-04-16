@@ -336,6 +336,7 @@ export const exportCommand = new Command('export')
   .option('--guide [dir]',    'User guide — one page per feature that has a non-empty userGuide field')
   .option('--hub [dir]',     'Hub landing page linking to all generated views → lac-hub.html')
   .option('--all [dir]',     'Generate all HTML views + hub index.html → --out dir (default: ./lac-output)')
+  .option('--prefix <prefix>', 'URL prefix for hub links (no leading slash), e.g. lac → hrefs become /lac/lac-guide.html')
   .option('--diff <dir-b>',   'Compare cwd workspace against <dir-b> and show added/removed/changed')
   .option('--site <dir>',     'Generate a multi-page static site → --out dir (default: ./lac-site)')
   .option('--prompt [dir]',   'AI reconstruction prompt for all features (stdout or --out file)')
@@ -406,6 +407,7 @@ Views (--view):
     tags?: string
     sort?: string
     view?: string
+    prefix?: string
   }) => {
     // ── View validation ──────────────────────────────────────────────────────
     let activeView = options.view
@@ -785,7 +787,7 @@ Views (--view):
         deprecated: fs.filter(f => f.status === 'deprecated').length,
         domains: [...new Set(fs.map(f => f.domain).filter((d): d is string => Boolean(d)))],
       }
-      const html = generateHub(basename(dir), stats, ALL_HUB_ENTRIES)
+      const html = generateHub(basename(dir), stats, ALL_HUB_ENTRIES, new Date().toISOString(), options.prefix)
       const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-hub.html')
       try {
         await writeFile(outFile, html, 'utf-8')
@@ -838,7 +840,7 @@ Views (--view):
         deprecated: fs.filter(f => f.status === 'deprecated').length,
         domains: [...new Set(fs.map(f => f.domain).filter((d): d is string => Boolean(d)))],
       }
-      await write('index.html', generateHub(projectName, stats, ALL_HUB_ENTRIES))
+      await write('index.html', generateHub(projectName, stats, ALL_HUB_ENTRIES, new Date().toISOString(), options.prefix))
 
       process.stdout.write(`Done — ${features.length} features, 11 files written to ${outDir}\n`)
       return

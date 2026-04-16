@@ -53,11 +53,28 @@ export function generateHub(
   stats: HubStats,
   entries: HubEntry[],
   generatedAt: string = new Date().toISOString(),
+  prefix?: string,
 ): string {
   function esc(s: string): string {
     return s
       .replace(/&/g, "&amp;").replace(/</g, "&lt;")
       .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  // Normalise prefix: result always starts with / and has no trailing slash.
+  // e.g. "lac" → "/lac", "/lac" → "/lac"
+  // Git Bash on Windows expands /lac to /C:/Program Files/Git/lac — detect
+  // by presence of a drive letter and take only the last path segment.
+  const urlPrefix = prefix
+    ? "/" + (
+        /[A-Za-z]:[/\\]/.test(prefix)
+          ? (prefix.split(/[/\\]/).filter(Boolean).pop() ?? "")  // e.g. /C:/.../lac → lac
+          : prefix.replace(/^\/+/, "").replace(/\/+$/, "")       // e.g. lac or /lac → lac
+      )
+    : "";
+
+  function href(file: string): string {
+    return urlPrefix ? `${urlPrefix}/${file}` : `./${file}`;
   }
 
   const primaryEntries   = entries.filter(e => e.primary);
@@ -69,7 +86,7 @@ export function generateHub(
 
   function primaryCard(e: HubEntry): string {
     return `
-    <a href="./${esc(e.file)}" onclick="event.preventDefault();lacGo('${esc(e.file)}')" class="primary-card">
+    <a href="${esc(href(e.file))}" class="primary-card">
       <div class="primary-card-icon">${e.icon}</div>
       <div class="primary-card-body">
         <div class="primary-card-label">${esc(e.label)}</div>
@@ -81,7 +98,7 @@ export function generateHub(
 
   function secondaryCard(e: HubEntry): string {
     return `
-    <a href="./${esc(e.file)}" onclick="event.preventDefault();lacGo('${esc(e.file)}')" class="secondary-card">
+    <a href="${esc(href(e.file))}" class="secondary-card">
       <div class="secondary-card-icon">${e.icon}</div>
       <div class="secondary-card-label">${esc(e.label)}</div>
       <div class="secondary-card-desc">${esc(e.description)}</div>
@@ -186,11 +203,9 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
 .footer-sep   { font-family: var(--mono); font-size: 10px; color: var(--border); }
 .footer-note  { font-size: 11px; color: var(--text-soft); }
 </style>
-<script>
-function lacGo(file) {
-  location.href = location.href.replace(/[^\/]*$/, '') + file;
-}
-</script>
+${urlPrefix ? "" : `<script>
+function lacGo(file){location.href=location.href.replace(/[^\\/]*$/,'')+file}
+</script>`}
 </head>
 <body>
 
