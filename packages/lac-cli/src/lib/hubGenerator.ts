@@ -187,12 +187,11 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
 .footer-note  { font-size: 11px; color: var(--text-soft); }
 </style>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  var base = location.href.substring(0, location.href.lastIndexOf('/') + 1);
-  document.querySelectorAll('a[href^="./"]').forEach(function(a) {
-    a.href = base + a.getAttribute('href').slice(2);
-  });
-});
+(function() {
+  var b = document.createElement('base');
+  b.href = location.href.substring(0, location.href.lastIndexOf('/') + 1);
+  document.head.appendChild(b);
+})();
 </script>
 </head>
 <body>
