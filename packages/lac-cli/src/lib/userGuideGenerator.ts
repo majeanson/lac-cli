@@ -519,9 +519,21 @@ function showPage(id) {
   const page = document.getElementById('page-' + id);
   if (page) { page.classList.remove('hidden'); document.getElementById('content').scrollTop = 0; }
   document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.id === id));
+  var hash = '#' + id;
+  if (window.location.hash !== hash) { history.replaceState(null, '', hash); }
 }
 // init
 document.querySelectorAll('.feature-page').forEach(p => p.classList.add('hidden'));
+// Hash routing: navigate to feature on load if hash is present
+(function() {
+  var hash = window.location.hash.slice(1);
+  if (hash) { showPage(hash); }
+})();
+// Hash routing: respond to browser back/forward navigation
+window.addEventListener('hashchange', function() {
+  var hash = window.location.hash.slice(1);
+  showPage(hash || 'home');
+});
 
 const gsearch  = document.getElementById('gsearch');
 const sresults = document.getElementById('sresults');

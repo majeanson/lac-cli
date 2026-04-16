@@ -186,7 +186,15 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
 .footer-sep   { font-family: var(--mono); font-size: 10px; color: var(--border); }
 .footer-note  { font-size: 11px; color: var(--text-soft); }
 </style>
-<script>if(location.pathname.slice(-1)!=='/')location.replace(location.pathname+'/')</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var p = location.pathname;
+  var base = location.origin + (p.endsWith('/') ? p : p + '/');
+  document.querySelectorAll('a[href^="./"]').forEach(function(a) {
+    a.href = base + a.getAttribute('href').slice(2);
+  });
+});
+</script>
 </head>
 <body>
 
