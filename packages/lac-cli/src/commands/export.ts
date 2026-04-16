@@ -30,6 +30,8 @@ import { generateReleaseNotes } from '../lib/releaseNotesGenerator.js'
 import { generateSprint } from '../lib/sprintGenerator.js'
 import { generateApiSurface } from '../lib/apiSurfaceGenerator.js'
 import { generateDependencyMap } from '../lib/dependencyMapGenerator.js'
+import { generateDataExport } from '../lib/dataExportGenerator.js'
+import { generateHelpWidget } from '../lib/helpWidgetGenerator.js'
 import { generateHub, ALL_HUB_ENTRIES, type HubStats } from '../lib/hubGenerator.js'
 import { generateRadar } from '../lib/radarGenerator.js'
 import { generateSuccessboard } from '../lib/successboardGenerator.js'
@@ -362,6 +364,8 @@ export const exportCommand = new Command('export')
   .option('--successboard [dir]',   'Success criteria board — achieved/in-progress/planned by successCriteria → lac-successboard.html')
   .option('--pitch [dir]',          'Demo slide deck — keyboard-navigable fullscreen presentation → lac-pitch.html')
   .option('--timeline [dir]',       'Feature velocity timeline — swim-lane history from statusHistory → lac-timeline.html')
+  .option('--data [dir]',          'Universal JSON bridge for in-app help/docs — all views per feature → lac-data.json')
+  .option('--help-widget [dir]',   'Zero-dep vanilla JS help widget + Web Component → lac-help.js')
   .option('--tags <tags>',    'Comma-separated tags to filter by (OR logic) — applies to all multi-feature modes')
   .option('--sort <mode>',    'Sort order for multi-feature modes: key (default) | build-order (parents before children)')
   .option('--view <name>',    `Audience view — built-in (${VIEW_NAMES.join(', ')}) or custom name from lac.config.json views`)
@@ -437,6 +441,8 @@ Views (--view):
     successboard?: string | boolean
     pitch?: string | boolean
     timeline?: string | boolean
+    data?: string | boolean
+    helpWidget?: string | boolean
     tags?: string
     sort?: string
     view?: string
@@ -1008,6 +1014,36 @@ Views (--view):
       return
     }
 
+    // ── Data export mode ──────────────────────────────────────────────────────
+    if (options.data !== undefined) {
+      const dir = typeof options.data === 'string' ? resolve(options.data) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const json = generateDataExport(fs, basename(dir), { customViews: config.views })
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-data.json')
+      try {
+        await writeFile(outFile, json, 'utf-8')
+        process.stdout.write(`✓ Data export (${features.length} features, all views) → ${options.out ?? 'lac-data.json'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── Help widget mode ──────────────────────────────────────────────────────
+    if (options.helpWidget !== undefined) {
+      const dir = typeof options.helpWidget === 'string' ? resolve(options.helpWidget) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const js = generateHelpWidget(fs, basename(dir))
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-help.js')
+      try {
+        await writeFile(outFile, js, 'utf-8')
+        process.stdout.write(`✓ Help widget (${features.length} features, LacHelp API + Web Component) → ${options.out ?? 'lac-help.js'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
     // ── All mode ──────────────────────────────────────────────────────────────
     if (options.all !== undefined) {
       const dir = typeof options.all === 'string' ? resolve(options.all) : resolve(process.cwd())
@@ -1052,6 +1088,8 @@ Views (--view):
       await write('lac-successboard.html',   generateSuccessboard(fs, projectName))
       await write('lac-pitch.html',          generatePitch(fs, projectName))
       await write('lac-timeline.html',       generateTimeline(fs, projectName))
+      await write('lac-data.json',           generateDataExport(fs, projectName, { customViews: config.views }))
+      await write('lac-help.js',             generateHelpWidget(fs, projectName))
 
       const stats: HubStats = {
         total: fs.length,
@@ -1108,7 +1146,7 @@ Views (--view):
       const allEntries = [...ALL_HUB_ENTRIES, ...customEntries]
       await write('index.html', generateHub(projectName, stats, allEntries, new Date().toISOString(), options.prefix))
 
-      const totalFiles = 19 + customEntries.length + 1
+      const totalFiles = 21 + customEntries.length + 1
       process.stdout.write(`Done — ${features.length} features, ${totalFiles} files written to ${outDir}\n`)
       return
     }

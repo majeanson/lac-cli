@@ -55,6 +55,8 @@ export const ALL_HUB_ENTRIES: HubEntry[] = [
   { file: "lac-successboard.html", label: "Success Board",      description: "successCriteria + acceptanceCriteria organized by delivery status",          icon: "✅", primary: false },
   { file: "lac-pitch.html",        label: "Pitch Deck",         description: "Full-screen keyboard-navigable slide deck — present your product story",     icon: "🎤", primary: true  },
   { file: "lac-timeline.html",     label: "Feature Timeline",   description: "Horizontal swim-lane timeline built from statusHistory — velocity at a glance", icon: "📆", primary: false },
+  { file: "lac-data.json",         label: "Data Export",        description: "Universal JSON bridge — all features with multi-view projections for in-app help and docs", icon: "📦", primary: false },
+  { file: "lac-help.js",           label: "Help Widget",        description: "Zero-dep vanilla JS widget + Web Component — drop in any app for contextual in-app help", icon: "💡", primary: false },
 ];
 
 export function generateHub(
