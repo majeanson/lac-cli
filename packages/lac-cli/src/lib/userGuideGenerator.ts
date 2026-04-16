@@ -237,6 +237,10 @@ export function generateUserGuide(features: Feature[], projectName: string): str
         ${f.featureKey ? `<span class="feature-key-label">${esc(f.featureKey)}</span>` : ""}
         ${tags}
       </div>
+      ${f.featureKey ? `<div class="cross-links">
+        <a class="cross-link" href="./lac-wiki.html#${esc(f.featureKey)}">🗂️ Wiki</a>
+        <a class="cross-link" href="./lac-raw.html#${esc(f.featureKey)}">🔩 Raw</a>
+      </div>` : ""}
       <div class="guide-block">
         <div class="guide-block-label">How to use</div>
         <div class="guide-text">${guideHtml}</div>
@@ -401,7 +405,10 @@ body {
 .feature-page.hidden, .home-page.hidden { display: none; }
 .feature-domain-eyebrow { font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 10px; }
 .feature-title { font-size: 28px; font-weight: 800; color: var(--text); letter-spacing: -0.015em; line-height: 1.2; margin-bottom: 12px; }
-.feature-meta  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 28px; }
+.feature-meta  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.cross-links   { display: flex; gap: 8px; margin-bottom: 24px; }
+.cross-link    { font-family: var(--mono); font-size: 11px; color: var(--text-soft); text-decoration: none; padding: 3px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-card); }
+.cross-link:hover { color: var(--accent); border-color: var(--accent); }
 .status-badge  { display: inline-block; padding: 2px 10px; border-radius: 999px; font-family: var(--mono); font-size: 10px; border: 1px solid; }
 .status-badge.frozen     { color: var(--status-frozen);     border-color: rgba(91,130,204,0.4);  background: var(--status-frozen-bg); }
 .status-badge.active     { color: var(--status-active);     border-color: rgba(74,173,114,0.4);  background: var(--status-active-bg); }
