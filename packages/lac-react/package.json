@@ -1,0 +1,42 @@
+{
+  "name": "@majeanson/lac-react",
+  "version": "1.0.0",
+  "description": "React components for surfacing LAC feature documentation inside your app — hub, sprint, help panel, search",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/majeanson/lac-cli.git"
+  },
+  "keywords": ["react", "lac", "life-as-code", "documentation", "feature", "hub"],
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "tsdown": "^0.19.0",
+    "typescript": "^5.7.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
