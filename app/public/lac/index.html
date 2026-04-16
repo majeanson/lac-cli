@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>lac-cli — Life-as-Code Hub</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:        #0f0d0b;
+  --bg-card:   #181512;
+  --bg-hover:  #1e1a16;
+  --border:    #262018;
+  --text:      #ece3d8;
+  --text-mid:  #b0a494;
+  --text-soft: #736455;
+  --accent:    #c4a255;
+  --accent-w:  #e8b865;
+  --mono: 'Cascadia Code','Fira Code','JetBrains Mono','Consolas',monospace;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --frozen:  #5b82cc; --active: #4aad72; --draft: #c4a255; --deprecated: #cc5b5b;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.6; min-height: 100vh; }
+
+/* ── Topbar ── */
+.topbar { height: 46px; display: flex; align-items: center; gap: 14px; padding: 0 28px; background: #0b0a08; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+.topbar-brand { font-family: var(--mono); font-size: 13px; color: var(--accent); letter-spacing: 0.05em; }
+.topbar-sep   { color: var(--border); font-size: 18px; line-height: 1; }
+.topbar-title { font-size: 13px; color: var(--text-mid); }
+.topbar-date  { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--text-soft); }
+
+/* ── Layout ── */
+.page { max-width: 880px; margin: 0 auto; padding: 56px 28px 100px; }
+
+/* ── Hero ── */
+.hero { margin-bottom: 48px; }
+.hero-eyebrow { font-family: var(--mono); font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+.hero-title   { font-size: 40px; font-weight: 800; color: var(--text); letter-spacing: -0.025em; line-height: 1.1; margin-bottom: 10px; }
+.hero-sub     { font-size: 15px; color: var(--text-mid); max-width: 520px; line-height: 1.7; margin-bottom: 28px; }
+
+/* ── Stats row ── */
+.stats-row { display: flex; flex-wrap: wrap; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 8px; }
+.stat { flex: 1; min-width: 90px; padding: 14px 20px; background: var(--bg-card); }
+.stat-num   { font-family: var(--mono); font-size: 22px; font-weight: 700; line-height: 1; }
+.stat-lbl   { font-size: 11px; color: var(--text-soft); margin-top: 3px; }
+.stat-total  .stat-num { color: var(--accent); }
+.stat-frozen .stat-num { color: var(--frozen); }
+.stat-active .stat-num { color: var(--active); }
+.stat-draft  .stat-num { color: var(--draft);  }
+
+.domains-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.domain-tag  { display: inline-block; padding: 2px 9px; border-radius: 999px; font-family: var(--mono); font-size: 10px; color: var(--text-soft); background: var(--bg-card); border: 1px solid var(--border); }
+
+/* ── Section headings ── */
+.section-header { margin-top: 52px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+.section-title  { font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-soft); }
+.section-rule   { flex: 1; height: 1px; background: var(--border); }
+
+/* ── Primary cards (user-facing) ── */
+.primary-grid { display: flex; flex-direction: column; gap: 12px; }
+.primary-card {
+  display: flex; align-items: center; gap: 20px;
+  padding: 22px 24px; background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; text-decoration: none;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+.primary-card:hover { background: var(--bg-hover); border-color: var(--accent); transform: translateX(2px); }
+.primary-card-icon  { font-size: 28px; flex-shrink: 0; width: 44px; text-align: center; }
+.primary-card-body  { flex: 1; min-width: 0; }
+.primary-card-label { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.primary-card-desc  { font-size: 13px; color: var(--text-mid); line-height: 1.5; }
+.primary-card-arrow { font-size: 18px; color: var(--accent); flex-shrink: 0; transition: transform 0.15s; }
+.primary-card:hover .primary-card-arrow { transform: translateX(4px); }
+
+/* ── Secondary grid (developer) ── */
+.secondary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.secondary-card {
+  display: block; padding: 18px 20px; background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 10px; text-decoration: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.secondary-card:hover { background: var(--bg-hover); border-color: var(--text-soft); }
+.secondary-card-icon  { font-size: 20px; margin-bottom: 8px; display: block; }
+.secondary-card-label { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.secondary-card-desc  { font-size: 12px; color: var(--text-soft); line-height: 1.55; }
+
+/* ── Footer ── */
+.footer { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+.footer-brand { font-family: var(--mono); font-size: 10px; color: var(--text-soft); }
+.footer-sep   { font-family: var(--mono); font-size: 10px; color: var(--border); }
+.footer-note  { font-size: 11px; color: var(--text-soft); }
+</style>
+<script>
+function lacGo(file) {
+  location.href = location.href.replace(/[^/]*$/, '') + file;
+}
+</script>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-brand">lac·hub</span>
+  <span class="topbar-sep">/</span>
+  <span class="topbar-title">lac-cli</span>
+  <span class="topbar-date">Generated April 15, 2026</span>
+</div>
+
+<div class="page">
+
+  <div class="hero">
+    <div class="hero-eyebrow">life-as-code</div>
+    <div class="hero-title">lac-cli</div>
+    <div class="hero-sub">Feature documentation hub — every view of the project's feature.json data in one place.</div>
+    <div class="stats-row">
+      <div class="stat stat-total">
+        <div class="stat-num">7</div>
+        <div class="stat-lbl">features</div>
+      </div>
+      <div class="stat stat-frozen">
+        <div class="stat-num">1</div>
+        <div class="stat-lbl">frozen</div>
+      </div>
+      <div class="stat stat-active">
+        <div class="stat-num">5</div>
+        <div class="stat-lbl">active</div>
+      </div>
+      <div class="stat stat-draft">
+        <div class="stat-num">1</div>
+        <div class="stat-lbl">draft</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" style="color:var(--text-mid)">1</div>
+        <div class="stat-lbl">domains</div>
+      </div>
+    </div>
+    <div class="domains-row"><span class="domain-tag">cli-export</span></div>
+  </div>
+
+  
+  <div class="section-header">
+    <div class="section-title">User-facing</div>
+    <div class="section-rule"></div>
+  </div>
+  <div class="primary-grid">
+    
+    <a href="./lac-guide.html" onclick="event.preventDefault();lacGo('lac-guide.html')" class="primary-card">
+      <div class="primary-card-icon">📖</div>
+      <div class="primary-card-body">
+        <div class="primary-card-label">User Guide</div>
+        <div class="primary-card-desc">How to use every user-facing feature — generated from userGuide fields</div>
+      </div>
+      <div class="primary-card-arrow">→</div>
+    </a>
+    <a href="./lac-story.html" onclick="event.preventDefault();lacGo('lac-story.html')" class="primary-card">
+      <div class="primary-card-icon">📰</div>
+      <div class="primary-card-body">
+        <div class="primary-card-label">Product Story</div>
+        <div class="primary-card-desc">Long-form narrative case study built from feature data</div>
+      </div>
+      <div class="primary-card-arrow">→</div>
+    </a>
+  </div>
+
+  
+  <div class="section-header">
+    <div class="section-title">Developer views</div>
+    <div class="section-rule"></div>
+  </div>
+  <div class="secondary-grid">
+    
+    <a href="./lac-wiki.html" onclick="event.preventDefault();lacGo('lac-wiki.html')" class="secondary-card">
+      <div class="secondary-card-icon">🗂️</div>
+      <div class="secondary-card-label">Feature Wiki</div>
+      <div class="secondary-card-desc">Complete searchable wiki — all fields, all features, sidebar navigation</div>
+    </a>
+    <a href="./lac-kanban.html" onclick="event.preventDefault();lacGo('lac-kanban.html')" class="secondary-card">
+      <div class="secondary-card-icon">📋</div>
+      <div class="secondary-card-label">Kanban Board</div>
+      <div class="secondary-card-desc">Active / Frozen / Draft columns with sortable, filterable cards</div>
+    </a>
+    <a href="./lac-health.html" onclick="event.preventDefault();lacGo('lac-health.html')" class="secondary-card">
+      <div class="secondary-card-icon">🏥</div>
+      <div class="secondary-card-label">Health Scorecard</div>
+      <div class="secondary-card-desc">Completeness, coverage, tech-debt score, and field fill rates</div>
+    </a>
+    <a href="./lac-decisions.html" onclick="event.preventDefault();lacGo('lac-decisions.html')" class="secondary-card">
+      <div class="secondary-card-icon">⚖️</div>
+      <div class="secondary-card-label">Decision Log</div>
+      <div class="secondary-card-desc">All architectural decisions consolidated and searchable by domain</div>
+    </a>
+    <a href="./lac-heatmap.html" onclick="event.preventDefault();lacGo('lac-heatmap.html')" class="secondary-card">
+      <div class="secondary-card-icon">🔥</div>
+      <div class="secondary-card-label">Completeness Heatmap</div>
+      <div class="secondary-card-desc">Field x feature completeness grid — quickly spot gaps</div>
+    </a>
+    <a href="./lac-graph.html" onclick="event.preventDefault();lacGo('lac-graph.html')" class="secondary-card">
+      <div class="secondary-card-icon">🕸️</div>
+      <div class="secondary-card-label">Lineage Graph</div>
+      <div class="secondary-card-desc">Interactive force-directed feature dependency graph</div>
+    </a>
+    <a href="./lac-print.html" onclick="event.preventDefault();lacGo('lac-print.html')" class="secondary-card">
+      <div class="secondary-card-icon">🖨️</div>
+      <div class="secondary-card-label">Print</div>
+      <div class="secondary-card-desc">Print-ready A4 document — all features in clean two-column layout</div>
+    </a>
+    <a href="./lac-raw.html" onclick="event.preventDefault();lacGo('lac-raw.html')" class="secondary-card">
+      <div class="secondary-card-icon">🔩</div>
+      <div class="secondary-card-label">Raw Dump</div>
+      <div class="secondary-card-desc">Field-by-field dump of every feature.json with sidebar navigation</div>
+    </a>
+  </div>
+
+  <div class="footer">
+    <span class="footer-brand">@majeanson/lac</span>
+    <span class="footer-sep">//</span>
+    <span class="footer-note">Generated from feature.json files. Run <code style="font-family:var(--mono);font-size:10px;background:#1e1a16;padding:1px 5px;border-radius:3px">lac export --all</code> to regenerate.</span>
+  </div>
+
+</div>
+</body>
+</html>

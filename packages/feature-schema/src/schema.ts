@@ -111,6 +111,16 @@ export const FeatureSchema = z.object({
   releaseVersion: z.string().optional(),                              // release version this feature first shipped in, e.g. "3.5.0", "v2", "2026-Q2"
   acceptanceCriteria: z.array(z.string()).optional(),                 // structured testable checklist (parallel to successCriteria prose) — each entry is one verifiable statement
 
+  // Quality assurance
+  testCases: z.array(z.string()).optional(),              // explicit test scenarios — each entry is one test case description, e.g. "Given X, when Y, then Z"
+  edgeCases: z.array(z.string()).optional(),              // boundary conditions and edge cases to validate — surfaces scenarios likely to be missed
+  riskLevel: z.enum(['low', 'medium', 'high', 'critical']).optional(), // estimated impact risk if this feature regresses — drives QA prioritisation
+
+  // Operations & support
+  rollbackPlan: z.string().optional(),                    // how to revert or mitigate if this feature causes issues in production
+  supportNotes: z.string().optional(),                    // guidance for support teams handling tickets about this feature — triage tips, escalation hints
+  knownWorkarounds: z.array(z.string()).optional(),       // active workarounds users or support can apply for known limitations
+
   // Guardlock
   fieldLocks: z.array(FieldLockSchema).optional(),                    // per-field locks; AI tools will not overwrite these fields without --force/override
   featureLocked: z.boolean().optional(),                              // when true, ALL fields in this feature are AI-locked — equivalent to listing every field in fieldLocks

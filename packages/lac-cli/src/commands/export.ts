@@ -37,6 +37,7 @@ import { generateRadar } from '../lib/radarGenerator.js'
 import { generateSuccessboard } from '../lib/successboardGenerator.js'
 import { generatePitch } from '../lib/pitchGenerator.js'
 import { generateTimeline } from '../lib/timelineGenerator.js'
+import { generateRoles } from '../lib/rolesGenerator.js'
 import { VIEW_NAMES, applyView, applyViewForHtml, applyDensity, applyViewTransforms, resolveView, type ViewName, type DensityLevel } from '../lib/views.js'
 import { loadConfig } from '../lib/config.js'
 
@@ -365,6 +366,7 @@ export const exportCommand = new Command('export')
   .option('--successboard [dir]',   'Success criteria board — achieved/in-progress/planned by successCriteria → lac-successboard.html')
   .option('--pitch [dir]',          'Demo slide deck — keyboard-navigable fullscreen presentation → lac-pitch.html')
   .option('--timeline [dir]',       'Feature velocity timeline — swim-lane history from statusHistory → lac-timeline.html')
+  .option('--roles [dir]',          'All stakeholder views in one place — User/Product/Dev/QA/Support/Architect + Compare mode → lac-roles.html')
   .option('--data [dir]',          'Universal JSON bridge for in-app help/docs — all views per feature → lac-data.json')
   .option('--help-widget [dir]',   'Zero-dep vanilla JS help widget + Web Component → lac-help.js')
   .option('--tags <tags>',    'Comma-separated tags to filter by (OR logic) — applies to all multi-feature modes')
@@ -442,6 +444,7 @@ Views (--view):
     successboard?: string | boolean
     pitch?: string | boolean
     timeline?: string | boolean
+    roles?: string | boolean
     data?: string | boolean
     helpWidget?: string | boolean
     tags?: string
@@ -1016,6 +1019,21 @@ Views (--view):
       return
     }
 
+    // ── Roles mode ────────────────────────────────────────────────────────────
+    if (options.roles !== undefined) {
+      const dir = typeof options.roles === 'string' ? resolve(options.roles) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const html = generateRoles(fs as Record<string, unknown>[], basename(dir))
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-roles.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Roles view (${features.length} features, 6 roles + Compare) → ${options.out ?? 'lac-roles.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
     // ── Data export mode ──────────────────────────────────────────────────────
     if (options.data !== undefined) {
       const dir = typeof options.data === 'string' ? resolve(options.data) : resolve(process.cwd())
@@ -1090,6 +1108,7 @@ Views (--view):
       await write('lac-successboard.html',   generateSuccessboard(fs, projectName))
       await write('lac-pitch.html',          generatePitch(fs, projectName))
       await write('lac-timeline.html',       generateTimeline(fs, projectName))
+      await write('lac-roles.html',          generateRoles(fs as Record<string, unknown>[], projectName))
       await write('lac-data.json',           generateDataExport(fs, projectName, { customViews: config.views }))
       await write('lac-help.js',             generateHelpWidget(fs, projectName))
 
@@ -1148,7 +1167,7 @@ Views (--view):
       const allEntries = [...ALL_HUB_ENTRIES, ...customEntries]
       await write('index.html', generateHub(projectName, stats, allEntries, new Date().toISOString(), options.prefix, options.appHub))
 
-      const totalFiles = 21 + customEntries.length + 1
+      const totalFiles = 22 + customEntries.length + 1
       process.stdout.write(`Done — ${features.length} features, ${totalFiles} files written to ${outDir}\n`)
       return
     }

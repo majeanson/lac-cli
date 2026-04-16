@@ -21,6 +21,12 @@ export type FillableField =
   | 'testStrategy'
   | 'releaseVersion'
   | 'acceptanceCriteria'
+  | 'testCases'
+  | 'edgeCases'
+  | 'riskLevel'
+  | 'rollbackPlan'
+  | 'supportNotes'
+  | 'knownWorkarounds'
 
 export interface FieldPrompt {
   system: string
@@ -169,6 +175,39 @@ Return ONLY a valid JSON array of strings — no other text:
 ["criterion 1", "criterion 2", "criterion 3"]`,
     userSuffix: 'Generate structured acceptance criteria for this feature.',
   },
+  testCases: {
+    system: `You are a QA engineer. Given a feature.json, write 3-6 explicit test case descriptions in Given/When/Then or Action/Expected format. Cover happy paths and important error paths. Each test case should be executable — concrete enough that a tester could run it without additional context.
+
+Return ONLY a valid JSON array of strings — no other text:
+["Given X, when Y, then Z", "Action: do A. Expected: B"]`,
+    userSuffix: 'Write explicit test cases for this feature.',
+  },
+  edgeCases: {
+    system: `You are a QA engineer. Given a feature.json, identify 2-5 edge cases and boundary conditions that are likely to reveal bugs if untested. Think about: empty/null inputs, maximum/minimum values, concurrent access, network failures, permission denials, and state transitions. Be specific to this feature.
+
+Return ONLY a valid JSON array of strings — no other text:
+["edge case 1", "edge case 2"]`,
+    userSuffix: 'Identify edge cases and boundary conditions for this feature.',
+  },
+  riskLevel: {
+    system: `You are a software risk analyst. Given a feature.json, assess the risk level if this feature regresses or fails in production. Consider: user impact, data integrity risk, blast radius, reversibility, and complexity. Choose one level: "low" (minor inconvenience, easy to hotfix), "medium" (noticeable degradation, moderate effort to fix), "high" (significant user impact, hard to hotfix), "critical" (data loss, security breach, or production outage). Return ONLY the single word — nothing else.`,
+    userSuffix: 'Assess the production risk level for this feature (low/medium/high/critical).',
+  },
+  rollbackPlan: {
+    system: `You are a software reliability engineer. Given a feature.json, describe in 2-3 sentences how to safely roll back or mitigate this feature if it causes issues in production. Cover: what to revert (feature flag, deployment, migration), any cleanup needed, and who needs to be notified. If the feature is low-risk or trivially reversible, say so briefly. Return only the plan text, no JSON wrapper, no heading.`,
+    userSuffix: 'Write a rollback plan for this feature.',
+  },
+  supportNotes: {
+    system: `You are a customer support lead. Given a feature.json, write 2-4 sentences of guidance for a support team handling tickets about this feature. Cover: how to verify the issue is in-scope for this feature, common causes, triage questions to ask the user, and when to escalate to engineering. Return only the notes text, no JSON wrapper, no heading.`,
+    userSuffix: 'Write support team guidance notes for this feature.',
+  },
+  knownWorkarounds: {
+    system: `You are a customer support expert. Given a feature.json and its knownLimitations[], describe practical workarounds users or support agents can apply for each known limitation. Only include workarounds that actually help — if none exist, return an empty array.
+
+Return ONLY a valid JSON array of strings — no other text:
+["For limitation X, users can work around it by Y", "If Z fails, do W instead"]`,
+    userSuffix: 'List known workarounds for the limitations of this feature.',
+  },
 }
 
 // Fields whose AI response is JSON (needs parsing) vs plain text
@@ -183,6 +222,9 @@ export const JSON_FIELDS = new Set<FillableField>([
   'codeSnippets',
   'implementationNotes',
   'acceptanceCriteria',
+  'testCases',
+  'edgeCases',
+  'knownWorkarounds',
 ])
 
 export const ALL_FILLABLE_FIELDS: FillableField[] = [
@@ -205,6 +247,12 @@ export const ALL_FILLABLE_FIELDS: FillableField[] = [
   'codeSnippets',
   'implementationNotes',
   'releaseVersion',
+  'testCases',
+  'edgeCases',
+  'riskLevel',
+  'rollbackPlan',
+  'supportNotes',
+  'knownWorkarounds',
 ]
 
 export function getMissingFields(feature: Feature): FillableField[] {

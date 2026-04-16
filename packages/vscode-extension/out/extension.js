@@ -33294,6 +33294,21 @@ var FeatureSchema = external_exports.object({
   lastVerifiedDate: external_exports.string().regex(/^\d{4}-\d{2}-\d{2}$/, "lastVerifiedDate must be YYYY-MM-DD").optional(),
   codeSnippets: external_exports.array(CodeSnippetSchema).optional(),
   implementationNotes: external_exports.array(external_exports.string()).optional(),
+  pmSummary: external_exports.string().optional(),
+  testStrategy: external_exports.string().optional(),
+  releaseVersion: external_exports.string().optional(),
+  acceptanceCriteria: external_exports.array(external_exports.string()).optional(),
+  testCases: external_exports.array(external_exports.string()).optional(),
+  edgeCases: external_exports.array(external_exports.string()).optional(),
+  riskLevel: external_exports.enum([
+    "low",
+    "medium",
+    "high",
+    "critical"
+  ]).optional(),
+  rollbackPlan: external_exports.string().optional(),
+  supportNotes: external_exports.string().optional(),
+  knownWorkarounds: external_exports.array(external_exports.string()).optional(),
   fieldLocks: external_exports.array(FieldLockSchema).optional(),
   featureLocked: external_exports.boolean().optional()
 });

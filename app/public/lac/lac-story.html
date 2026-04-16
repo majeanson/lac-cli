@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>lac-cli · Product Story</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#12100e;--bg-card:#1a1714;--bg-hover:#201d1a;--bg-sidebar:#0e0c0a;
+  --border:#2a2420;--border-soft:#221e1b;
+  --text:#e8ddd4;--text-mid:#b0a49c;--text-soft:#7a6a5a;
+  --accent:#c4a255;
+  --mono:'Cascadia Code','Fira Code','JetBrains Mono','Consolas',monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --status-active:#4aad72;--status-draft:#c4a255;--status-frozen:#5b82cc;--status-deprecated:#cc5b5b;
+}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:Georgia,'Times New Roman',serif;
+  -webkit-font-smoothing:antialiased;
+  line-height:1.75;font-size:1rem;
+}
+
+/* ── Topbar ── */
+#topbar{
+  position:fixed;top:0;left:0;right:0;height:48px;
+  background:var(--bg-sidebar);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:0;
+  padding:0 20px;z-index:200;
+}
+#topbar-brand{
+  font-family:var(--mono);font-size:0.82rem;color:var(--accent);
+  white-space:nowrap;margin-right:20px;
+}
+#topbar-project{
+  font-family:var(--sans);font-size:0.82rem;color:var(--text-mid);
+  white-space:nowrap;flex:1;overflow:hidden;text-overflow:ellipsis;
+}
+#topbar-right{
+  display:flex;align-items:center;gap:16px;flex-shrink:0;
+}
+#reading-time{
+  font-family:var(--mono);font-size:0.72rem;color:var(--text-soft);
+  white-space:nowrap;
+}
+#print-btn{
+  padding:4px 14px;border-radius:6px;
+  border:1px solid var(--border);
+  background:transparent;color:var(--text-soft);
+  font-family:var(--mono);font-size:0.72rem;
+  cursor:pointer;transition:all 0.15s;
+  white-space:nowrap;
+}
+#print-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ── Reading column ── */
+#content{
+  margin-top:48px;
+  padding:60px 20px 120px;
+}
+.reading-col{
+  max-width:720px;
+  margin:0 auto;
+}
+
+/* ── Opening section ── */
+.opening-section{
+  margin-bottom:64px;
+}
+.opening-eyebrow{
+  font-family:var(--mono);font-size:0.7rem;letter-spacing:0.15em;
+  text-transform:uppercase;color:var(--text-soft);
+  margin-bottom:20px;
+}
+.opening-title{
+  font-family:var(--sans);font-size:2.6rem;font-weight:800;
+  color:var(--text);letter-spacing:-0.02em;line-height:1.1;
+  margin-bottom:24px;
+}
+.opening-summary{
+  font-size:1.1rem;color:var(--text-mid);line-height:1.8;
+  margin-bottom:32px;
+}
+.stats-row{
+  display:flex;flex-wrap:wrap;gap:12px;
+  padding:20px;border-radius:10px;
+  background:var(--bg-card);border:1px solid var(--border);
+}
+.stat-item{
+  display:flex;flex-direction:column;
+  padding:0 16px;border-right:1px solid var(--border-soft);
+}
+.stat-item:last-child{border-right:none;}
+.stat-num{
+  font-family:var(--mono);font-size:1.4rem;font-weight:700;
+  color:var(--accent);line-height:1;
+}
+.stat-label{
+  font-family:var(--sans);font-size:0.72rem;color:var(--text-soft);
+  margin-top:4px;
+}
+
+/* ── Domain chapters ── */
+.domain-chapter{
+  margin-bottom:80px;
+  padding-top:48px;
+  border-top:1px solid var(--border);
+}
+.domain-chapter:first-of-type{border-top:none;}
+.chapter-number{
+  font-family:var(--mono);font-size:0.68rem;letter-spacing:0.18em;
+  text-transform:uppercase;color:var(--text-soft);
+  margin-bottom:8px;
+}
+.chapter-title{
+  font-family:var(--sans);font-size:2rem;font-weight:700;
+  color:var(--accent);letter-spacing:-0.01em;line-height:1.15;
+  margin-bottom:6px;
+}
+.chapter-meta{
+  font-family:var(--mono);font-size:0.72rem;color:var(--text-soft);
+  margin-bottom:40px;
+}
+
+/* ── Feature articles ── */
+.feature-article{
+  margin-bottom:52px;
+  padding-bottom:52px;
+  border-bottom:1px solid var(--border-soft);
+}
+.feature-article:last-child{border-bottom:none;}
+.feature-headline{
+  display:flex;align-items:flex-start;gap:12px;
+  margin-bottom:6px;
+  flex-wrap:wrap;
+}
+.feature-title{
+  font-family:var(--sans);font-size:1.35rem;font-weight:700;
+  color:var(--text);letter-spacing:-0.01em;line-height:1.3;
+}
+.status-badge{
+  display:inline-block;
+  padding:2px 10px;border-radius:999px;
+  font-family:var(--mono);font-size:0.68rem;
+  border:1px solid;
+  white-space:nowrap;margin-top:4px;
+  flex-shrink:0;
+}
+.feature-key-label{
+  font-family:var(--mono);font-size:0.72rem;color:var(--text-soft);
+  margin-bottom:20px;
+  letter-spacing:0.04em;
+}
+.feature-section-label{
+  font-family:var(--sans);font-size:0.72rem;font-weight:600;
+  letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--text-soft);margin-bottom:10px;margin-top:24px;
+}
+.feature-problem{
+  font-size:1rem;color:var(--text-mid);line-height:1.75;
+}
+
+/* ── Markdown rendered content ── */
+.md-p{margin:0 0 0.75em;line-height:1.75;}
+.md-p:last-child{margin-bottom:0;}
+.md-h{font-family:var(--mono);font-size:0.78rem;letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--accent);margin:1.2em 0 0.4em;}
+.md-ul{margin:0.4em 0 0.75em 1.2em;padding:0;}
+.md-ul li{margin-bottom:0.3em;line-height:1.65;}
+.md-ul li code,.md-p code,.impl-text code{
+  font-family:var(--mono);font-size:0.82em;
+  background:rgba(196,162,85,0.1);border:1px solid rgba(196,162,85,0.2);
+  padding:1px 5px;border-radius:3px;color:var(--accent);
+}
+
+/* ── Implementation expand ── */
+.impl-wrap{margin-top:0;}
+.impl-text{
+  font-size:0.92rem;color:var(--text-soft);line-height:1.7;
+}
+.read-more-btn{
+  display:inline-block;margin-top:8px;
+  background:none;border:none;
+  color:var(--accent);font-family:var(--mono);font-size:0.75rem;
+  cursor:pointer;padding:0;
+  transition:opacity 0.15s;
+}
+.read-more-btn:hover{opacity:0.7;}
+
+/* ── Pull quotes ── */
+.decisions-block{margin-top:28px;}
+.pull-quote{
+  margin:16px 0;
+  padding:18px 22px;
+  border-left:3px solid var(--accent);
+  background:var(--bg-card);
+  border-radius:0 8px 8px 0;
+  position:relative;
+}
+.pull-quote-text{
+  font-size:1rem;color:var(--text);
+  font-style:italic;line-height:1.65;
+  margin-bottom:8px;
+}
+.pull-quote-rationale{
+  font-family:var(--sans);font-size:0.82rem;color:var(--text-soft);
+  font-style:normal;
+}
+.pull-quote-mark{
+  position:absolute;bottom:12px;right:18px;
+  font-size:1.5rem;color:var(--accent);opacity:0.25;
+  line-height:1;
+}
+
+/* ── Caveats box ── */
+.caveats-box{
+  margin-top:24px;
+  padding:14px 18px;
+  border-left:3px solid rgba(196,162,85,0.5);
+  background:rgba(196,162,85,0.06);
+  border-radius:0 8px 8px 0;
+}
+.caveats-label{
+  font-family:var(--sans);font-size:0.68rem;font-weight:700;
+  letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:8px;opacity:0.8;
+}
+.caveats-list{
+  list-style:disc;padding-left:18px;
+  font-size:0.88rem;color:var(--text-soft);line-height:1.65;
+}
+.caveats-list li{margin-bottom:4px;}
+
+/* ── Roadmap / closing ── */
+.closing-chapter .chapter-title{color:var(--text-mid);}
+.roadmap-list{display:flex;flex-direction:column;gap:12px;}
+.roadmap-item{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  grid-template-rows:auto auto;
+  column-gap:14px;row-gap:2px;
+  padding:14px 16px;
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:8px;
+}
+.roadmap-key{
+  font-family:var(--mono);font-size:0.72rem;color:var(--text-soft);
+  grid-column:1;grid-row:1;
+  white-space:nowrap;
+}
+.roadmap-title{
+  font-family:var(--sans);font-size:0.92rem;font-weight:600;color:var(--text-mid);
+  grid-column:2;grid-row:1;
+}
+.roadmap-problem{
+  font-size:0.8rem;color:var(--text-soft);
+  grid-column:2;grid-row:2;
+  font-style:italic;
+}
+
+/* ── Print styles ── */
+@media print{
+  #topbar{display:none!important;}
+  #content{margin-top:0;padding:32px;}
+  body{background:#fff;color:#111;font-size:11pt;}
+  .domain-chapter{page-break-before:always;}
+  .domain-chapter:first-of-type{page-break-before:avoid;}
+  .opening-section{page-break-before:avoid;}
+  .pull-quote{border-left:2px solid #333;background:#f9f9f9;}
+  .pull-quote-text{color:#222;}
+  .pull-quote-rationale{color:#555;}
+  .caveats-box{border-left:2px solid #c4a255;background:#fffbf2;}
+  .caveats-label{color:#8a6e2a;}
+  .caveats-list{color:#444;}
+  .chapter-title{color:#7a5a20;}
+  .feature-title{color:#111;}
+  .opening-title{color:#111;}
+  .opening-summary{color:#333;}
+  .stat-num{color:#7a5a20;}
+  .stats-row{background:#f5f3ee;border:1px solid #ddd;}
+  .roadmap-item{background:#f9f9f9;border:1px solid #ddd;}
+  .read-more-btn{display:none!important;}
+  .impl-full{display:inline!important;}
+  .impl-short{display:none!important;}
+}
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div id="topbar">
+  <div id="topbar-brand">◈ lac · story</div>
+  <div id="topbar-project">lac-cli</div>
+  <div id="topbar-right">
+    <div id="reading-time">5 min read · 958 words</div>
+    <button id="print-btn" onclick="window.print()">⎙ Print</button>
+  </div>
+</div>
+
+<!-- Content -->
+<div id="content">
+  <div class="reading-col">
+
+    <!-- Opening / Executive Summary -->
+    <section class="opening-section">
+      <div class="opening-eyebrow">Life as Code · Product Story</div>
+      <h1 class="opening-title">lac-cli</h1>
+      <p class="opening-summary">lac-cli is a system built around 7 features spanning 1 domain: cli-export. It addresses challenges including: Users need a secure way to log in and maintain sessions across the app; Users need to subscribe to a paid plan and have their access updated automatical…; Every provenance system needs a canonical, versioned, machine-readable format fo….</p>
+      <div class="stats-row">
+        <div class="stat-item">
+          <div class="stat-num">7</div>
+          <div class="stat-label">Total features</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">1</div>
+          <div class="stat-label">Frozen (shipped)</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">5</div>
+          <div class="stat-label">Active (in progress)</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">1</div>
+          <div class="stat-label">Draft (planned)</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">1</div>
+          <div class="stat-label">Domain</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Domain chapters -->
+    <section class="domain-chapter" id="chapter-1">
+        <div class="chapter-number">Chapter 1</div>
+        <h2 class="chapter-title">cli-export</h2>
+        <div class="chapter-meta">1 feature</div>
+        <article class="feature-article">
+      <div class="feature-headline">
+        <h3 class="feature-title">lac export-all: batch all export formats to a folder</h3>
+        <span class="status-badge" style="color:var(--status-frozen);border-color:var(--status-frozen)44;background:var(--status-frozen)18;">frozen</span>
+      </div>
+      <div class="feature-key-label">feat-2026-033</div>
+      <div class="feature-section-label">The problem it solves</div>
+         <div class="feature-problem"><p class="md-p">Running each export format individually requires 15+ separate CLI invocations. Users who want a full snapshot of their workspace — for sharing, archiving, or CI artifacts — have no single command to produce all outputs at once.</p></div>
+      <div class="feature-section-label">How it was solved</div>
+         <div class="impl-wrap" id="impl-4">
+           <div class="impl-text">
+             <span class="impl-short"><p class="md-p">HTML<em>FORMATS registry: array of {name, file, generate} where generate wraps each generator with the correct argument shape. ALL</em>FORMAT<em>NAMES: used for --skip validation. Action: resolves scanDir and outDir, validates skip names, scans features, mkdir outDir, iterates HTML</em>FORMATS (skipping or writing), handles prompt (buildReconstructionPrompt from export.ts, writes lac-prompt.md), handles site (g</p><span class="impl-ellipsis">…</span></span><span class="impl-full" style="display:none;"><p class="md-p">HTML<em>FORMATS registry: array of {name, file, generate} where generate wraps each generator with the correct argument shape. ALL</em>FORMAT<em>NAMES: used for --skip validation. Action: resolves scanDir and outDir, validates skip names, scans features, mkdir outDir, iterates HTML</em>FORMATS (skipping or writing), handles prompt (buildReconstructionPrompt from export.ts, writes lac-prompt.md), handles site (generateSite to outDir/site/). Prints ✓/✗/skip per file. Summary line: N exported, M failed, K skipped.</p></span>
+           </div>
+           <button class="read-more-btn" onclick="toggleImpl('impl-4')">Read more ▾</button>
+         </div>
+      <div class="decisions-block">
+            <blockquote class="pull-quote">
+                    <div class="pull-quote-text">&#10077; Registry array drives the loop rather than hardcoded if-chains</div>
+                    <div class="pull-quote-rationale">— Adding a new export format in the future requires one entry in the HTML_FORMATS array, not a new if-block. Mirrors the generator library&#39;s own open/closed structure.</div>
+                    <div class="pull-quote-mark">&#10078;</div>
+                  </blockquote><blockquote class="pull-quote">
+                    <div class="pull-quote-text">&#10077; Scan features once, pass to all generators</div>
+                    <div class="pull-quote-rationale">— Avoids repeated filesystem walks. All generators accept the same ScannedFeature[] type, so one scan suffices for all 14+ formats.</div>
+                    <div class="pull-quote-mark">&#10078;</div>
+                  </blockquote><blockquote class="pull-quote">
+                    <div class="pull-quote-text">&#10077; Exclude postcard, markdown, and diff from export-all</div>
+                    <div class="pull-quote-rationale">— postcard and markdown are single-feature formats that require a nearest feature.json context. diff requires a second workspace path. None are meaningful in a batch context.</div>
+                    <div class="pull-quote-mark">&#10078;</div>
+                  </blockquote>
+          </div>
+      <aside class="caveats-box">
+            <div class="caveats-label">Caveats</div>
+            <ul class="caveats-list">
+              <li>No --view or --tags support — export-all targets full snapshots, not filtered views</li><li>Site output is always written to &lt;outDir&gt;/site/ with no configurable subdirectory name</li><li>Generators that fail do not abort the run — partial output is possible without a clear error exit code</li><li>Does not support postcard or markdown (single-feature only) or diff (requires a second target)</li>
+            </ul>
+          </aside>
+    </article>
+      </section>
+    <section class="domain-chapter" id="chapter-unclassified">
+          <div class="chapter-number">Unclassified</div>
+          <h2 class="chapter-title">Unclassified</h2>
+          <div class="chapter-meta">6 features</div>
+          <article class="feature-article">
+      <div class="feature-headline">
+        <h3 class="feature-title">User Authentication</h3>
+        <span class="status-badge" style="color:var(--status-active);border-color:var(--status-active)44;background:var(--status-active)18;">active</span>
+      </div>
+      <div class="feature-key-label">feat-2026-001</div>
+      <div class="feature-section-label">The problem it solves</div>
+         <div class="feature-problem"><p class="md-p">Users need a secure way to log in and maintain sessions across the app.</p></div>
+      
+      <div class="decisions-block">
+            <blockquote class="pull-quote">
+                    <div class="pull-quote-text">&#10077; Use JWT over server-side sessions</div>
+                    <div class="pull-quote-rationale">— Stateless servers make horizontal scaling trivial and remove the need for a session store.</div>
+                    <div class="pull-quote-mark">&#10078;</div>
+                  </blockquote>
+          </div>
+      <aside class="caveats-box">
+            <div class="caveats-label">Caveats</div>
+            <ul class="caveats-list">
+              <li>Token revocation requires waiting for expiry unless a denylist is added</li>
+            </ul>
+          </aside>
+    </article>
+<article class="feature-article">
+      <div class="feature-headline">
+        <h3 class="feature-title">Subscription Billing</h3>
+        <span class="status-badge" style="color:var(--status-draft);border-color:var(--status-draft)44;background:var(--status-draft)18;">draft</span>
+      </div>
+      <div class="feature-key-label">feat-2026-002</div>
+      <div class="feature-section-label">The problem it solves</div>
+         <div class="feature-problem"><p class="md-p">Users need to subscribe to a paid plan and have their access updated automatically on payment.</p></div>
+      
+      
+      
+    </article>
+<article class="feature-article">
+      <div class="feature-headline">
+        <h3 class="feature-title">Feature Schema</h3>
+        <span class="status-badge" style="color:var(--status-active);border-color:var(--status-active)44;background:var(--status-active)18;">active</span>
+      </div>
+      <div class="feature-key-label">feat-2026-001</div>
+      <div class="feature-section-label">The problem it solves</div>
+         <div class="feature-problem"><p class="md-p">Every provenance system needs a canonical, versioned, machine-readable format for capturing why a feature exists. Without a shared schema, tooling cannot validate, index, or evolve feature records consistently.</p></div>
+      <div class="feature-section-label">How it was solved</div>
+         <div class="impl-wrap" id="impl-9">
+           <div class="impl-text">
+             <span class="impl-full"><p class="md-p">Zod schema exported as FeatureSchema with validateFeature() and generateFeatureKey() utilities. The FEATURE<em>KEY</em>PATTERN regex accepts any lowercase domain prefix. A JSON Schema file (feature.schema.json) is co-located for IDE validation and autocompletion. Published as @life-as-code/feature-schema. Build output: ESM + .d.mts type declarations via tsdown.</p></span>
+           </div>
+           
+         </div>
+      <div class="decisions-block">
+            <blockquote class="pull-quote">
+                    <div class="pull-quote-text">&#10077; Use Zod for runtime validation</div>
+                    <div class="pull-quote-rationale">— Single schema definition drives both TypeScript types and runtime validation. No code duplication.</div>
+                    <div class="pull-quote-mark">&#10078;</div>
+                  </blockquote><blockquote class="pull-quote">
+                    <div class="pull-quote-text">&#10077; featureKey format: domain-YYYY-NNN</div>
+                    <div class="pull-quote-rationale">— Year in key makes keys self-documenting. Domain prefix enables multi-domain workspaces (proc-, goal-, adr-).</div>
+                    <div class="pull-quote-mark">&#10078;</div>
+                  </blockquote><blockquote class="pull-quote">
+                    <div class="pull-quote-text">&#10077; schemaVersion as an explicit integer field</div>
+                    <div class="pull-quote-rationale">— Enables forward migration when breaking changes are needed. Current value is 1.</div>
+                    <div class="pull-quote-mark">&#10078;</div>
+                  </blockquote>
+          </div>
+      <aside class="caveats-box">
+            <div class="caveats-label">Caveats</div>
+            <ul class="caveats-list">
+              <li>knownLimitations field is a flat string array — no structured impact/workaround fields yet</li><li>No schema migration tooling for breaking changes (schemaVersion field exists but no migrator)</li><li>annotations field not yet in schema — added ad-hoc by consuming packages</li>
+            </ul>
+          </aside>
+    </article>
+<article class="feature-article">
+      <div class="feature-headline">
+        <h3 class="feature-title">lac CLI</h3>
+        <span class="status-badge" style="color:var(--status-active);border-color:var(--status-active)44;background:var(--status-active)18;">active</span>
+      </div>
+      <div class="feature-key-label">feat-2026-002</div>
+      <div class="feature-section-label">The problem it solves</div>
+         <div class="feature-problem"><p class="md-p">Developers need a terminal interface for the entire feature provenance lifecycle — creating features, running quality checks, tracing ownership, and operating the local server — without leaving their workflow.</p></div>
+      <div class="feature-section-label">How it was solved</div>
+         <div class="impl-wrap" id="impl-10">
+           <div class="impl-text">
+             <span class="impl-full"><p class="md-p">Commands: workspace (init/status), init, spawn, tag, archive, lint (--watch), blame, export (--site), hooks (install/uninstall), serve, doctor, search. Built with tsdown to ESM. Installed globally as <code>lac</code> binary. Reads lac.config.json from workspace root for default options and paths.</p></span>
+           </div>
+           
+         </div>
+      <div class="decisions-block">
+            <blockquote class="pull-quote">
+                    <div class="pull-quote-text">&#10077; Commander.js over yargs or meow</div>
+                    <div class="pull-quote-rationale">— Commander has the cleanest subcommand model and TypeScript support without runtime type gymnastics.</div>
+                    <div class="pull-quote-mark">&#10078;</div>
+                  </blockquote><blockquote class="pull-quote">
+                    <div class="pull-quote-text">&#10077; lac serve spawns lac-lsp as a child process rather than embedding the HTTP server</div>
+                    <div class="pull-quote-rationale">— Keeps packages independently deployable. lac-cli stays lightweight. lac-lsp can be used standalone.</div>
+                    <div class="pull-quote-mark">&#10078;</div>
+                  </blockquote>
+          </div>
+      <aside class="caveats-box">
+            <div class="caveats-label">Caveats</div>
+            <ul class="caveats-list">
+              <li>lint --watch uses fs.watch which is unreliable on Linux (use chokidar in a future iteration)</li><li>No shell completion yet (bash/zsh/fish)</li><li>lac diff command not yet implemented</li>
+            </ul>
+          </aside>
+    </article>
+<article class="feature-article">
+      <div class="feature-headline">
+        <h3 class="feature-title">Language Server + HTTP API</h3>
+        <span class="status-badge" style="color:var(--status-active);border-color:var(--status-active)44;background:var(--status-active)18;">active</span>
+      </div>
+      <div class="feature-key-label">feat-2026-003</div>
+      <div class="feature-section-label">The problem it solves</div>
+         <div class="feature-problem"><p class="md-p">Editors need real-time feature provenance overlaid on code (hover cards, code lens, diagnostics) without polling the filesystem on every keystroke. CI pipelines and browser tools need a stable HTTP API to query the same index.</p></div>
+      <div class="feature-section-label">How it was solved</div>
+         <div class="impl-wrap" id="impl-11">
+           <div class="impl-text">
+             <span class="impl-short"><p class="md-p">LacLspServer orchestrates FeatureIndex + optional HttpServer + optional LSP connection. LSP capabilities: hover (with missing fields + completeness %), codeLens, definition, diagnostics (push), workspaceSymbols. HTTP endpoints: GET /health (uptime, indexedCount, version) /features /features/:key /features/:key/lineage /blame /lint /events (SSE), PUT /features/:key, DELETE /features/:key. Startup l</p><span class="impl-ellipsis">…</span></span><span class="impl-full" style="display:none;"><p class="md-p">LacLspServer orchestrates FeatureIndex + optional HttpServer + optional LSP connection. LSP capabilities: hover (with missing fields + completeness %), codeLens, definition, diagnostics (push), workspaceSymbols. HTTP endpoints: GET /health (uptime, indexedCount, version) /features /features/:key /features/:key/lineage /blame /lint /events (SSE), PUT /features/:key, DELETE /features/:key. Startup log: 'lac-lsp v0.1.0 started on port N'. File watching via chokidar.</p></span>
+           </div>
+           <button class="read-more-btn" onclick="toggleImpl('impl-11')">Read more ▾</button>
+         </div>
+      <div class="decisions-block">
+            <blockquote class="pull-quote">
+                    <div class="pull-quote-text">&#10077; Single process for both LSP and HTTP</div>
+                    <div class="pull-quote-rationale">— One shared FeatureIndex means no sync needed between transports. Simpler to install and operate.</div>
+                    <div class="pull-quote-mark">&#10078;</div>
+                  </blockquote><blockquote class="pull-quote">
+                    <div class="pull-quote-text">&#10077; Replace fs.watch with chokidar</div>
+                    <div class="pull-quote-rationale">— fs.watch --recursive is unreliable on Linux/Docker. Chokidar provides consistent cross-platform behavior.</div>
+                    <div class="pull-quote-mark">&#10078;</div>
+                  </blockquote>
+          </div>
+      <aside class="caveats-box">
+            <div class="caveats-label">Caveats</div>
+            <ul class="caveats-list">
+              <li>Only one workspace root supported — multi-root workspaces use first folder only</li><li>textDocument/references not yet implemented</li><li>textDocument/rename not yet implemented</li>
+            </ul>
+          </aside>
+    </article>
+<article class="feature-article">
+      <div class="feature-headline">
+        <h3 class="feature-title">VS Code Extension (lac-lens)</h3>
+        <span class="status-badge" style="color:var(--status-active);border-color:var(--status-active)44;background:var(--status-active)18;">active</span>
+      </div>
+      <div class="feature-key-label">feat-2026-004</div>
+      <div class="feature-section-label">The problem it solves</div>
+         <div class="feature-problem"><p class="md-p">Developers spend most of their time in their editor. Feature provenance needs to surface exactly where the code is — as a CodeLens badge, hover card, and status bar item — without requiring context switches to a browser or terminal.</p></div>
+      <div class="feature-section-label">How it was solved</div>
+         <div class="impl-wrap" id="impl-12">
+           <div class="impl-text">
+             <span class="impl-full"><p class="md-p">CodeLens shows featureKey + status + completeness%. Hover shows problem, analysis, decisions, limitations with backtick escaping. Status bar shows active feature. Click-to-open feature.json. LSP mode adds diagnostics, go-to-definition, workspace symbol search. Bundled with esbuild to CJS for VS Code compatibility.</p></span>
+           </div>
+           
+         </div>
+      <div class="decisions-block">
+            <blockquote class="pull-quote">
+                    <div class="pull-quote-text">&#10077; Two modes (direct + LSP) rather than LSP-only</div>
+                    <div class="pull-quote-rationale">— Direct mode works offline, in remote environments, and without any global installs. LSP mode is opt-in for power users.</div>
+                    <div class="pull-quote-mark">&#10078;</div>
+                  </blockquote><blockquote class="pull-quote">
+                    <div class="pull-quote-text">&#10077; Auto-detect lac-lsp at activation via spawnSync</div>
+                    <div class="pull-quote-rationale">— Zero-config experience. Most users who have lac-lsp installed want LSP mode. Explicit false opt-out is better than explicit true opt-in.</div>
+                    <div class="pull-quote-mark">&#10078;</div>
+                  </blockquote>
+          </div>
+      <aside class="caveats-box">
+            <div class="caveats-label">Caveats</div>
+            <ul class="caveats-list">
+              <li>Only first workspace folder used in multi-root workspaces</li><li>No Neovim/Helix/JetBrains support (LSP is standard but needs client config)</li>
+            </ul>
+          </aside>
+    </article>
+        </section>
+
+    <!-- Closing / Roadmap -->
+    <section class="domain-chapter closing-chapter" id="chapter-roadmap">
+          <div class="chapter-number">What's next</div>
+          <h2 class="chapter-title" style="color:var(--text-mid);">In progress</h2>
+          <div class="chapter-meta">1 feature in draft</div>
+          <div class="roadmap-list">
+            <div class="roadmap-item">
+                    <span class="roadmap-key">feat-2026-002</span>
+                    <span class="roadmap-title">Subscription Billing</span>
+                    <span class="roadmap-problem">Users need to subscribe to a paid plan and have their access updated automatical…</span>
+                  </div>
+          </div>
+        </section>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  window.toggleImpl = function(id){
+    var wrap = document.getElementById(id);
+    if(!wrap) return;
+    var shortEl = wrap.querySelector('.impl-short');
+    var fullEl = wrap.querySelector('.impl-full');
+    var btn = wrap.querySelector('.read-more-btn');
+    if(!fullEl || !btn) return;
+
+    if(fullEl.style.display === 'none'){
+      // Expand
+      fullEl.style.display = 'inline';
+      if(shortEl) shortEl.style.display = 'none';
+      btn.textContent = 'Read less ▴';
+    } else {
+      // Collapse
+      fullEl.style.display = 'none';
+      if(shortEl) shortEl.style.display = 'inline';
+      btn.textContent = 'Read more ▾';
+    }
+  };
+})();
+</script>
+</body>
+</html>

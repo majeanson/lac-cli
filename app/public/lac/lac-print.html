@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>lac-cli — Feature Documentation</title>
+<style>
+
+  /* ── CSS counters for page simulation ───────────────────────────────────── */
+  :root {
+    --page-bg: #ffffff;
+    --page-shadow: 0 2px 24px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06);
+    --ink: #1a1714;
+    --ink-mid: #4a3f35;
+    --ink-soft: #8a7a6a;
+    --ink-faint: #c8bdb4;
+    --rule: #e0d8d0;
+    --accent: #c4a255;
+    --code-bg: #f5f2ee;
+    --status-active: #2a8a52;
+    --status-draft: #a07828;
+    --status-frozen: #3a60a8;
+    --status-deprecated: #a83a3a;
+  }
+
+  /* ── Reset ───────────────────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Screen layout ───────────────────────────────────────────────────────── */
+  @media screen {
+    body {
+      background: #e8e0d8;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-size: 14px;
+      color: var(--ink);
+      padding: 40px 20px 80px;
+      line-height: 1.6;
+      counter-reset: page-num;
+    }
+    .page {
+      background: var(--page-bg);
+      max-width: 800px;
+      margin: 0 auto 32px;
+      padding: 64px 72px;
+      border-radius: 4px;
+      box-shadow: var(--page-shadow);
+      position: relative;
+      counter-increment: page-num;
+    }
+    .page + .page {
+      /* visual separation between pages on screen */
+    }
+  }
+
+  /* ── Print layout ────────────────────────────────────────────────────────── */
+  @media print {
+    @page {
+      size: A4;
+      margin: 18mm 20mm 22mm;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-size: 11pt;
+      color: #1a1714;
+      line-height: 1.55;
+      background: #fff;
+      counter-reset: page-num;
+    }
+    .page {
+      padding: 0;
+      margin: 0;
+      counter-increment: page-num;
+    }
+    .page + .page {
+      page-break-before: always;
+    }
+    /* Print footers via running elements aren't universally supported;
+       we use a CSS-counter based footer pseudo-element as a best-effort. */
+  }
+
+  /* ── Page footer (screen + print) ───────────────────────────────────────── */
+  .page-footer {
+    margin-top: 40px;
+    padding-top: 12px;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--ink-faint);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+  .page-footer .footer-left  { text-align: left; }
+  .page-footer .footer-right { text-align: right; }
+
+  /* ── Page top rule ───────────────────────────────────────────────────────── */
+  .page-rule {
+    border: none;
+    border-top: 2px solid var(--accent);
+    margin-bottom: 28px;
+    opacity: 0.6;
+  }
+
+  /* ── Cover page ──────────────────────────────────────────────────────────── */
+  .cover {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 560px;
+  }
+  .cover-eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  .cover-title {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 12px;
+  }
+  .cover-subtitle {
+    font-size: 1.1rem;
+    color: var(--ink-mid);
+    font-weight: 400;
+    margin-bottom: 40px;
+  }
+  .cover-meta {
+    font-size: 12px;
+    color: var(--ink-soft);
+    border-top: 1px solid var(--rule);
+    padding-top: 20px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .cover-meta-item strong {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 3px;
+    font-weight: 600;
+  }
+  .cover-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+  }
+  .cover-stat-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  /* ── Table of contents ───────────────────────────────────────────────────── */
+  .toc-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 24px;
+    letter-spacing: -0.01em;
+  }
+  .toc-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .toc-item {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .toc-num {
+    font-size: 11px;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+    min-width: 24px;
+    flex-shrink: 0;
+  }
+  .toc-key {
+    font-family: 'Cascadia Code','Fira Code','JetBrains Mono','Consolas',monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    flex-shrink: 0;
+    min-width: 160px;
+  }
+  .toc-feature-title {
+    font-size: 13px;
+    color: var(--ink-mid);
+    flex: 1;
+  }
+  .toc-badge {
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 3px;
+    padding: 1px 6px;
+    flex-shrink: 0;
+  }
+
+  /* ── Feature page ────────────────────────────────────────────────────────── */
+  .feature-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .feature-key {
+    font-family: 'Cascadia Code','Fira Code','JetBrains Mono','Consolas',monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .feature-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-radius: 3px;
+    padding: 2px 7px;
+  }
+  .feature-domain {
+    font-size: 11px;
+    color: var(--ink-soft);
+    background: #f0ece8;
+    border-radius: 3px;
+    padding: 2px 7px;
+  }
+  .feature-h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+    margin-bottom: 24px;
+  }
+
+  /* ── Section headings ────────────────────────────────────────────────────── */
+  .section {
+    margin-top: 24px;
+  }
+  .section-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 5px;
+  }
+
+  /* ── Problem block ───────────────────────────────────────────────────────── */
+  .problem-block {
+    padding: 14px 18px;
+    border-left: 3px solid var(--accent);
+    background: #faf7f2;
+    border-radius: 0 5px 5px 0;
+    font-size: 14px;
+    color: var(--ink-mid);
+    line-height: 1.7;
+  }
+  .problem-block p { margin: 0; }
+  .problem-block p + p { margin-top: 8px; }
+
+  /* ── Body text ───────────────────────────────────────────────────────────── */
+  .body-text {
+    font-size: 13px;
+    color: var(--ink-mid);
+    line-height: 1.65;
+  }
+  .body-text p { margin: 0; }
+  .body-text p + p { margin-top: 10px; }
+  .body-text ul, .body-text ol {
+    margin: 8px 0 0 20px;
+  }
+  .body-text li { margin-bottom: 3px; }
+  .body-text code {
+    font-family: 'Cascadia Code','Fira Code','JetBrains Mono','Consolas',monospace;
+    font-size: 11px;
+    background: var(--code-bg);
+    border-radius: 3px;
+    padding: 1px 4px;
+  }
+  .body-text pre {
+    background: var(--code-bg);
+    border-radius: 5px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    margin: 10px 0;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .body-text pre code {
+    background: none;
+    border-radius: 0;
+    padding: 0;
+    font-size: inherit;
+  }
+  .body-text h1, .body-text h2, .body-text h3 {
+    color: var(--ink);
+    margin: 14px 0 6px;
+    font-weight: 700;
+  }
+  .body-text h1 { font-size: 15px; }
+  .body-text h2 { font-size: 14px; }
+  .body-text h3 { font-size: 13px; }
+
+  /* ── Decisions ───────────────────────────────────────────────────────────── */
+  .decisions-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .decision-item {
+    padding: 12px 14px;
+    background: #faf7f2;
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+  }
+  .decision-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+  }
+  .decision-num {
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 700;
+    min-width: 16px;
+  }
+  .decision-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    flex: 1;
+  }
+  .decision-date {
+    font-family: 'Cascadia Code','Fira Code','JetBrains Mono','Consolas',monospace;
+    font-size: 10px;
+    color: var(--ink-faint);
+  }
+  .decision-rationale {
+    font-size: 12px;
+    color: var(--ink-mid);
+    line-height: 1.55;
+    padding-left: 24px;
+  }
+  .decision-alts {
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin-top: 5px;
+    padding-left: 24px;
+    font-style: italic;
+  }
+
+  /* ── Known limitations ───────────────────────────────────────────────────── */
+  .limitations-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .limitations-list li {
+    font-size: 13px;
+    color: var(--ink-soft);
+    padding-left: 14px;
+    position: relative;
+  }
+  .limitations-list li::before {
+    content: '–';
+    position: absolute;
+    left: 0;
+    color: var(--ink-faint);
+  }
+
+  /* ── Tags ────────────────────────────────────────────────────────────────── */
+  .tags-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 6px;
+  }
+  .tag {
+    font-family: 'Cascadia Code','Fira Code','JetBrains Mono','Consolas',monospace;
+    font-size: 10px;
+    color: var(--ink-soft);
+    background: #f0ece8;
+    border-radius: 3px;
+    padding: 2px 7px;
+  }
+
+  /* ── Success criteria ────────────────────────────────────────────────────── */
+  .success-block {
+    padding: 12px 14px;
+    background: #faf7f2;
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+    font-size: 13px;
+    color: var(--ink-mid);
+    line-height: 1.6;
+  }
+  .success-block p { margin: 0; }
+  .success-block p + p { margin-top: 8px; }
+  .success-block ul { margin: 6px 0 0 18px; }
+  .success-block li { margin-bottom: 3px; }
+  .success-block code {
+    font-family: 'Cascadia Code','Fira Code','JetBrains Mono','Consolas',monospace;
+    font-size: 11px;
+    background: var(--code-bg);
+    border-radius: 3px;
+    padding: 1px 4px;
+  }
+
+</style>
+</head>
+<body>
+
+
+  <div class="page">
+    <hr class="page-rule">
+    <div class="cover">
+      <div class="cover-eyebrow">◈ life-as-code · Feature Documentation</div>
+      <div class="cover-title">lac-cli</div>
+      <div class="cover-subtitle">Feature Documentation</div>
+      <div class="cover-meta">
+        <div class="cover-meta-item">
+          <strong>Generated</strong>
+          2026-04-16
+        </div>
+        <div class="cover-meta-item">
+          <strong>Total features</strong>
+          7
+        </div>
+        <div class="cover-meta-item">
+          <strong>By status</strong>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px">
+            <span class="cover-stat">
+           <span class="cover-stat-dot" style="background:#4aad72"></span>
+           <span>5 active</span>
+         </span>
+            <span class="cover-stat">
+           <span class="cover-stat-dot" style="background:#5b82cc"></span>
+           <span>1 frozen</span>
+         </span>
+            <span class="cover-stat">
+           <span class="cover-stat-dot" style="background:#c4a255"></span>
+           <span>1 draft</span>
+         </span>
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-footer">
+      <span class="footer-left">lac-cli</span>
+      <span class="footer-right">2026-04-16</span>
+    </div>
+  </div>
+
+  <div class="page">
+    <hr class="page-rule">
+    <div class="toc-title">Table of Contents</div>
+    <ol class="toc-list">
+      
+    <li class="toc-item">
+      <span class="toc-num">1.</span>
+      <span class="toc-key">feat-2026-001</span>
+      <span class="toc-feature-title">User Authentication</span>
+      <span class="toc-badge" style="color:#4aad72;background:#4aad721a">Active</span>
+    </li>
+    <li class="toc-item">
+      <span class="toc-num">2.</span>
+      <span class="toc-key">feat-2026-002</span>
+      <span class="toc-feature-title">Subscription Billing</span>
+      <span class="toc-badge" style="color:#c4a255;background:#c4a2551a">Draft</span>
+    </li>
+    <li class="toc-item">
+      <span class="toc-num">3.</span>
+      <span class="toc-key">feat-2026-001</span>
+      <span class="toc-feature-title">Feature Schema</span>
+      <span class="toc-badge" style="color:#4aad72;background:#4aad721a">Active</span>
+    </li>
+    <li class="toc-item">
+      <span class="toc-num">4.</span>
+      <span class="toc-key">feat-2026-002</span>
+      <span class="toc-feature-title">lac CLI</span>
+      <span class="toc-badge" style="color:#4aad72;background:#4aad721a">Active</span>
+    </li>
+    <li class="toc-item">
+      <span class="toc-num">5.</span>
+      <span class="toc-key">feat-2026-033</span>
+      <span class="toc-feature-title">lac export-all: batch all export formats to a folder</span>
+      <span class="toc-badge" style="color:#5b82cc;background:#5b82cc1a">Frozen</span>
+    </li>
+    <li class="toc-item">
+      <span class="toc-num">6.</span>
+      <span class="toc-key">feat-2026-003</span>
+      <span class="toc-feature-title">Language Server + HTTP API</span>
+      <span class="toc-badge" style="color:#4aad72;background:#4aad721a">Active</span>
+    </li>
+    <li class="toc-item">
+      <span class="toc-num">7.</span>
+      <span class="toc-key">feat-2026-004</span>
+      <span class="toc-feature-title">VS Code Extension (lac-lens)</span>
+      <span class="toc-badge" style="color:#4aad72;background:#4aad721a">Active</span>
+    </li>
+    </ol>
+    <div class="page-footer">
+      <span class="footer-left">lac-cli</span>
+      <span class="footer-right">2026-04-16</span>
+    </div>
+  </div>
+
+  <div class="page">
+    <hr class="page-rule">
+    <div class="feature-eyebrow">
+      <span class="feature-key">feat-2026-001</span>
+      <span class="feature-badge" style="color:#4aad72;background:#4aad721a">Active</span>
+      
+      
+    </div>
+    <h1 class="feature-h1">User Authentication</h1>
+
+    <div class="section">
+      <div class="section-label">Problem</div>
+      <div class="problem-block body-text"><p>Users need a secure way to log in and maintain sessions across the app.</p></div>
+    </div>
+
+    
+      <div class="section">
+        <div class="section-label">Analysis</div>
+        <div class="body-text"><p>JWT-based auth with refresh tokens stored in httpOnly cookies. Stateless server, tokens expire in 15 minutes.</p></div>
+      </div>
+    
+      <div class="section">
+        <div class="section-label">Decisions</div>
+        <ol class="decisions-list">
+          
+            <li class="decision-item">
+              <div class="decision-header">
+                <span class="decision-num">1.</span>
+                <span class="decision-text">Use JWT over server-side sessions</span>
+                <span class="decision-date">2026-01-10</span>
+              </div>
+              <div class="decision-rationale">Stateless servers make horizontal scaling trivial and remove the need for a session store.</div>
+              <div class="decision-alts">Alternatives considered: Redis-backed sessions, Database sessions</div>
+            </li>
+        </ol>
+      </div>
+    
+    
+      <div class="section">
+        <div class="section-label">Known Limitations</div>
+        <ul class="limitations-list">
+          <li>Token revocation requires waiting for expiry unless a denylist is added</li>
+        </ul>
+      </div>
+    
+    
+      <div class="section">
+        <div class="section-label">Tags</div>
+        <div class="tags-row">
+          <span class="tag">auth</span><span class="tag">security</span>
+        </div>
+      </div>
+
+    <div class="page-footer">
+      <span class="footer-left">lac-cli</span>
+      <span class="footer-right">2026-04-16</span>
+    </div>
+  </div>
+
+  <div class="page">
+    <hr class="page-rule">
+    <div class="feature-eyebrow">
+      <span class="feature-key">feat-2026-002</span>
+      <span class="feature-badge" style="color:#c4a255;background:#c4a2551a">Draft</span>
+      
+      
+    </div>
+    <h1 class="feature-h1">Subscription Billing</h1>
+
+    <div class="section">
+      <div class="section-label">Problem</div>
+      <div class="problem-block body-text"><p>Users need to subscribe to a paid plan and have their access updated automatically on payment.</p></div>
+    </div>
+
+    
+    
+    
+    
+    
+    
+      <div class="section">
+        <div class="section-label">Tags</div>
+        <div class="tags-row">
+          <span class="tag">billing</span><span class="tag">stripe</span>
+        </div>
+      </div>
+
+    <div class="page-footer">
+      <span class="footer-left">lac-cli</span>
+      <span class="footer-right">2026-04-16</span>
+    </div>
+  </div>
+
+  <div class="page">
+    <hr class="page-rule">
+    <div class="feature-eyebrow">
+      <span class="feature-key">feat-2026-001</span>
+      <span class="feature-badge" style="color:#4aad72;background:#4aad721a">Active</span>
+      
+      
+    </div>
+    <h1 class="feature-h1">Feature Schema</h1>
+
+    <div class="section">
+      <div class="section-label">Problem</div>
+      <div class="problem-block body-text"><p>Every provenance system needs a canonical, versioned, machine-readable format for capturing why a feature exists. Without a shared schema, tooling cannot validate, index, or evolve feature records consistently.</p></div>
+    </div>
+
+    
+      <div class="section">
+        <div class="section-label">Analysis</div>
+        <div class="body-text"><p>A Zod-based schema provides runtime validation and TypeScript type inference from a single source of truth. The featureKey pattern (domain-YYYY-NNN) encodes temporal context and supports multi-domain deployments. Optional fields are additive so the schema can evolve without breaking existing records. The schemaVersion field enables future migration tooling. As of iteration 3, 40 Vitest tests exercise all validation paths.</p></div>
+      </div>
+    
+      <div class="section">
+        <div class="section-label">Decisions</div>
+        <ol class="decisions-list">
+          
+            <li class="decision-item">
+              <div class="decision-header">
+                <span class="decision-num">1.</span>
+                <span class="decision-text">Use Zod for runtime validation</span>
+                <span class="decision-date">2026-01-15</span>
+              </div>
+              <div class="decision-rationale">Single schema definition drives both TypeScript types and runtime validation. No code duplication.</div>
+              <div class="decision-alts">Alternatives considered: JSON Schema only — no TS type inference, manual validation — fragile and verbose</div>
+            </li>
+            <li class="decision-item">
+              <div class="decision-header">
+                <span class="decision-num">2.</span>
+                <span class="decision-text">featureKey format: domain-YYYY-NNN</span>
+                <span class="decision-date">2026-01-15</span>
+              </div>
+              <div class="decision-rationale">Year in key makes keys self-documenting. Domain prefix enables multi-domain workspaces (proc-, goal-, adr-).</div>
+              <div class="decision-alts">Alternatives considered: UUIDs — opaque, not human-readable, sequential integers — no temporal context</div>
+            </li>
+            <li class="decision-item">
+              <div class="decision-header">
+                <span class="decision-num">3.</span>
+                <span class="decision-text">schemaVersion as an explicit integer field</span>
+                <span class="decision-date">2026-02-01</span>
+              </div>
+              <div class="decision-rationale">Enables forward migration when breaking changes are needed. Current value is 1.</div>
+              <div class="decision-alts">Alternatives considered: Implicit versioning via field presence — ambiguous under concurrent evolution</div>
+            </li>
+        </ol>
+      </div>
+    
+      <div class="section">
+        <div class="section-label">Implementation</div>
+        <div class="body-text"><p>Zod schema exported as FeatureSchema with validateFeature() and generateFeatureKey() utilities. The FEATURE_KEY_PATTERN regex accepts any lowercase domain prefix. A JSON Schema file (feature.schema.json) is co-located for IDE validation and autocompletion. Published as @life-as-code/feature-schema. Build output: ESM + .d.mts type declarations via tsdown.</p></div>
+      </div>
+    
+      <div class="section">
+        <div class="section-label">Known Limitations</div>
+        <ul class="limitations-list">
+          <li>knownLimitations field is a flat string array — no structured impact/workaround fields yet</li><li>No schema migration tooling for breaking changes (schemaVersion field exists but no migrator)</li><li>annotations field not yet in schema — added ad-hoc by consuming packages</li>
+        </ul>
+      </div>
+    
+    
+      <div class="section">
+        <div class="section-label">Tags</div>
+        <div class="tags-row">
+          <span class="tag">schema</span><span class="tag">core</span><span class="tag">zod</span><span class="tag">typescript</span><span class="tag">validation</span>
+        </div>
+      </div>
+
+    <div class="page-footer">
+      <span class="footer-left">lac-cli</span>
+      <span class="footer-right">2026-04-16</span>
+    </div>
+  </div>
+
+  <div class="page">
+    <hr class="page-rule">
+    <div class="feature-eyebrow">
+      <span class="feature-key">feat-2026-002</span>
+      <span class="feature-badge" style="color:#4aad72;background:#4aad721a">Active</span>
+      
+      
+    </div>
+    <h1 class="feature-h1">lac CLI</h1>
+
+    <div class="section">
+      <div class="section-label">Problem</div>
+      <div class="problem-block body-text"><p>Developers need a terminal interface for the entire feature provenance lifecycle — creating features, running quality checks, tracing ownership, and operating the local server — without leaving their workflow.</p></div>
+    </div>
+
+    
+      <div class="section">
+        <div class="section-label">Analysis</div>
+        <div class="body-text"><p>A Commander.js-based CLI exposes 11 commands covering the full lifecycle. Commands are thin wrappers over shared lib/ utilities so they are individually testable. The serve command bridges the CLI and LSP worlds by spawning lac-lsp and opening the browser. As of iteration 3, 23 Vitest tests cover loadConfig, doctor, lint, and blame commands.</p></div>
+      </div>
+    
+      <div class="section">
+        <div class="section-label">Decisions</div>
+        <ol class="decisions-list">
+          
+            <li class="decision-item">
+              <div class="decision-header">
+                <span class="decision-num">1.</span>
+                <span class="decision-text">Commander.js over yargs or meow</span>
+                <span class="decision-date">2026-01-20</span>
+              </div>
+              <div class="decision-rationale">Commander has the cleanest subcommand model and TypeScript support without runtime type gymnastics.</div>
+              
+            </li>
+            <li class="decision-item">
+              <div class="decision-header">
+                <span class="decision-num">2.</span>
+                <span class="decision-text">lac serve spawns lac-lsp as a child process rather than embedding the HTTP server</span>
+                <span class="decision-date">2026-03-01</span>
+              </div>
+              <div class="decision-rationale">Keeps packages independently deployable. lac-cli stays lightweight. lac-lsp can be used standalone.</div>
+              
+            </li>
+        </ol>
+      </div>
+    
+      <div class="section">
+        <div class="section-label">Implementation</div>
+        <div class="body-text"><p>Commands: workspace (init/status), init, spawn, tag, archive, lint (--watch), blame, export (--site), hooks (install/uninstall), serve, doctor, search. Built with tsdown to ESM. Installed globally as <code>lac</code> binary. Reads lac.config.json from workspace root for default options and paths.</p></div>
+      </div>
+    
+      <div class="section">
+        <div class="section-label">Known Limitations</div>
+        <ul class="limitations-list">
+          <li>lint --watch uses fs.watch which is unreliable on Linux (use chokidar in a future iteration)</li><li>No shell completion yet (bash/zsh/fish)</li><li>lac diff command not yet implemented</li>
+        </ul>
+      </div>
+    
+    
+      <div class="section">
+        <div class="section-label">Tags</div>
+        <div class="tags-row">
+          <span class="tag">cli</span><span class="tag">commander</span><span class="tag">developer-tools</span>
+        </div>
+      </div>
+
+    <div class="page-footer">
+      <span class="footer-left">lac-cli</span>
+      <span class="footer-right">2026-04-16</span>
+    </div>
+  </div>
+
+  <div class="page">
+    <hr class="page-rule">
+    <div class="feature-eyebrow">
+      <span class="feature-key">feat-2026-033</span>
+      <span class="feature-badge" style="color:#5b82cc;background:#5b82cc1a">Frozen</span>
+      <span class="feature-domain">cli-export</span>
+      
+    </div>
+    <h1 class="feature-h1">lac export-all: batch all export formats to a folder</h1>
+
+    <div class="section">
+      <div class="section-label">Problem</div>
+      <div class="problem-block body-text"><p>Running each export format individually requires 15+ separate CLI invocations. Users who want a full snapshot of their workspace — for sharing, archiving, or CI artifacts — have no single command to produce all outputs at once.</p></div>
+    </div>
+
+    
+      <div class="section">
+        <div class="section-label">Analysis</div>
+        <div class="body-text"><p>The export-all command is a batch runner over the existing generator library. It scans features once from a given directory, then calls every multi-feature generator (14 HTML formats + prompt + site) and writes outputs to a single folder. The architecture is a thin registry pattern: an array of <code>{name, file, generate}</code> records drives the main loop, keeping the command extensible without code duplication. Non-applicable single-feature formats (postcard, markdown) and comparison formats (diff) are intentionally excluded. The site generator writes a directory tree rather than a single file, so it is handled separately with its own mkdir. A <code>--skip</code> flag accepts comma-separated format names so users can exclude slow or unwanted outputs. Errors per format are non-fatal — the loop continues and the summary reports failures.</p></div>
+      </div>
+    
+      <div class="section">
+        <div class="section-label">Decisions</div>
+        <ol class="decisions-list">
+          
+            <li class="decision-item">
+              <div class="decision-header">
+                <span class="decision-num">1.</span>
+                <span class="decision-text">Registry array drives the loop rather than hardcoded if-chains</span>
+                
+              </div>
+              <div class="decision-rationale">Adding a new export format in the future requires one entry in the HTML_FORMATS array, not a new if-block. Mirrors the generator library&#39;s own open/closed structure.</div>
+              <div class="decision-alts">Alternatives considered: Individual if-blocks per format (copied from export.ts), Dynamic import via format name string</div>
+            </li>
+            <li class="decision-item">
+              <div class="decision-header">
+                <span class="decision-num">2.</span>
+                <span class="decision-text">Scan features once, pass to all generators</span>
+                
+              </div>
+              <div class="decision-rationale">Avoids repeated filesystem walks. All generators accept the same ScannedFeature[] type, so one scan suffices for all 14+ formats.</div>
+              <div class="decision-alts">Alternatives considered: Re-scan per format (simpler but slow for large workspaces)</div>
+            </li>
+            <li class="decision-item">
+              <div class="decision-header">
+                <span class="decision-num">3.</span>
+                <span class="decision-text">Exclude postcard, markdown, and diff from export-all</span>
+                
+              </div>
+              <div class="decision-rationale">postcard and markdown are single-feature formats that require a nearest feature.json context. diff requires a second workspace path. None are meaningful in a batch context.</div>
+              <div class="decision-alts">Alternatives considered: Include postcard using first frozen feature, Add --diff-target option</div>
+            </li>
+        </ol>
+      </div>
+    
+      <div class="section">
+        <div class="section-label">Implementation</div>
+        <div class="body-text"><p>HTML_FORMATS registry: array of {name, file, generate} where generate wraps each generator with the correct argument shape. ALL_FORMAT_NAMES: used for --skip validation. Action: resolves scanDir and outDir, validates skip names, scans features, mkdir outDir, iterates HTML_FORMATS (skipping or writing), handles prompt (buildReconstructionPrompt from export.ts, writes lac-prompt.md), handles site (generateSite to outDir/site/). Prints ✓/✗/skip per file. Summary line: N exported, M failed, K skipped.</p></div>
+      </div>
+    
+      <div class="section">
+        <div class="section-label">Known Limitations</div>
+        <ul class="limitations-list">
+          <li>No --view or --tags support — export-all targets full snapshots, not filtered views</li><li>Site output is always written to &lt;outDir&gt;/site/ with no configurable subdirectory name</li><li>Generators that fail do not abort the run — partial output is possible without a clear error exit code</li><li>Does not support postcard or markdown (single-feature only) or diff (requires a second target)</li>
+        </ul>
+      </div>
+    
+      <div class="section">
+        <div class="section-label">Success Criteria</div>
+        <div class="success-block body-text"><p><code>lac export-all</code> with 3 features produces 16 files (14 html + lac-prompt.md + site/) in ./lac-exports/. <code>--skip site,quiz</code> produces 14 files. <code>--skip unknownformat</code> exits with an error message listing valid formats. Each generated file is non-empty.</p></div>
+      </div>
+    
+      <div class="section">
+        <div class="section-label">Tags</div>
+        <div class="tags-row">
+          <span class="tag">cli</span><span class="tag">export</span><span class="tag">batch</span><span class="tag">reporting</span><span class="tag">artifacts</span>
+        </div>
+      </div>
+
+    <div class="page-footer">
+      <span class="footer-left">lac-cli</span>
+      <span class="footer-right">2026-04-16</span>
+    </div>
+  </div>
+
+  <div class="page">
+    <hr class="page-rule">
+    <div class="feature-eyebrow">
+      <span class="feature-key">feat-2026-003</span>
+      <span class="feature-badge" style="color:#4aad72;background:#4aad721a">Active</span>
+      
+      
+    </div>
+    <h1 class="feature-h1">Language Server + HTTP API</h1>
+
+    <div class="section">
+      <div class="section-label">Problem</div>
+      <div class="problem-block body-text"><p>Editors need real-time feature provenance overlaid on code (hover cards, code lens, diagnostics) without polling the filesystem on every keystroke. CI pipelines and browser tools need a stable HTTP API to query the same index.</p></div>
+    </div>
+
+    
+      <div class="section">
+        <div class="section-label">Analysis</div>
+        <div class="body-text"><p>A single long-running process serves both transports. The LSP stdio transport connects to any LSP-capable editor. The HTTP server on :7474 provides a REST API for CI, browser extensions, and the webapp. A shared in-memory FeatureIndex (chokidar-backed) is the single source of truth for both transports. As of iteration 3, 10 Vitest tests cover HTTP routing, rate limiting, lineage, and oversized-body protection.</p></div>
+      </div>
+    
+      <div class="section">
+        <div class="section-label">Decisions</div>
+        <ol class="decisions-list">
+          
+            <li class="decision-item">
+              <div class="decision-header">
+                <span class="decision-num">1.</span>
+                <span class="decision-text">Single process for both LSP and HTTP</span>
+                <span class="decision-date">2026-02-01</span>
+              </div>
+              <div class="decision-rationale">One shared FeatureIndex means no sync needed between transports. Simpler to install and operate.</div>
+              <div class="decision-alts">Alternatives considered: separate processes — double the memory, sync complexity</div>
+            </li>
+            <li class="decision-item">
+              <div class="decision-header">
+                <span class="decision-num">2.</span>
+                <span class="decision-text">Replace fs.watch with chokidar</span>
+                <span class="decision-date">2026-03-15</span>
+              </div>
+              <div class="decision-rationale">fs.watch --recursive is unreliable on Linux/Docker. Chokidar provides consistent cross-platform behavior.</div>
+              
+            </li>
+        </ol>
+      </div>
+    
+      <div class="section">
+        <div class="section-label">Implementation</div>
+        <div class="body-text"><p>LacLspServer orchestrates FeatureIndex + optional HttpServer + optional LSP connection. LSP capabilities: hover (with missing fields + completeness %), codeLens, definition, diagnostics (push), workspaceSymbols. HTTP endpoints: GET /health (uptime, indexedCount, version) /features /features/:key /features/:key/lineage /blame /lint /events (SSE), PUT /features/:key, DELETE /features/:key. Startup log: &#39;lac-lsp v0.1.0 started on port N&#39;. File watching via chokidar.</p></div>
+      </div>
+    
+      <div class="section">
+        <div class="section-label">Known Limitations</div>
+        <ul class="limitations-list">
+          <li>Only one workspace root supported — multi-root workspaces use first folder only</li><li>textDocument/references not yet implemented</li><li>textDocument/rename not yet implemented</li>
+        </ul>
+      </div>
+    
+    
+      <div class="section">
+        <div class="section-label">Tags</div>
+        <div class="tags-row">
+          <span class="tag">lsp</span><span class="tag">http-api</span><span class="tag">language-server</span><span class="tag">chokidar</span>
+        </div>
+      </div>
+
+    <div class="page-footer">
+      <span class="footer-left">lac-cli</span>
+      <span class="footer-right">2026-04-16</span>
+    </div>
+  </div>
+
+  <div class="page">
+    <hr class="page-rule">
+    <div class="feature-eyebrow">
+      <span class="feature-key">feat-2026-004</span>
+      <span class="feature-badge" style="color:#4aad72;background:#4aad721a">Active</span>
+      
+      
+    </div>
+    <h1 class="feature-h1">VS Code Extension (lac-lens)</h1>
+
+    <div class="section">
+      <div class="section-label">Problem</div>
+      <div class="problem-block body-text"><p>Developers spend most of their time in their editor. Feature provenance needs to surface exactly where the code is — as a CodeLens badge, hover card, and status bar item — without requiring context switches to a browser or terminal.</p></div>
+    </div>
+
+    
+      <div class="section">
+        <div class="section-label">Analysis</div>
+        <div class="body-text"><p>Two modes: Direct (reads feature.json via VS Code FS API, no external process) and LSP (delegates to lac-lsp for diagnostics and workspace symbols). Auto-detect: if lac-lsp is in PATH at activation, LSP mode is enabled automatically. This means zero configuration for the common case. As of iteration 3, hover provider escapes backticks in all string values to prevent broken markdown rendering.</p></div>
+      </div>
+    
+      <div class="section">
+        <div class="section-label">Decisions</div>
+        <ol class="decisions-list">
+          
+            <li class="decision-item">
+              <div class="decision-header">
+                <span class="decision-num">1.</span>
+                <span class="decision-text">Two modes (direct + LSP) rather than LSP-only</span>
+                <span class="decision-date">2026-02-10</span>
+              </div>
+              <div class="decision-rationale">Direct mode works offline, in remote environments, and without any global installs. LSP mode is opt-in for power users.</div>
+              
+            </li>
+            <li class="decision-item">
+              <div class="decision-header">
+                <span class="decision-num">2.</span>
+                <span class="decision-text">Auto-detect lac-lsp at activation via spawnSync</span>
+                <span class="decision-date">2026-03-15</span>
+              </div>
+              <div class="decision-rationale">Zero-config experience. Most users who have lac-lsp installed want LSP mode. Explicit false opt-out is better than explicit true opt-in.</div>
+              
+            </li>
+        </ol>
+      </div>
+    
+      <div class="section">
+        <div class="section-label">Implementation</div>
+        <div class="body-text"><p>CodeLens shows featureKey + status + completeness%. Hover shows problem, analysis, decisions, limitations with backtick escaping. Status bar shows active feature. Click-to-open feature.json. LSP mode adds diagnostics, go-to-definition, workspace symbol search. Bundled with esbuild to CJS for VS Code compatibility.</p></div>
+      </div>
+    
+      <div class="section">
+        <div class="section-label">Known Limitations</div>
+        <ul class="limitations-list">
+          <li>Only first workspace folder used in multi-root workspaces</li><li>No Neovim/Helix/JetBrains support (LSP is standard but needs client config)</li>
+        </ul>
+      </div>
+    
+    
+      <div class="section">
+        <div class="section-label">Tags</div>
+        <div class="tags-row">
+          <span class="tag">vscode</span><span class="tag">codelens</span><span class="tag">lsp-client</span><span class="tag">extension</span>
+        </div>
+      </div>
+
+    <div class="page-footer">
+      <span class="footer-left">lac-cli</span>
+      <span class="footer-right">2026-04-16</span>
+    </div>
+  </div>
+
+</body>
+</html>
