@@ -436,6 +436,10 @@ Views (--view):
     let activeView = options.view
       ? resolveView(options.view, config.views)
       : undefined
+    // For custom views, use the extends base as render mode so 'user'-extending views get clean UI
+    const activeViewRenderMode = options.view && config.views[options.view]
+      ? config.views[options.view].extends
+      : undefined
 
     if (options.view && !activeView) {
       const customNames = Object.keys(config.views)
@@ -541,7 +545,7 @@ Views (--view):
       const htmlFeatures = activeView
         ? densityFeatures.map(f => applyViewForHtml(f.feature as Record<string, unknown>, activeView) as typeof f.feature)
         : densityFeatures.map(f => f.feature)
-      const html = generateHtmlWiki(htmlFeatures, projectName, activeView?.label, activeView?.name)
+      const html = generateHtmlWiki(htmlFeatures, projectName, activeView?.label, activeView?.name, activeViewRenderMode)
 
       const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-wiki.html')
       try {
@@ -1019,7 +1023,9 @@ Views (--view):
           sortBy: (resolved as { sortBy?: string }).sortBy,
         })
         const viewHtmlFeatures = viewFeatures.map(f => applyViewForHtml(f, resolved) as typeof f)
-        await write(filename, generateHtmlWiki(viewHtmlFeatures, projectName, label, viewName))
+        // Pass the extends base as renderMode so views like musician inherit user-friendly UI
+        const renderMode = viewDef.extends
+        await write(filename, generateHtmlWiki(viewHtmlFeatures, projectName, label, viewName, renderMode))
 
         customEntries.push({ file: filename, label, description, icon, primary: false })
       }

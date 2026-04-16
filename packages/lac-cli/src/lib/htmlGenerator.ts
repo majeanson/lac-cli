@@ -61,7 +61,7 @@ function completeness(f: Feature): number {
 
 // ── Main generator ─────────────────────────────────────────────────────────────
 
-export function generateHtmlWiki(features: Feature[], projectName: string, viewLabel?: string, viewName?: string): string {
+export function generateHtmlWiki(features: Feature[], projectName: string, viewLabel?: string, viewName?: string, renderMode?: string): string {
   // Safe JSON embedding — prevent </script> injection
   const dataJson = JSON.stringify(features).replace(/<\/script>/gi, '<\\/script>')
 
@@ -679,7 +679,7 @@ function statusColor(s) {
 
 // ── Tree building ────────────────────────────────────────────────────────────
 
-const VIEW = '${viewName || ''}';
+const VIEW = '${renderMode || viewName || ''}';
 const byKey = new Map(FEATURES.map(f => [f.featureKey, f]));
 
 function getChildren(key) {
