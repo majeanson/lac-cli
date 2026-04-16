@@ -65,6 +65,8 @@ export function generateHub(
   entries: HubEntry[],
   generatedAt: string = new Date().toISOString(),
   prefix?: string,
+  /** Optional URL for an "Open Live Hub" button in the topbar (e.g. "/lac-hub") */
+  appHubUrl?: string,
 ): string {
   function esc(s: string): string {
     return s
@@ -87,6 +89,15 @@ export function generateHub(
   function href(file: string): string {
     return urlPrefix ? `${urlPrefix}/${file}` : `./${file}`;
   }
+
+  // Normalise appHubUrl: handle Git Bash Windows path expansion (e.g. /C:/Program Files/Git/lac-hub → /lac-hub)
+  const normalizedAppHubUrl = appHubUrl
+    ? "/" + (
+        /[A-Za-z]:[/\\]/.test(appHubUrl)
+          ? (appHubUrl.split(/[/\\]/).filter(Boolean).pop() ?? "")
+          : appHubUrl.replace(/^\/+/, "").replace(/\/+$/, "")
+      )
+    : undefined
 
   const primaryEntries   = entries.filter(e => e.primary);
   const secondaryEntries = entries.filter(e => !e.primary);
@@ -152,6 +163,9 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
 .topbar-sep   { color: var(--border); font-size: 18px; line-height: 1; }
 .topbar-title { font-size: 13px; color: var(--text-mid); }
 .topbar-date  { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--text-soft); }
+.topbar-hub-btn { display: inline-flex; align-items: center; gap: 5px; background: var(--accent); color: #0b0a08; font-size: 11px; font-weight: 700; letter-spacing: 0.03em; padding: 4px 10px; border-radius: 5px; text-decoration: none; transition: opacity .15s; }
+.topbar-hub-btn:hover { opacity: .85; }
+@media (max-width: 480px) { .topbar-date { display: none; } }
 
 /* ── Layout ── */
 .page { max-width: 880px; margin: 0 auto; padding: 56px 28px 100px; }
@@ -225,6 +239,7 @@ function lacGo(file){location.href=location.href.replace(/[^\\/]*$/,'')+file}
   <span class="topbar-sep">/</span>
   <span class="topbar-title">${esc(projectName)}</span>
   <span class="topbar-date">Generated ${esc(date)}</span>
+  ${normalizedAppHubUrl ? `<a href="${esc(normalizedAppHubUrl)}" class="topbar-hub-btn">⚡ Open Live Hub</a>` : ""}
 </div>
 
 <div class="page">

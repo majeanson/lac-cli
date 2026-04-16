@@ -349,6 +349,7 @@ export const exportCommand = new Command('export')
   .option('--hub [dir]',     'Hub landing page linking to all generated views → lac-hub.html')
   .option('--all [dir]',     'Generate all HTML views + hub index.html → --out dir (default: ./lac-output)')
   .option('--prefix <prefix>', 'URL prefix for hub links (no leading slash), e.g. lac → hrefs become /lac/lac-guide.html')
+  .option('--app-hub <url>',  'URL to an in-app hub page — adds "Open Live Hub" button to the static hub topbar, e.g. /lac-hub')
   .option('--diff <dir-b>',   'Compare cwd workspace against <dir-b> and show added/removed/changed')
   .option('--site <dir>',     'Generate a multi-page static site → --out dir (default: ./lac-site)')
   .option('--prompt [dir]',   'AI reconstruction prompt for all features (stdout or --out file)')
@@ -448,6 +449,7 @@ Views (--view):
     view?: string
     density?: string
     prefix?: string
+    appHub?: string
   }) => {
     // ── Config + view resolution ─────────────────────────────────────────────
     const config = loadConfig(process.cwd())
@@ -867,7 +869,7 @@ Views (--view):
         deprecated: fs.filter(f => f.status === 'deprecated').length,
         domains: [...new Set(fs.map(f => f.domain).filter((d): d is string => Boolean(d)))],
       }
-      const html = generateHub(basename(dir), stats, ALL_HUB_ENTRIES, new Date().toISOString(), options.prefix)
+      const html = generateHub(basename(dir), stats, ALL_HUB_ENTRIES, new Date().toISOString(), options.prefix, options.appHub)
       const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-hub.html')
       try {
         await writeFile(outFile, html, 'utf-8')
@@ -1144,7 +1146,7 @@ Views (--view):
       }
 
       const allEntries = [...ALL_HUB_ENTRIES, ...customEntries]
-      await write('index.html', generateHub(projectName, stats, allEntries, new Date().toISOString(), options.prefix))
+      await write('index.html', generateHub(projectName, stats, allEntries, new Date().toISOString(), options.prefix, options.appHub))
 
       const totalFiles = 21 + customEntries.length + 1
       process.stdout.write(`Done — ${features.length} features, ${totalFiles} files written to ${outDir}\n`)
