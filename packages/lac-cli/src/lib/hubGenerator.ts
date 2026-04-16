@@ -186,6 +186,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
 .footer-sep   { font-family: var(--mono); font-size: 10px; color: var(--border); }
 .footer-note  { font-size: 11px; color: var(--text-soft); }
 </style>
+<script>if(location.pathname.slice(-1)!=='/')location.replace(location.pathname+'/')</script>
 </head>
 <body>
 
