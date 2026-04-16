@@ -425,8 +425,20 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
   font-family: var(--mono);
   font-size: 11px;
   color: var(--text-soft);
-  margin-bottom: 32px;
+  margin-bottom: 12px;
 }
+.guide-link {
+  display: inline-block;
+  margin-bottom: 28px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--accent);
+  text-decoration: none;
+  border: 1px solid rgba(196,162,85,0.3);
+  border-radius: 4px;
+  padding: 3px 10px;
+}
+.guide-link:hover { background: rgba(196,162,85,0.08); }
 .completeness-bar {
   display: inline-block;
   width: 80px;
@@ -885,7 +897,8 @@ function renderFeature(key) {
     \${f.domain ? \`<span class="badge badge-domain">\${esc(f.domain)}</span>\` : ''}
   </div>\` : ''}
   <div class="feature-title">\${esc(f.title)}</div>
-  \${VIEW !== 'user' ? \`<div class="feature-completeness">\${barFill}\${pct}% complete</div>\` : ''}\`;
+  \${VIEW !== 'user' ? \`<div class="feature-completeness">\${barFill}\${pct}% complete</div>\` : ''}
+  \${f.userGuide ? \`<a class="guide-link" href="./lac-guide.html#\${esc(f.featureKey)}" target="_self">📖 View User Guide →</a>\` : ''}\`;
 
   // Problem
   html += section(VIEW === 'user' ? 'About this feature' : 'Problem', f.problem ? \`<div class="section-body">\${md(f.problem)}</div>\` : '<span class="empty">Not documented.</span>');
