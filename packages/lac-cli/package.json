@@ -1,6 +1,6 @@
 {
   "name": "@majeanson/lac",
-  "version": "3.4.3",
+  "version": "3.4.4",
   "description": "CLI for life-as-code — feature provenance tracking from the terminal",
   "license": "MIT",
   "repository": {

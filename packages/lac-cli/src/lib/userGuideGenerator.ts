@@ -532,13 +532,23 @@ function showPage(id) {
 }
 // init
 document.querySelectorAll('.feature-page').forEach(p => p.classList.add('hidden'));
-// Hash routing: navigate to feature on load if hash is present
+// Navigate to feature on page load if hash is present
 (function() {
   var hash = window.location.hash.slice(1);
   if (hash) { showPage(hash); }
 })();
-// Hash routing: respond to browser back/forward navigation
-window.addEventListener('hashchange', function() {
+// Click delegation — catch clicks on any element with data-id (nav items, TOC cards)
+document.addEventListener('click', function(e) {
+  var el = e.target.closest('[data-id]');
+  if (!el) return;
+  var id = el.dataset.id;
+  if (!id) return;
+  e.preventDefault();
+  showPage(id);
+  history.pushState(null, '', '#' + id);
+});
+// Browser back/forward navigation
+window.addEventListener('popstate', function() {
   var hash = window.location.hash.slice(1);
   showPage(hash || 'home');
 });
