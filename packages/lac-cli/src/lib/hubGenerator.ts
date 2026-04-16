@@ -69,7 +69,7 @@ export function generateHub(
 
   function primaryCard(e: HubEntry): string {
     return `
-    <a href="./${esc(e.file)}" class="primary-card" target="_self">
+    <a href="./${esc(e.file)}" onclick="event.preventDefault();lacGo('${esc(e.file)}')" class="primary-card">
       <div class="primary-card-icon">${e.icon}</div>
       <div class="primary-card-body">
         <div class="primary-card-label">${esc(e.label)}</div>
@@ -81,7 +81,7 @@ export function generateHub(
 
   function secondaryCard(e: HubEntry): string {
     return `
-    <a href="./${esc(e.file)}" class="secondary-card" target="_self">
+    <a href="./${esc(e.file)}" onclick="event.preventDefault();lacGo('${esc(e.file)}')" class="secondary-card">
       <div class="secondary-card-icon">${e.icon}</div>
       <div class="secondary-card-label">${esc(e.label)}</div>
       <div class="secondary-card-desc">${esc(e.description)}</div>
@@ -187,11 +187,9 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
 .footer-note  { font-size: 11px; color: var(--text-soft); }
 </style>
 <script>
-(function() {
-  var b = document.createElement('base');
-  b.href = location.href.substring(0, location.href.lastIndexOf('/') + 1);
-  document.head.appendChild(b);
-})();
+function lacGo(file) {
+  location.href = location.href.replace(/[^\/]*$/, '') + file;
+}
 </script>
 </head>
 <body>
