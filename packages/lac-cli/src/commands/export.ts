@@ -31,6 +31,10 @@ import { generateSprint } from '../lib/sprintGenerator.js'
 import { generateApiSurface } from '../lib/apiSurfaceGenerator.js'
 import { generateDependencyMap } from '../lib/dependencyMapGenerator.js'
 import { generateHub, ALL_HUB_ENTRIES, type HubStats } from '../lib/hubGenerator.js'
+import { generateRadar } from '../lib/radarGenerator.js'
+import { generateSuccessboard } from '../lib/successboardGenerator.js'
+import { generatePitch } from '../lib/pitchGenerator.js'
+import { generateTimeline } from '../lib/timelineGenerator.js'
 import { VIEW_NAMES, applyView, applyViewForHtml, applyDensity, applyViewTransforms, resolveView, type ViewName, type DensityLevel } from '../lib/views.js'
 import { loadConfig } from '../lib/config.js'
 
@@ -354,6 +358,10 @@ export const exportCommand = new Command('export')
   .option('--sprint [dir]',         'Sprint planning view — draft+active features sorted by priority, summary density')
   .option('--api-surface [dir]',    'Aggregated publicInterface[] reference across all features → lac-api-surface.html')
   .option('--dependency-map [dir]', 'Runtime dependency graph from externalDependencies[] → lac-depmap.html')
+  .option('--radar [dir]',          'Domain maturity radar — SVG polar chart across 5 quality dimensions → lac-radar.html')
+  .option('--successboard [dir]',   'Success criteria board — achieved/in-progress/planned by successCriteria → lac-successboard.html')
+  .option('--pitch [dir]',          'Demo slide deck — keyboard-navigable fullscreen presentation → lac-pitch.html')
+  .option('--timeline [dir]',       'Feature velocity timeline — swim-lane history from statusHistory → lac-timeline.html')
   .option('--tags <tags>',    'Comma-separated tags to filter by (OR logic) — applies to all multi-feature modes')
   .option('--sort <mode>',    'Sort order for multi-feature modes: key (default) | build-order (parents before children)')
   .option('--view <name>',    `Audience view — built-in (${VIEW_NAMES.join(', ')}) or custom name from lac.config.json views`)
@@ -425,6 +433,10 @@ Views (--view):
     sprint?: string | boolean
     apiSurface?: string | boolean
     dependencyMap?: string | boolean
+    radar?: string | boolean
+    successboard?: string | boolean
+    pitch?: string | boolean
+    timeline?: string | boolean
     tags?: string
     sort?: string
     view?: string
@@ -937,6 +949,65 @@ Views (--view):
       return
     }
 
+    // ── Radar mode ────────────────────────────────────────────────────────────
+    if (options.radar !== undefined) {
+      const dir = typeof options.radar === 'string' ? resolve(options.radar) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const html = generateRadar(features.map(f => f.feature), basename(dir))
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-radar.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Radar (${features.length} features, ${new Set(features.map(f => f.feature.domain)).size} domains) → ${options.out ?? 'lac-radar.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── Success board mode ────────────────────────────────────────────────────
+    if (options.successboard !== undefined) {
+      const dir = typeof options.successboard === 'string' ? resolve(options.successboard) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const html = generateSuccessboard(fs, basename(dir))
+      const withCriteria = fs.filter(f => (f as Record<string, unknown>)['successCriteria'] || Array.isArray((f as Record<string, unknown>)['acceptanceCriteria'])).length
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-successboard.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Success board (${withCriteria}/${features.length} features with criteria) → ${options.out ?? 'lac-successboard.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── Pitch deck mode ───────────────────────────────────────────────────────
+    if (options.pitch !== undefined) {
+      const dir = typeof options.pitch === 'string' ? resolve(options.pitch) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const html = generatePitch(fs, basename(dir))
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-pitch.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Pitch deck (${features.length} features) → ${options.out ?? 'lac-pitch.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── Timeline mode ─────────────────────────────────────────────────────────
+    if (options.timeline !== undefined) {
+      const dir = typeof options.timeline === 'string' ? resolve(options.timeline) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const html = generateTimeline(features.map(f => f.feature), basename(dir))
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-timeline.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Timeline (${features.length} features) → ${options.out ?? 'lac-timeline.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
     // ── All mode ──────────────────────────────────────────────────────────────
     if (options.all !== undefined) {
       const dir = typeof options.all === 'string' ? resolve(options.all) : resolve(process.cwd())
@@ -977,6 +1048,10 @@ Views (--view):
       await write('lac-sprint.html',         generateSprint(fs.filter(f => f.status === 'draft' || f.status === 'active'), projectName))
       await write('lac-api-surface.html',    generateApiSurface(fs, projectName))
       await write('lac-depmap.html',         generateDependencyMap(fs, projectName))
+      await write('lac-radar.html',          generateRadar(fs, projectName))
+      await write('lac-successboard.html',   generateSuccessboard(fs, projectName))
+      await write('lac-pitch.html',          generatePitch(fs, projectName))
+      await write('lac-timeline.html',       generateTimeline(fs, projectName))
 
       const stats: HubStats = {
         total: fs.length,
@@ -1033,7 +1108,7 @@ Views (--view):
       const allEntries = [...ALL_HUB_ENTRIES, ...customEntries]
       await write('index.html', generateHub(projectName, stats, allEntries, new Date().toISOString(), options.prefix))
 
-      const totalFiles = 15 + customEntries.length + 1
+      const totalFiles = 19 + customEntries.length + 1
       process.stdout.write(`Done — ${features.length} features, ${totalFiles} files written to ${outDir}\n`)
       return
     }

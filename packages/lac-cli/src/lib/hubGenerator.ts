@@ -51,6 +51,10 @@ export const ALL_HUB_ENTRIES: HubEntry[] = [
   { file: "lac-graph.html",        label: "Lineage Graph",      description: "Interactive force-directed feature lineage graph",                           icon: "🌐", primary: false },
   { file: "lac-print.html",        label: "Print",              description: "Print-ready A4 document — all features in clean two-column layout",          icon: "🖨️",  primary: false },
   { file: "lac-raw.html",          label: "Raw Dump",           description: "Field-by-field dump of every feature.json with sidebar navigation",          icon: "🔩", primary: false },
+  { file: "lac-radar.html",        label: "Maturity Radar",     description: "SVG polar chart — 5 quality dimensions scored per domain",                   icon: "🎯", primary: false },
+  { file: "lac-successboard.html", label: "Success Board",      description: "successCriteria + acceptanceCriteria organized by delivery status",          icon: "✅", primary: false },
+  { file: "lac-pitch.html",        label: "Pitch Deck",         description: "Full-screen keyboard-navigable slide deck — present your product story",     icon: "🎤", primary: true  },
+  { file: "lac-timeline.html",     label: "Feature Timeline",   description: "Horizontal swim-lane timeline built from statusHistory — velocity at a glance", icon: "📆", primary: false },
 ];
 
 export function generateHub(
