@@ -105,6 +105,12 @@ export const FeatureSchema = z.object({
   codeSnippets: z.array(CodeSnippetSchema).optional(),               // critical one-liners worth preserving verbatim (glob paths, API calls, etc.)
   implementationNotes: z.array(z.string()).optional(),                // free-form implementation context: architectural choices, non-obvious constraints, why-not notes
 
+  // Audience-specific documentation
+  pmSummary: z.string().optional(),                                   // 1–2 sentence business-value summary for PMs/execs — distinct from problem (technical) and userGuide (user-facing)
+  testStrategy: z.string().optional(),                                // how this feature should be tested: integration, unit, manual E2E, etc. — drives lac gen --type test
+  releaseVersion: z.string().optional(),                              // release version this feature first shipped in, e.g. "3.5.0", "v2", "2026-Q2"
+  acceptanceCriteria: z.array(z.string()).optional(),                 // structured testable checklist (parallel to successCriteria prose) — each entry is one verifiable statement
+
   // Guardlock
   fieldLocks: z.array(FieldLockSchema).optional(),                    // per-field locks; AI tools will not overwrite these fields without --force/override
   featureLocked: z.boolean().optional(),                              // when true, ALL fields in this feature are AI-locked — equivalent to listing every field in fieldLocks

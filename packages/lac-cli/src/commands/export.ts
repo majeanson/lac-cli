@@ -25,8 +25,14 @@ import { generateHealth } from '../lib/healthGenerator.js'
 import { generateEmbed } from '../lib/embedGenerator.js'
 import { generateDecisionLog } from '../lib/decisionLogGenerator.js'
 import { generateUserGuide } from '../lib/userGuideGenerator.js'
+import { generateChangelog } from '../lib/changelogGenerator.js'
+import { generateReleaseNotes } from '../lib/releaseNotesGenerator.js'
+import { generateSprint } from '../lib/sprintGenerator.js'
+import { generateApiSurface } from '../lib/apiSurfaceGenerator.js'
+import { generateDependencyMap } from '../lib/dependencyMapGenerator.js'
 import { generateHub, ALL_HUB_ENTRIES, type HubStats } from '../lib/hubGenerator.js'
-import { VIEWS, VIEW_NAMES, applyView, applyViewForHtml, type ViewName } from '../lib/views.js'
+import { VIEW_NAMES, applyView, applyViewForHtml, applyDensity, applyViewTransforms, resolveView, type ViewName, type DensityLevel } from '../lib/views.js'
+import { loadConfig } from '../lib/config.js'
 
 /**
  * Walks up the directory tree from `startDir` to find the nearest feature.json.
@@ -341,9 +347,17 @@ export const exportCommand = new Command('export')
   .option('--site <dir>',     'Generate a multi-page static site → --out dir (default: ./lac-site)')
   .option('--prompt [dir]',   'AI reconstruction prompt for all features (stdout or --out file)')
   .option('--markdown',       'Single feature as Markdown (nearest feature.json)')
+  .option('--changelog [dir]',      'Structured changelog grouped by month — from revisions[] across all features')
+  .option('--since <date>',         'Filter --changelog and --release-notes to entries after this date (YYYY-MM-DD)')
+  .option('--release-notes [dir]',  'User-facing release notes — features that went frozen since --since date or --release version')
+  .option('--release <version>',    'Filter --release-notes to features matching this releaseVersion (e.g. 3.5.0)')
+  .option('--sprint [dir]',         'Sprint planning view — draft+active features sorted by priority, summary density')
+  .option('--api-surface [dir]',    'Aggregated publicInterface[] reference across all features → lac-api-surface.html')
+  .option('--dependency-map [dir]', 'Runtime dependency graph from externalDependencies[] → lac-depmap.html')
   .option('--tags <tags>',    'Comma-separated tags to filter by (OR logic) — applies to all multi-feature modes')
   .option('--sort <mode>',    'Sort order for multi-feature modes: key (default) | build-order (parents before children)')
-  .option('--view <name>',    `Audience view — filters and shapes exported fields. One of: ${VIEW_NAMES.join(', ')}`)
+  .option('--view <name>',    `Audience view — built-in (${VIEW_NAMES.join(', ')}) or custom name from lac.config.json views`)
+  .option('--density <level>','Content density: summary | standard | verbose (default: standard)')
   .addHelpText('after', `
 Examples:
   lac export --html                          HTML wiki (cwd) → lac-wiki.html
@@ -404,22 +418,42 @@ Views (--view):
     site?: string
     prompt?: string | boolean
     markdown?: boolean
+    changelog?: string | boolean
+    since?: string
+    releaseNotes?: string | boolean
+    release?: string
+    sprint?: string | boolean
+    apiSurface?: string | boolean
+    dependencyMap?: string | boolean
     tags?: string
     sort?: string
     view?: string
+    density?: string
     prefix?: string
   }) => {
-    // ── View validation ──────────────────────────────────────────────────────
+    // ── Config + view resolution ─────────────────────────────────────────────
+    const config = loadConfig(process.cwd())
     let activeView = options.view
-      ? VIEWS[options.view as ViewName]
+      ? resolveView(options.view, config.views)
       : undefined
 
     if (options.view && !activeView) {
+      const customNames = Object.keys(config.views)
+      const allNames = [...VIEW_NAMES, ...customNames]
       process.stderr.write(
-        `Error: unknown view "${options.view}". Valid views: ${VIEW_NAMES.join(', ')}\n`,
+        `Error: unknown view "${options.view}". Available: ${allNames.join(', ')}\n`,
       )
       process.exit(1)
     }
+
+    // Density — explicit flag overrides view profile density
+    const activeDensity: DensityLevel = (
+      options.density === 'summary' || options.density === 'verbose'
+        ? options.density
+        : (activeView && 'density' in activeView && activeView.density)
+          ? activeView.density as DensityLevel
+          : 'standard'
+    )
 
     if (options.sort && options.sort !== 'key' && options.sort !== 'build-order') {
       process.stderr.write(
@@ -503,9 +537,10 @@ Views (--view):
       }
 
       const projectName = basename(htmlDir)
+      const densityFeatures = withDensity(features)
       const htmlFeatures = activeView
-        ? features.map(f => applyViewForHtml(f.feature as Record<string, unknown>, activeView) as typeof f.feature)
-        : features.map(f => f.feature)
+        ? densityFeatures.map(f => applyViewForHtml(f.feature as Record<string, unknown>, activeView) as typeof f.feature)
+        : densityFeatures.map(f => f.feature)
       const html = generateHtmlWiki(htmlFeatures, projectName, activeView?.label, activeView?.name)
 
       const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-wiki.html')
@@ -550,9 +585,10 @@ Views (--view):
       }
 
       const projectName = basename(rawDir)
+      const densityRaw = withDensity(features)
       const rawFeatures = activeView
-        ? features.map(f => applyViewForHtml(f.feature as Record<string, unknown>, activeView) as typeof f.feature)
-        : features.map(f => f.feature)
+        ? densityRaw.map(f => applyViewForHtml(f.feature as Record<string, unknown>, activeView) as typeof f.feature)
+        : densityRaw.map(f => f.feature)
       const html = generateRawHtml(rawFeatures, projectName, activeView?.label, activeView?.name)
 
       const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-raw.html')
@@ -603,7 +639,27 @@ Views (--view):
         const tagsToMatch = options.tags!.split(',').map(t => t.trim()).filter(Boolean)
         features = features.filter(({ feature }) => tagsToMatch.some(tag => feature.tags?.includes(tag)))
       }
-      return applySort(features)
+      // Apply view-level transforms (filterStatus, sortBy) if active view has them
+      if (activeView && ('filterStatus' in activeView || 'sortBy' in activeView)) {
+        const rawFeatures = features.map(f => f.feature as Record<string, unknown>)
+        const transformed = applyViewTransforms(rawFeatures, {
+          filterStatus: (activeView as { filterStatus?: string[] }).filterStatus,
+          sortBy: (activeView as { sortBy?: string }).sortBy,
+        })
+        const transformedKeys = new Set(transformed.map(f => f['featureKey'] as string))
+        features = features.filter(f => transformedKeys.has(f.feature.featureKey))
+      }
+      features = applySort(features)
+      return features
+    }
+
+    // ── Helper: apply density to a scanned feature list ──────────────────────
+    function withDensity<T extends { feature: Record<string, unknown> }>(featureList: T[]): T[] {
+      if (activeDensity === 'standard') return featureList
+      return featureList.map(f => ({
+        ...f,
+        feature: applyDensity(f.feature, activeDensity) as T['feature'],
+      }))
     }
 
     // ── Print mode ───────────────────────────────────────────────────────────
@@ -611,7 +667,8 @@ Views (--view):
       const dir = typeof options.print === 'string' ? resolve(options.print) : resolve(process.cwd())
       const features = await scanAndFilter(dir)
       if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
-      const fs = activeView ? features.map(f => applyViewForHtml(f.feature as Record<string, unknown>, activeView) as typeof f.feature) : features.map(f => f.feature)
+      const dPrint = withDensity(features)
+      const fs = activeView ? dPrint.map(f => applyViewForHtml(f.feature as Record<string, unknown>, activeView) as typeof f.feature) : dPrint.map(f => f.feature)
       const html = generatePrint(fs, basename(dir), activeView?.label)
       const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-print.html')
       try {
@@ -626,7 +683,7 @@ Views (--view):
       const dir = typeof options.resume === 'string' ? resolve(options.resume) : resolve(process.cwd())
       const features = await scanAndFilter(dir)
       if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
-      const fs = features.map(f => f.feature)
+      const fs = withDensity(features).map(f => f.feature)
       const html = generateResume(fs, basename(dir))
       const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-resume.html')
       try {
@@ -641,7 +698,8 @@ Views (--view):
       const dir = typeof options.slide === 'string' ? resolve(options.slide) : resolve(process.cwd())
       const features = await scanAndFilter(dir)
       if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
-      const fs = activeView ? features.map(f => applyViewForHtml(f.feature as Record<string, unknown>, activeView) as typeof f.feature) : features.map(f => f.feature)
+      const dSlide = withDensity(features)
+      const fs = activeView ? dSlide.map(f => applyViewForHtml(f.feature as Record<string, unknown>, activeView) as typeof f.feature) : dSlide.map(f => f.feature)
       const html = generateSlides(fs, basename(dir), activeView?.label)
       const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-slides.html')
       try {
@@ -671,7 +729,7 @@ Views (--view):
       const dir = typeof options.story === 'string' ? resolve(options.story) : resolve(process.cwd())
       const features = await scanAndFilter(dir)
       if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
-      const fs = features.map(f => f.feature)
+      const fs = withDensity(features).map(f => f.feature)
       const html = generateStory(fs, basename(dir))
       const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-story.html')
       try {
@@ -701,7 +759,7 @@ Views (--view):
       const dir = typeof options.kanban === 'string' ? resolve(options.kanban) : resolve(process.cwd())
       const features = await scanAndFilter(dir)
       if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
-      const fs = features.map(f => f.feature)
+      const fs = withDensity(features).map(f => f.feature)
       const html = generateKanban(fs, basename(dir))
       const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-kanban.html')
       try {
@@ -746,7 +804,7 @@ Views (--view):
       const dir = typeof options.decisions === 'string' ? resolve(options.decisions) : resolve(process.cwd())
       const features = await scanAndFilter(dir)
       if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
-      const fs = features.map(f => f.feature)
+      const fs = withDensity(features).map(f => f.feature)
       const totalDecisions = fs.reduce((n, f) => n + (f.decisions?.length ?? 0), 0)
       const html = generateDecisionLog(fs, basename(dir))
       const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-decisions.html')
@@ -796,6 +854,85 @@ Views (--view):
       return
     }
 
+    // ── Changelog mode ────────────────────────────────────────────────────────
+    if (options.changelog !== undefined) {
+      const dir = typeof options.changelog === 'string' ? resolve(options.changelog) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const html = generateChangelog(fs, basename(dir), options.since)
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-changelog.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        const totalRevisions = fs.reduce((n, f) => n + ((f as Record<string, unknown[]>)['revisions']?.length ?? 0), 0)
+        process.stdout.write(`✓ Changelog (${totalRevisions} revisions across ${features.length} features) → ${options.out ?? 'lac-changelog.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── Release notes mode ────────────────────────────────────────────────────
+    if (options.releaseNotes !== undefined) {
+      const dir = typeof options.releaseNotes === 'string' ? resolve(options.releaseNotes) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const html = generateReleaseNotes(fs, basename(dir), { since: options.since, release: options.release })
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-release-notes.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Release notes → ${options.out ?? 'lac-release-notes.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── Sprint mode ───────────────────────────────────────────────────────────
+    if (options.sprint !== undefined) {
+      const dir = typeof options.sprint === 'string' ? resolve(options.sprint) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      // Sprint is always summary density, always draft+active only
+      const sprintFeatures = features.filter(f => f.feature.status === 'draft' || f.feature.status === 'active')
+      const fs = sprintFeatures.map(f => f.feature)
+      const html = generateSprint(fs, basename(dir))
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-sprint.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Sprint (${sprintFeatures.length} active+draft features) → ${options.out ?? 'lac-sprint.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── API surface mode ──────────────────────────────────────────────────────
+    if (options.apiSurface !== undefined) {
+      const dir = typeof options.apiSurface === 'string' ? resolve(options.apiSurface) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const totalEntries = fs.reduce((n, f) => n + ((f as Record<string, unknown[]>)['publicInterface']?.length ?? 0), 0)
+      const html = generateApiSurface(fs, basename(dir))
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-api-surface.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ API surface (${totalEntries} entries across ${features.length} features) → ${options.out ?? 'lac-api-surface.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
+    // ── Dependency map mode ───────────────────────────────────────────────────
+    if (options.dependencyMap !== undefined) {
+      const dir = typeof options.dependencyMap === 'string' ? resolve(options.dependencyMap) : resolve(process.cwd())
+      const features = await scanAndFilter(dir)
+      if (features.length === 0) { process.stdout.write(`No valid feature.json files found in "${dir}".\n`); process.exit(0) }
+      const fs = features.map(f => f.feature)
+      const html = generateDependencyMap(fs, basename(dir))
+      const outFile = options.out ? resolve(options.out) : resolve(process.cwd(), 'lac-depmap.html')
+      try {
+        await writeFile(outFile, html, 'utf-8')
+        process.stdout.write(`✓ Dependency map (${features.length} features) → ${options.out ?? 'lac-depmap.html'}\n`)
+      } catch (err) { process.stderr.write(`Error writing "${outFile}": ${err instanceof Error ? err.message : String(err)}\n`); process.exit(1) }
+      return
+    }
+
     // ── All mode ──────────────────────────────────────────────────────────────
     if (options.all !== undefined) {
       const dir = typeof options.all === 'string' ? resolve(options.all) : resolve(process.cwd())
@@ -821,16 +958,21 @@ Views (--view):
       const projectName = basename(dir)
       process.stdout.write(`Generating all LAC views for "${projectName}" → ${outDir}\n`)
 
-      await write('lac-guide.html',     generateUserGuide(fs, projectName))
-      await write('lac-story.html',     generateStory(fs, projectName))
-      await write('lac-wiki.html',      generateHtmlWiki(fs, projectName))
-      await write('lac-kanban.html',    generateKanban(fs, projectName))
-      await write('lac-health.html',    generateHealth(fs, projectName))
-      await write('lac-decisions.html', generateDecisionLog(fs, projectName))
-      await write('lac-heatmap.html',   generateHeatmap(fs, projectName))
-      await write('lac-graph.html',     generateGraph(fs, projectName))
-      await write('lac-print.html',     generatePrint(fs, projectName))
-      await write('lac-raw.html',       generateRawHtml(fs, projectName))
+      await write('lac-guide.html',          generateUserGuide(fs, projectName))
+      await write('lac-story.html',          generateStory(fs, projectName))
+      await write('lac-wiki.html',           generateHtmlWiki(fs, projectName))
+      await write('lac-kanban.html',         generateKanban(fs, projectName))
+      await write('lac-health.html',         generateHealth(fs, projectName))
+      await write('lac-decisions.html',      generateDecisionLog(fs, projectName))
+      await write('lac-heatmap.html',        generateHeatmap(fs, projectName))
+      await write('lac-graph.html',          generateGraph(fs, projectName))
+      await write('lac-print.html',          generatePrint(fs, projectName))
+      await write('lac-raw.html',            generateRawHtml(fs, projectName))
+      await write('lac-changelog.html',      generateChangelog(fs, projectName))
+      await write('lac-release-notes.html',  generateReleaseNotes(fs, projectName, {}))
+      await write('lac-sprint.html',         generateSprint(fs.filter(f => f.status === 'draft' || f.status === 'active'), projectName))
+      await write('lac-api-surface.html',    generateApiSurface(fs, projectName))
+      await write('lac-depmap.html',         generateDependencyMap(fs, projectName))
 
       const stats: HubStats = {
         total: fs.length,
@@ -840,9 +982,53 @@ Views (--view):
         deprecated: fs.filter(f => f.status === 'deprecated').length,
         domains: [...new Set(fs.map(f => f.domain).filter((d): d is string => Boolean(d)))],
       }
-      await write('index.html', generateHub(projectName, stats, ALL_HUB_ENTRIES, new Date().toISOString(), options.prefix))
 
-      process.stdout.write(`Done — ${features.length} features, 11 files written to ${outDir}\n`)
+      // ── Custom views from lac.config.json ─────────────────────────────────
+      const customEntries: HubEntry[] = []
+      const VIEW_ICON_MAP: Record<string, string> = {
+        musician: '🎵', sprint: '⚡', 'dev-deep': '🔬', 'code-focus': '📦',
+        shipped: '🚀', onboarding: '🎓', architect: '🏛️', support: '🛟',
+        user: '👤', dev: '💻', product: '📊', tech: '🔧',
+      }
+      function pickViewIcon(name: string, label: string): string {
+        if (VIEW_ICON_MAP[name]) return VIEW_ICON_MAP[name]
+        const lc = label.toLowerCase()
+        if (lc.includes('music')) return '🎵'
+        if (lc.includes('sprint') || lc.includes('active')) return '⚡'
+        if (lc.includes('dev') || lc.includes('engineer')) return '🔬'
+        if (lc.includes('code') || lc.includes('snippet')) return '📦'
+        if (lc.includes('ship') || lc.includes('release') || lc.includes('frozen')) return '🚀'
+        if (lc.includes('onboard') || lc.includes('guide') || lc.includes('new')) return '🎓'
+        if (lc.includes('architect') || lc.includes('decision')) return '🏛️'
+        if (lc.includes('support') || lc.includes('qa')) return '🛟'
+        return '📄'
+      }
+
+      for (const [viewName, viewDef] of Object.entries(config.views)) {
+        const resolved = resolveView(viewName, config.views)
+        if (!resolved) continue
+
+        const label = viewDef.label ?? viewName
+        const description = viewDef.description ?? `Custom view: ${viewName}`
+        const icon = pickViewIcon(viewName, label)
+        const filename = `view-${viewName}.html`
+
+        let viewFeatures = features.map(f => f.feature as Record<string, unknown>)
+        viewFeatures = applyViewTransforms(viewFeatures, {
+          filterStatus: (resolved as { filterStatus?: string[] }).filterStatus,
+          sortBy: (resolved as { sortBy?: string }).sortBy,
+        })
+        const viewHtmlFeatures = viewFeatures.map(f => applyViewForHtml(f, resolved) as typeof f)
+        await write(filename, generateHtmlWiki(viewHtmlFeatures, projectName, label, viewName))
+
+        customEntries.push({ file: filename, label, description, icon, primary: false })
+      }
+
+      const allEntries = [...ALL_HUB_ENTRIES, ...customEntries]
+      await write('index.html', generateHub(projectName, stats, allEntries, new Date().toISOString(), options.prefix))
+
+      const totalFiles = 15 + customEntries.length + 1
+      process.stdout.write(`Done — ${features.length} features, ${totalFiles} files written to ${outDir}\n`)
       return
     }
 

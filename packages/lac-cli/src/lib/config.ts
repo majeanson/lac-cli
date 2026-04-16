@@ -3,6 +3,91 @@ import process from 'node:process'
 
 import { findLacConfig } from './walker.js'
 
+// ── View profile config ───────────────────────────────────────────────────────
+
+/**
+ * A named view profile defined in lac.config.json.
+ * Extends one of the 5 built-in views (dev/product/user/support/tech) and
+ * overrides specific attributes. Used via `lac export --view <name>`.
+ *
+ * Community tip: publish your view profiles as JSON snippets in a README
+ * so anyone can drop them into their lac.config.json. No package install needed.
+ */
+export interface ViewProfileConfig {
+  /** Built-in view to extend. Inherited fields are overridden by any explicit keys below. */
+  extends?: 'dev' | 'product' | 'user' | 'support' | 'tech'
+  /** Explicit field list — overrides the extended view's field set if provided. */
+  fields?: string[]
+  /**
+   * Content density:
+   * - 'summary'  — title + problem (first sentence) + status badge + priority + tags only
+   * - 'standard' — all included fields rendered normally (default)
+   * - 'verbose'  — standard + adds annotations, statusHistory, revisions, toolingAnnotations
+   */
+  density?: 'summary' | 'standard' | 'verbose'
+  /** Group features by this attribute before rendering. */
+  groupBy?: 'domain' | 'status' | 'priority'
+  /** Sort features by this attribute (within group if groupBy is set). */
+  sortBy?: 'priority' | 'title' | 'status' | 'lastVerifiedDate'
+  /** Only include features with these statuses. Defaults to all statuses. */
+  filterStatus?: Array<'draft' | 'active' | 'frozen' | 'deprecated'>
+  /** Ordered array of field names controlling section rendering order in HTML exports. */
+  sections?: string[]
+  /** Human label shown in HTML topbars for this view. Defaults to the view name. */
+  label?: string
+  /** Short description shown in lac config output. */
+  description?: string
+}
+
+// ── Generator plugin config ───────────────────────────────────────────────────
+
+/**
+ * A named generator defined in lac.config.json.
+ * Run with `lac gen --generator <name> [dir]`.
+ *
+ * Three types:
+ *  - 'template' — Handlebars (.hbs) template file; receives features as template context
+ *  - 'script'   — JS/TS script; receives features JSON on stdin, writes output to stdout
+ *  - 'ai'       — custom Claude prompt (inline string or path to .md file)
+ *
+ * Community tip: publish your generators as npm packages.
+ * Users install and reference them:
+ *   "script": "./node_modules/@lac-gen/openapi/index.js"
+ */
+export interface GeneratorConfig {
+  /** Generator type. */
+  type: 'template' | 'script' | 'ai'
+  /** (template) Path to a Handlebars .hbs file. Relative to the lac.config.json location. */
+  template?: string
+  /** (script) Path to a JS/TS script. Relative to the lac.config.json location. */
+  script?: string
+  /**
+   * (ai) System prompt — inline string or path to a .md/.txt file.
+   * The feature JSON is appended as user content. Claude model is used.
+   */
+  systemPrompt?: string
+  /**
+   * Output file path pattern. Supports substitutions:
+   *   {featureKey}  — e.g. feat-2026-001
+   *   {domain}      — e.g. auth
+   *   {status}      — e.g. frozen
+   *   {title}       — slugified title
+   * If omitted, output goes to stdout.
+   */
+  outputFile?: string
+  /** Only run this generator on features with these statuses. */
+  filterStatus?: Array<'draft' | 'active' | 'frozen' | 'deprecated'>
+  /** Only run on features matching these tags (OR logic). */
+  filterTags?: string[]
+  /**
+   * Whether to run per-feature (default) or once for the whole workspace.
+   * 'workspace' mode receives all matching features as an array.
+   */
+  scope?: 'feature' | 'workspace'
+  /** Short description shown in `lac gen --list`. */
+  description?: string
+}
+
 /**
  * Guardlock configuration — controls how AI tools (lac fill, write_feature_fields)
  * interact with fields that a human has already decided and locked down.
@@ -69,6 +154,36 @@ export interface LacConfig {
   defaultAuthor?: string
   /** Guardlock settings — restrict AI writes on specific fields. */
   guardlock?: GuardlockConfig
+  /**
+   * Named view profiles used with `lac export --view <name>`.
+   * Each profile extends a built-in view and overrides specific attributes.
+   *
+   * Example:
+   * ```json
+   * "views": {
+   *   "sprint": { "extends": "product", "density": "summary", "filterStatus": ["draft", "active"], "sortBy": "priority" },
+   *   "onboarding": { "extends": "dev", "density": "verbose", "filterStatus": ["frozen"], "groupBy": "domain" }
+   * }
+   * ```
+   *
+   * Community: share your views as JSON snippets — others drop them in their lac.config.json.
+   */
+  views?: Record<string, ViewProfileConfig>
+  /**
+   * Named generator plugins used with `lac gen --generator <name>`.
+   * Supports template (Handlebars), script (stdin/stdout), and ai (custom Claude prompt) types.
+   *
+   * Example:
+   * ```json
+   * "generators": {
+   *   "my-docs": { "type": "template", "template": "./templates/feature-doc.hbs", "outputFile": "./docs/{featureKey}.md" },
+   *   "openapi":  { "type": "script",   "script": "./node_modules/@lac-gen/openapi/index.js", "scope": "workspace" }
+   * }
+   * ```
+   *
+   * Community: publish generators as npm packages (e.g. @lac-gen/openapi, @lac-gen/storybook).
+   */
+  generators?: Record<string, GeneratorConfig>
 }
 
 const DEFAULTS: Required<LacConfig> = {
@@ -84,6 +199,8 @@ const DEFAULTS: Required<LacConfig> = {
     requireAlternatives: false,
     freezeRequiresHumanRevision: false,
   },
+  views: {},
+  generators: {},
 }
 
 export function loadConfig(fromDir?: string): Required<LacConfig> {
@@ -107,6 +224,8 @@ export function loadConfig(fromDir?: string): Required<LacConfig> {
         requireAlternatives: parsed.guardlock?.requireAlternatives ?? DEFAULTS.guardlock.requireAlternatives,
         freezeRequiresHumanRevision: parsed.guardlock?.freezeRequiresHumanRevision ?? DEFAULTS.guardlock.freezeRequiresHumanRevision,
       },
+      views: parsed.views ?? DEFAULTS.views,
+      generators: parsed.generators ?? DEFAULTS.generators,
     }
   } catch {
     process.stderr.write(`Warning: could not parse lac.config.json at "${configPath}" — using defaults\n`)

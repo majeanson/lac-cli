@@ -36,16 +36,21 @@ export interface HubStats {
 
 /** Canonical ordered entry definitions for all standard LAC outputs. */
 export const ALL_HUB_ENTRIES: HubEntry[] = [
-  { file: "lac-guide.html",     label: "User Guide",         description: "How to use every user-facing feature — generated from userGuide fields",   icon: "📖", primary: true  },
-  { file: "lac-story.html",     label: "Product Story",      description: "Long-form narrative case study built from feature data",                    icon: "📰", primary: true  },
-  { file: "lac-wiki.html",      label: "Feature Wiki",       description: "Complete searchable wiki — all fields, all features, sidebar navigation",    icon: "🗂️",  primary: false },
-  { file: "lac-kanban.html",    label: "Kanban Board",       description: "Active / Frozen / Draft columns with sortable, filterable cards",            icon: "📋", primary: false },
-  { file: "lac-health.html",    label: "Health Scorecard",   description: "Completeness, coverage, tech-debt score, and field fill rates",              icon: "🏥", primary: false },
-  { file: "lac-decisions.html", label: "Decision Log",       description: "All architectural decisions consolidated and searchable by domain",          icon: "⚖️",  primary: false },
-  { file: "lac-heatmap.html",   label: "Completeness Heatmap", description: "Field x feature completeness grid — quickly spot gaps",                               icon: "🔥", primary: false },
-  { file: "lac-graph.html",     label: "Lineage Graph",      description: "Interactive force-directed feature dependency graph",                        icon: "🕸️",  primary: false },
-  { file: "lac-print.html",     label: "Print",              description: "Print-ready A4 document — all features in clean two-column layout",          icon: "🖨️",  primary: false },
-  { file: "lac-raw.html",       label: "Raw Dump",           description: "Field-by-field dump of every feature.json with sidebar navigation",          icon: "🔩", primary: false },
+  { file: "lac-guide.html",        label: "User Guide",         description: "How to use every user-facing feature — generated from userGuide fields",   icon: "📖", primary: true  },
+  { file: "lac-story.html",        label: "Product Story",      description: "Long-form narrative case study built from feature data",                    icon: "📰", primary: true  },
+  { file: "lac-release-notes.html",label: "Release Notes",      description: "User-facing release notes — features that shipped recently",               icon: "🚀", primary: true  },
+  { file: "lac-sprint.html",       label: "Sprint Board",       description: "Active + draft features sorted by priority — sprint planning at a glance",  icon: "⚡", primary: false },
+  { file: "lac-wiki.html",         label: "Feature Wiki",       description: "Complete searchable wiki — all fields, all features, sidebar navigation",    icon: "🗂️",  primary: false },
+  { file: "lac-kanban.html",       label: "Kanban Board",       description: "Active / Frozen / Draft columns with sortable, filterable cards",            icon: "📋", primary: false },
+  { file: "lac-changelog.html",    label: "Changelog",          description: "Feature revision history grouped by month — all changes across the workspace", icon: "📅", primary: false },
+  { file: "lac-decisions.html",    label: "Decision Log",       description: "All architectural decisions consolidated and searchable by domain",          icon: "⚖️",  primary: false },
+  { file: "lac-api-surface.html",  label: "API Surface",        description: "Aggregated public interface reference — all exported components, hooks, and types", icon: "🔌", primary: false },
+  { file: "lac-depmap.html",       label: "Dependency Map",     description: "Runtime cross-feature dependency graph from externalDependencies[]",         icon: "🕸️",  primary: false },
+  { file: "lac-health.html",       label: "Health Scorecard",   description: "Completeness, coverage, tech-debt score, and field fill rates",              icon: "🏥", primary: false },
+  { file: "lac-heatmap.html",      label: "Completeness Heatmap", description: "Field x feature completeness grid — quickly spot gaps",                   icon: "🔥", primary: false },
+  { file: "lac-graph.html",        label: "Lineage Graph",      description: "Interactive force-directed feature lineage graph",                           icon: "🌐", primary: false },
+  { file: "lac-print.html",        label: "Print",              description: "Print-ready A4 document — all features in clean two-column layout",          icon: "🖨️",  primary: false },
+  { file: "lac-raw.html",          label: "Raw Dump",           description: "Field-by-field dump of every feature.json with sidebar navigation",          icon: "🔩", primary: false },
 ];
 
 export function generateHub(

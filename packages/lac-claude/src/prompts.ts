@@ -17,6 +17,10 @@ export type FillableField =
   | 'lastVerifiedDate'
   | 'codeSnippets'
   | 'implementationNotes'
+  | 'pmSummary'
+  | 'testStrategy'
+  | 'releaseVersion'
+  | 'acceptanceCriteria'
 
 export interface FieldPrompt {
   system: string
@@ -146,6 +150,25 @@ Return ONLY a valid JSON array of plain strings — no other text, no markdown f
 If there are no notable implementation notes, return an empty array: []`,
     userSuffix: 'Extract free-form implementation notes for this feature.',
   },
+  pmSummary: {
+    system: `You are a product manager writing for a non-technical executive audience. Given a feature.json, write a 1–2 sentence business-value summary. Focus on the outcome and the user or business benefit — not the technical implementation. Avoid words like "component", "schema", "API", "TypeScript". Write as if you are telling a stakeholder why this feature matters. Return only the summary text, no JSON wrapper, no heading.`,
+    userSuffix: 'Write a 1–2 sentence PM/exec summary for this feature.',
+  },
+  testStrategy: {
+    system: `You are a software testing expert. Given a feature.json, describe in 2-4 sentences how this feature should be tested. Cover: what type of tests are appropriate (unit, integration, E2E, manual), what the hardest thing to test is, and any test setup or environment requirements implied by the feature. Be specific — name the actual components or flows that need coverage. Return only the strategy text, no JSON wrapper, no heading.`,
+    userSuffix: 'Describe the test strategy for this feature.',
+  },
+  releaseVersion: {
+    system: `You are a software engineering analyst. Given a feature.json, return the release version string this feature first shipped in, if it can be inferred from the statusHistory dates, revisions, or annotations. If not determinable, return an empty string. Return only the version string (e.g. "3.5.0", "v2", "2026-Q2") or an empty string — nothing else.`,
+    userSuffix: 'Identify the release version this feature first shipped in, or return empty string if unknown.',
+  },
+  acceptanceCriteria: {
+    system: `You are a software testing expert. Given a feature.json, break the successCriteria and problem statement into 3-8 discrete, testable acceptance criteria. Each criterion must be a single concrete, verifiable statement (e.g. "Camera roll permission prompt appears on first launch only", "Denying permission shows a recovery screen with an Open Settings button"). No vague statements. No compound criteria (one thing per item).
+
+Return ONLY a valid JSON array of strings — no other text:
+["criterion 1", "criterion 2", "criterion 3"]`,
+    userSuffix: 'Generate structured acceptance criteria for this feature.',
+  },
 }
 
 // Fields whose AI response is JSON (needs parsing) vs plain text
@@ -158,6 +181,8 @@ export const JSON_FIELDS = new Set<FillableField>([
   'publicInterface',
   'externalDependencies',
   'codeSnippets',
+  'implementationNotes',
+  'acceptanceCriteria',
 ])
 
 export const ALL_FILLABLE_FIELDS: FillableField[] = [
@@ -168,6 +193,9 @@ export const ALL_FILLABLE_FIELDS: FillableField[] = [
   'tags',
   'successCriteria',
   'userGuide',
+  'pmSummary',
+  'testStrategy',
+  'acceptanceCriteria',
   'domain',
   'componentFile',
   'npmPackages',
@@ -176,6 +204,7 @@ export const ALL_FILLABLE_FIELDS: FillableField[] = [
   'lastVerifiedDate',
   'codeSnippets',
   'implementationNotes',
+  'releaseVersion',
 ]
 
 export function getMissingFields(feature: Feature): FillableField[] {
@@ -194,7 +223,7 @@ export const GEN_PROMPTS: Record<string, FieldPrompt> = {
     userSuffix: 'Generate a React TypeScript component for this feature.',
   },
   test: {
-    system: `You are an expert software testing engineer. You will be given a feature.json. Generate a comprehensive test suite using Vitest. Use the successCriteria to derive happy-path tests and the knownLimitations to derive edge-case tests. Return only the test code, no explanation.`,
+    system: `You are an expert software testing engineer. You will be given a feature.json. Generate a comprehensive test suite using Vitest. Primary inputs: use acceptanceCriteria[] for happy-path test cases (one test per criterion), testStrategy to determine the appropriate test type (unit/integration/E2E), and knownLimitations for edge-case tests. If acceptanceCriteria is absent, derive tests from successCriteria. Return only the test code, no explanation.`,
     userSuffix: 'Generate a Vitest test suite for this feature.',
   },
   migration: {
@@ -204,5 +233,9 @@ export const GEN_PROMPTS: Record<string, FieldPrompt> = {
   docs: {
     system: `You are a technical writer. You will be given a feature.json. Generate user-facing documentation for this feature. Write it clearly enough that any end user can understand it (not developer-focused). Cover: what it does, how to use it, and known limitations. Use Markdown. Return only the documentation, no explanation.`,
     userSuffix: 'Generate user-facing documentation for this feature.',
+  },
+  mock: {
+    system: `You are an expert TypeScript developer. You will be given a feature.json with a publicInterface[] array describing exported types, components, hooks, services, and functions. Generate realistic TypeScript mock factories for each entry. Use hand-crafted realistic static values (no external faker library). Export a factory function for each interface named \`mock<Name>(overrides?: Partial<Type>): Type\`. Where the shape is not fully defined in the feature, make reasonable assumptions from the name and description. Return only the TypeScript code, no explanation.`,
+    userSuffix: 'Generate TypeScript mock factories for this feature.',
   },
 }
